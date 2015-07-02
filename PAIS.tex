@@ -454,11 +454,11 @@ The mean of the estimator $\text{var}(w(y))$ is a smooth function, and so it is 
 
 The effective sample size, $\neff$, can be used to assess the efficiency of importance samplers. Ideally, in each iteration, we would like all $M$ of our samples to provide us with new information about the posterior distribution. In practise, we are unlikely to achieve a ratio of exactly 1.
 
-The effective sample size can be defined in the following ways:
+The effective sample size can be defined in the following way:
 \[
-	\neff = \frac{\left(\sum_{i=1}^M \! w_i\right)^2}{\sum_{i=1}^M \! w_i^2} = \frac{M\E(w)^2}{\E(w^2)} = M\left(1 - \frac{\mbox{var}(w)}{\mathbb{E}(w^2)}\right).
+	\neff = \frac{\left(\sum_{i=1}^M \! w_i\right)^2}{\sum_{i=1}^M \! w_i^2} \approx \frac{M\E(w)^2}{\E(w^2)} = M\left(1 - \frac{\mbox{var}(w)}{\mathbb{E}(w^2)}\right).
 \]
-From the last definition we can see that when the variance of the weights is zero, which is our ideal scenario, $\neff = M$. Also, in a neighbourhood around $\delta_{\text{var}}^*$, $\neff$ decreases, when the variance increases. So if $v(w(y))$ can be equal to zero for a particular problem and proposal distribution, maximising the effective sample size is equivalent to minimising the variance of the weights. In the PAIS algorithm we have a dynamic proposal which is perturbed at every iteration. Hence, our proposal distribution cannot be exactly proportional to the posterior.
+The second two expressions are true when $M\rightarrow\infty$. From the last expression we see that when the variance of the weights is zero, which is our ideal scenario, $\neff = M$. Also, in a neighbourhood around $\delta_{\text{var}}^*$, $\neff$ decreases, when the variance increases. So if $v(w(y))$ can be equal to zero for a particular problem and proposal distribution, maximising the effective sample size is equivalent to minimising the variance of the weights. In the PAIS algorithm we have a dynamic proposal which is perturbed at every iteration. Hence, our proposal distribution cannot be exactly proportional to the posterior.
 
 The statistic $\neff$ converges faster than the variance of the weights, and so is preferable as a means of tuning $\delta$. While $\delta_{\text{var}}^*$ and the optimal value found using the effective sample size, $\delta_{\text{eff}}^*$, coincide when $v(w(y)) = 0$, this is not usually possible, so the methods will find different optimal values of $\delta^*$.
 
@@ -553,12 +553,12 @@ In each of the following simulations, we perform three tasks. First we calculate
 
 \subsubsection{Numerical optimal values of $\delta$}\label{sec:Optimal values P1}
 
-\begin{figure}[h]
-\begin{center}
-\includegraphics[width=\textwidth]{"figures/pCNL1 opt delta"}
+\begin{figure}[htb]
+\centering
+\includegraphics[width=0.45\textwidth]{"figures/pCNL1o"}
+\includegraphics[width=0.45\textwidth]{"figures/PAISpCNL1o"}
 \caption{Finding optimal values of $\delta$ for the pCNL (left) algorithm and PAIS-pCNL (right) algorithm for the problem in Section~\ref{sec:problem 1}. The setup is as in Section~\ref{sec:Implementation P1}.}
 \label{fig:P1 opt delta}
-\end{center}
 \end{figure}
 
 \begin{table}[!htb]
@@ -589,23 +589,23 @@ In each of the following simulations, we perform three tasks. First we calculate
 	\label{table:prob1 opt delta}
 \end{table}
 
-Figure~\ref{fig:P1 opt delta} (left) shows the two values of $\delta$ which may be optimal for the pCNL algorithm. The first estimate comes from the relative L2 error, and the second comes from the variance of the estimate of the mean. Heuristically, the optimal acceptance rates of the function space algorithms are expected to be slightly higher than their finite dimensional versions. In light of this, it is clear that the variance of the estimate of the mean is a better indicator of the scaling parameter. The results in Figure~\ref{fig:P1 opt delta} are summarised in Table~\ref{table:prob1 opt delta} (left).
+Figure~\ref{fig:P1 opt delta} (left) shows the two values of $\delta$ which may be optimal for the pCNL algorithm, found at the turning points. The first estimate comes from the relative L2 error, and the second comes from the variance of the estimate of the mean. The optimal acceptance rates of the function space algorithms are expected to be slightly higher than their finite dimensional versions. Since the L2 error estimate of the histogram gives an acceptance rate which is near to 100\%, we say that the optimal acceptance rate is that as given by the variance of the mean, roughly 75\%. The results in Figure~\ref{fig:P1 opt delta} are summarised in Table~\ref{table:prob1 opt delta} (left).
 
-Figure~\ref{fig:P1 opt delta} (right) shows the effective sample size ratio compared to the error analysis and the variance of the weights. It is clear to see that the effective sample size does a much better job of finding the optimal value of $\delta$ as given by the error analysis than the variance of the weights does.
+Figure~\ref{fig:P1 opt delta} (right) shows the effective sample size ratio compared to the error analysis and the variance of the weights. Although the L2 error graph is noisy, the maximum in the effective sample size is close to the minimum in the L2 error. The minimum in the variance of the weights however is a long way away. We choose the effective sample size as the best estimator of the optimal scaling parameter because of this, and because the effective sample size statistic converges to a smooth graph faster than either the variance of the weights or the L2 error.
 
 \subsubsection{Convergence of pCNL vs PAIS-pCNL}
 
-\begin{figure}[h]
-\begin{center}
-\includegraphics[width=\textwidth]{"figures/pCNL1_error"}
-\caption{Relative error in the moments (right) and histograms (left) produced by the (A)pCNL and (A)PAIS-pCNL algorithms against iterations for problem~\ref{sec:problem 1}. The setup is as in Section~\ref{sec:Implementation P1} (2, 3).}
+\begin{figure}[htb]
+\centering
+\includegraphics[width=0.45\textwidth]{"figures/pCNL1l"}
+\includegraphics[width=0.45\textwidth]{"figures/pCNL1m"}
+\caption{Relative error in the first moment (right) and histograms (left) produced by the (A)pCNL and (A)PAIS-pCNL algorithms against iterations for problem~\ref{sec:problem 1}. The setup is as in Section~\ref{sec:Implementation P1} (2, 3).}
 \label{fig:MH1 L2}
-\end{center}
 \end{figure}
 
 Figure~\ref{fig:MH1 L2} shows that the PAIS-pCNL algorithm converges to the posterior distribution faster than the standard function space pCNL algorithm, in both L2 error and relative error in the moments. To reach a desired tolerance, after convergence the PAIS-pCNL algorithm requires 40\% fewer iterations than the pCNL algorithm.
 
-The adaptive algorithms are run with initial values of $\delta_0=0.1$ for the APAIS-pCNL algorithm, and $\delta_0=2$ for the ApCNL algorithm. From Figure~\ref{fig:MH1 L2} we can see that the APAIS-pCNL algorithm converges at least as quickly as the PAIS-pCNL algorithm. The ApCNL algorithm initially has trouble converging to the posterior; during the initial burn-in phase, some chains find themselves a long way out in the tails where due to the high gradient they will overshoot the high density region and reject almost all proposed values.
+Both adaptive algorithms are run with initial values of $\delta_0=0.1$. From Figure~\ref{fig:MH1 L2} we can see that the APAIS-pCNL algorithm converges at least as quickly as the PAIS-pCNL algorithm. The ApCNL algorithm initially has trouble converging to the posterior; during the initial burn-in phase, some chains find themselves a long way out in the tails where due to the high gradient they will overshoot the high density region and reject almost all proposed values.
 
 \subsubsection{Scaling of the PAIS algorithm with ensemble size}
 
@@ -631,12 +631,12 @@ As in the previous example, we use the identity observation operator $\G(u)=u$, 
 
 \subsubsection{Numerical optimal values of $\delta$}
 
-\begin{figure}[!h]
-\begin{center}
-\includegraphics[width=\textwidth]{"figures/P2 opt delta"}
+\begin{figure}[htb]
+\centering
+\includegraphics[width=0.45\textwidth]{"figures/pCNL2 opt delta"}
+\includegraphics[width=0.45\textwidth]{"figures/PAIS pCNL2 opt delta"}
 \caption{Finding optimal values of $\delta$ for the pCNL (left) algorithm and PAIS-pCNL (right) algorithm for the problem in Section~\ref{sec:problem 2}. The setup is as in Section~\ref{sec:Implementation P1}.}
 \label{fig:P2 opt delta}
-\end{center}
 \end{figure}
 
 \begin{table}[!htb]
@@ -669,16 +669,16 @@ As in the previous example, we use the identity observation operator $\G(u)=u$, 
 
 We find the optimal values of $\delta$ using the same methods described in Sections~\ref{sec:Implementation P1} and \ref{sec:Optimal values P1}. The results are displayed in Figure~\ref{fig:P2 opt delta} and Table~\ref{table:P2 opt delta}. There is a huge difference between the two error estimates of $\delta$ for pCNL, although the corresponding variance graph is very flat making it sensitive to Monte Carlo error. The variance of the mean estimate has an 81\% acceptance rate, which is larger than the pCNL acceptance rate found previously.
 
-For the PAIS-pCNL algorithm, it is again clear that the effective sample size ratio is a useful statistic for judging the optimal value of $\delta$. The relative L2 error estimate of $\delta^*$, shown in Table~\ref{table:P2 opt delta}, is slightly higher than the other two estimates, but from the graph there again seems to be a fairly flat wide minimum which is in the same region as the optimal effective sample size ratio.
+For the PAIS-pCNL algorithm, it is again clear that the effective sample size ratio is a useful statistic for judging the optimal value of $\delta$. The relative L2 error estimate of $\delta^*$, shown in Table~\ref{table:P2 opt delta}, is slightly higher than the other two estimates, but from the graph there again seems to be a fairly flat wide minimum which is in the same region as the optimal effective sample size ratio. The variance of the weights becomes so small in the critical region that we get numerical zeroes, this means that we could not use this method to tune the scaling parameter adaptively.
 
 \subsubsection{Convergence of pCNL vs PAIS-pCNL}
 
-\begin{figure}[htpb]
-\begin{center}
-\includegraphics[width=\textwidth]{"figures/pCNL2_error"}
-\caption{Relative error in the moments (right) and histograms (left) produced by the (A)pCNL and (A)PAIS-pCNL algorithms against iteratons for problem~\ref{sec:problem 2}. The setup is as described in Section~\ref{sec:Implementation P1} (2,3).}
+\begin{figure}[htb]
+\centering
+\includegraphics[width=0.45\textwidth]{"figures/pCNL2l"}
+\includegraphics[width=0.45\textwidth]{"figures/pCNL2m"}
+\caption{Relative error in the first moment (right) and histograms (left) produced by the (A)pCNL and (A)PAIS-pCNL algorithms against iteratons for problem~\ref{sec:problem 2}. The setup is as described in Section~\ref{sec:Implementation P1} (2,3).}
 \label{fig:MH2 L2}
-\end{center}
 \end{figure}
 
 Figure~\ref{fig:MH2 L2} that the PAIS-pCNL algorithm, converges to the posterior distribution faster than the pCNL algorithm. The adaptive algorithms both struggle with the first moment for the first million iterations, but produce better estimates after 10 million iterations. We see that to obtain a given tolerance level, the PAIS-pCNL algorithm requires 35\% fewer iterations than the pCNL algorithm.
@@ -714,7 +714,7 @@ Calculating the optimal values of the scaling parameters for this problem is sim
 \begin{table}[!htb]
     \begin{minipage}{.5\linewidth}
       \centering
-        \begin{tabular}{|c|r|r|}
+        \begin{tabular}{|l|r|r|}
 	\hline
 	Algorithm							& $\delta^*_{\text{acc}}$	& $\delta^*_{\text{eff}}$ \\ \hline
 	pCNL								& 1.9e-1					& - \\
