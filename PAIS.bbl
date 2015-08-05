@@ -111,6 +111,15 @@
   adaptive MCMC}}, Journal of Computational and Graphical Statistics, 18
   (2009), pp.~349--367.
 
+\bibitem{Paul}
+{\sc Paul Russell}, {\em PhD Thesis}, PhD thesis, School of Mathematics,
+  University of Manchester, 2017.
+
+\bibitem{schefzik2013uncertainty}
+{\sc Roman Schefzik, Thordis~L Thorarinsdottir, Tilmann Gneiting, et~al.}, {\em
+  Uncertainty quantification in complex simulation models using ensemble copula
+  coupling}, Statistical Science, 28 (2013), pp.~616--640.
+
 \bibitem{sexton1992hamiltonian}
 {\sc JC~Sexton and DH~Weingarten}, {\em Hamiltonian evolution for the hybrid
   monte carlo algorithm}, Nuclear Physics B, 380 (1992), pp.~665--677.

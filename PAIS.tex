@@ -931,43 +931,58 @@ The biggest issue for the Metropolis-Hastings algorithms when sampling
 from a posterior such as the one in BM(2) is that it is unlikely that
 the correct ratio of chains will occur in each of the modes, and since there is no interaction between the chains, there is no way to remedy this problem. The PAIS algorithm tackles this problem with its resampling step. The algorithm uses its dynamic kernel to build up an approximation of the posterior at each iteration, and then compares this to the posterior distribution via the weights function. Any large discrepancy in the approximation will result in a large or small weight being assigned to the relevant chain, meaning the chain will either pull other chains towards it or be sucked towards a chain with a larger weight. In this way, the algorithm allows chains to `teleport' to regions of the posterior which are in need of more exploration. Figure~\ref{fig:BM2_suction} shows Problem BM(2) with initially 1 chain in the positive mode, and 49 chains in the negative mode. It takes only a handful of iterations for the algorithm to balance out the chains into 25 chains in each mode. The chains switch modes without having to climb the energy gradient in the middle.
 
-\section{Discussion and Conclusions}\label{Sec:Conc}
+\section{Discussion and Conclusions}\label{Sec:Conc} 
 
-We have explored the application of parallelised MCMC algorithms in low dimensional Inverse problems. We have demonstrated numerically that these algorithms converge faster than the analogous Metropolis-Hastings algorithms, further experimentation with the Random Walk Metropolis-Hastings (RWMH), Metropolis Adjusted Langevin Algorithm (MALA) and preconditioned Crank-Nicolson (pCN) proposals has yielded similar results.
-
-One exception where the proposal distribution makes a difference to
-the convergence of the PAIS algorithm is where the KL divergence is
-large e.g. the PAIS-pCN algorithm struggles to sample from the
-distribution in Section~\ref{sec:problem 2}, while the pCN manages to
-produce a sample, albeit with a slow burn-in period. Additionally the
-PAIS-RWMH algorithm has no problems sampling from this distribution.
-
-
-
-\section{More conclusions to add}
-
-Incomplete PAIS (i.e. each processor only needs last reported value of
-the other chains)
-
-Using less than optimal resampler (lower cost, Schefzik, Roman,
-Thordis L. Thorarinsdottir, and Tilmann Gneiting. "Uncertainty
-quantification in complex simulation models using ensemble copula
-coupling." Statistical Science 28.4 (2013): 616-640.) COLIN TO DO THIS
-
-Use of other MCMC proposals (Riemann, HMC, etc)
+We have explored the application of parallelised MCMC algorithms in
+low dimensional Inverse problems. We have demonstrated numerically
+that these algorithms converge faster than the analogous naively parallelised
+Metropolis-Hastings algorithms. Further experimentation with the
+Random Walk Metropolis-Hastings (RWMH), Metropolis Adjusted Langevin
+Algorithm (MALA) and preconditioned Crank-Nicolson (pCN) proposals has
+yielded similar results\cite{Paul}.%  Importantly, we have demonstrated
+% that the convergence rate improves superlinearly with respect to the
+% number of processors used.
 
 Importantly, we have compared the efficiency of our parallel scheme
 with a naive parallelisation of serial methods. Thus our increase in
 efficiency is over and above an $N$-fold increase, where $N$ is the
 number of cores or processors at our disposal. Our approach
 demonstrates a better-than-linear speed-up with the number
-processors/cores used. Thus, our approach is not only embarrasingly
+processors/cores used. Thus, our approach is not only embarrassingly
 parallel (as coined by Cleve Moler in \cite{moler1986matrix}), but
 humiliatingly so.
 
-%It is commonly agreed that is preferable to run one MCMC long chain
-%than to run many shorter ones - this is largely due to the burn-in
-%period that is required. 
+The PAIS has a number of favourable features, for example the
+algorithm's ability to redistribute, through the resampling regime,
+the chains to regions which require more exploration. This allows the
+method to be used to sample from complex multimodal distribution.
+
+The PAIS approach is limited by the curse of dimensionality, since the
+cost of the resampling algorithm becomes prohibitively large. The cost
+of the resampler is $\mathcal{O}(n^2)$, where $n$ is the number of
+particles in the ensemble. Other resamplers exist which are not as
+costly, but for which there is some sacrifice in terms of optimality
+of the output. For example, the resampler proposed in
+\cite{schefzik2013uncertainty}  has computational complexity
+$\mathcal{O}(n)$. This might allow the PAIS to be used in higher
+dimensional problems, and is an avenue for future investigation.
+
+Another strength of the PAIS is that it can also be used with any MCMC
+proposal. There are a growing number of increasing sophisticated MCMC
+algorithms (HMC, Riemann manifold MCMC etc) which could be incorporated into this framework, leading to
+even more efficient algorithms, and this is another opportunity for
+future work.
+
+One disadvantage of parallelised algorithms is that often different
+processors will complete their tasks in different amount of times, for
+a number of reasons, often due to communication between the
+processors. One approach which could be applied to the PAIS to avoid
+this is for each processor to immediately start a new iteration, only
+using the last values of the other processors that were communicated
+to it. This incomplete approach would still be valid, and could lead
+to more efficient use of the computer architecture.
+
+
 
 \bibliographystyle{siam}
 \bibliography{refs}
