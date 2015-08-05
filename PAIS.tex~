@@ -1,5 +1,4 @@
 \documentclass[final]{siamltex}
-%test change
 \usepackage{cite}
 \usepackage{graphicx,bbm,pstricks}
 \usepackage{pifont}
@@ -94,9 +93,7 @@
   weighted sample ready for the next iteration. We demonstrate that
   this parallel adaptive importance sampling (PAIS) method outperforms
   naive parallelisation of serial MCMC methods using the same number
-  of processors, for low dimensional problems, and in fact shows
-  better than linear improvements in convergence rates with respect to
-  the number of processors used.
+  of processors. This demonstrates the added
 \end{abstract}
 \begin{keywords}MCMC, parallel, importance sampling, Bayesian, inverse problems.
 \end{keywords}
@@ -127,7 +124,7 @@ developed\cite{cotter2013mcmc}. The hybrid (or Hamiltonian) Monte
 Carlo (HMC) method uses Hamiltonian dynamics in order to propose and
 accept moves to states which are a long way away from the current
 position\cite{sexton1992hamiltonian}, and function space analogues of
-this have also been proposed\cite{beskos2011hybrid}. Riemann
+this have also been proposed\cite{beskos2011hybrid}. Riemannian
 manifold Monte Carlo methods exploit the Riemann geometry of the
 parameter space, and are able to take advantage of the local structure
 of the target density to produce more efficient MCMC
@@ -162,14 +159,13 @@ In this paper, we present a framework for parallelisation of
 importance sampling, which allows us to use any of the current
 Metropolis-based methodologies in order to create an efficient target
 proposal from the current state of all of the chains in the
-ensemble. In Section \ref{Sec:Prelim} we outline some preliminaries,
+ensemble. In Section \ref{sec:Prelim} we outline some preliminaries,
 including the general set up for Bayesian inverse problems, the
 preconditioned Crank-Nicolson Langevin (pCNL) algorithm and a
 brief review of the optimal transport resampler,  both of which we will be
-employing within the algorithm. We describe the Parallel Adaptive
-Importance Sampler (PAIS) in Section \ref{Sec:PAIS}, and in Section
-\ref{Sec:adapt} we describe how algorithmic parameters can be
-automatically tuned to provide optimal convergence. In
+employing within the algorithm. In Section \ref{sec:MCMC}, we explore the common problems with MCMC
+methods, which we intend to address with the development of our new
+framework. We describe this framework in Section \ref{Sec:PAIS}. In
 Section \ref{Sec:Num}, we present some numerical experiments which
 demonstrate the savings that can be made by employing this approach as
 opposed to a naive/trivial parallelisation of existing MCMC
@@ -185,9 +181,7 @@ suggest some areas for future investigation.
 
 
 
-\section{Preliminaries}\label{Sec:Prelim}
-In this Section we will introduce preliminary topics and algorithms
-that will be referred to throughout the paper.
+\section{Preliminaries}
 \subsection{Bayesian inverse problems}
 In this paper, we particularly focus on the use of MCMC methods in characterising
 posterior probability distributions in Bayesian inverse problems. We
@@ -227,11 +221,11 @@ likelihood:
 	\frac{d\mu_Y}{d\mu_0} \propto \exp \left ( -\Phi(u^*) \right ).
 \end{equation}
 
-\subsection{The preconditioned Crank-Nicolson Langevin (pCNL) algorithm}\label{Sec:pCNL}
+\subsection{The preconditioned Crank-Nicolson Langevin (pCNL) algorithm}
 In recent years, work has been carried out to frame MCMC proposal
 distributions on function space\cite{cotter2013mcmc}. These new
 discretisations perform comparably with the original versions in low
-dimensions. If gradient information regarding the observation operator is
+dimensions, so we choose one of these distributions to consider. If gradient information regarding the observation operator is
 available, then a range of MCMC methods are available which exploit this information to improve mixing rates. One
 example of such an algorithm is MALA. In \cite{cotter2013mcmc}, a function space version of this
 method was presented, the pCNL algorithm, and is described in full in Table
@@ -289,7 +283,7 @@ The Ensemble Transform (ET) method proposed by Reich \cite{reich2013nonparametri
 
 As proposed in \cite{reich2013nonparametric} a Monte Carlo algorithm can be implemented to resample from a weighted ensemble. We create a weighted sample, then solve the optimal transport problem which produces the coupling described above, we can draw a new sample from the evenly weighted distribution. Reich suggests using the mean of the evenly weighted distribution to produce a consistent estimator.
 
-Analysis of this method shows that as the ensemble size increases, the statistics of the evenly weighted sample approach those of the posterior distribution, at least well enough for a proposal distribution as described in Section~\ref{Sec:PAIS}. The histogram of the evenly weighted sample exhibits small oscillations in the tails of the posterior, and also struggles to deal with discontinuities.
+Analysis of this method shows that as the ensemble size increases, the statistics of the evenly weighted sample approach those of the posterior distribution, at least well enough for a proposal distribution as described in Section~\ref{sec:PAIS_alg}. The histogram of the evenly weighted sample exhibits small oscillations in the tails of the posterior, and also struggles to deal with discontinuities.
 
 Ideally the dimension of particles in a filter will not affect the convergence of the method. Unfortunately, the approximation of continuous density functions is computationally infeasible in high dimensions and the required ensemble size scales exponentially with the dimension of the problem\cite{silverman1986density,snyder2008obstacles}.
 
@@ -301,14 +295,7 @@ Ideally the dimension of particles in a filter will not affect the convergence o
 \end{center}
 \end{figure}
 
-Figure~\ref{fig:ET_dim_scaling} shows how quickly the ETMC algorithm
-loses its ability to accurately preserve the mean of the posterior
-distribution as the dimension increases. Clearly for a simple Gaussian
-problem, we can not resample in much more than 10 dimensions and hope
-to recover a representative sample, without hugely increasing the
-number of particles in the ensemble. As the cost of the ETMC is
-$\mathcal{O}(n^2)$, this does limit the dimension for which this
-approach can be used.
+Figure~\ref{fig:ET_dim_scaling} shows how quickly the ETMC algorithm loses its ability to accurately represent the mean of the posterior distribution as the dimension increases. Clearly for a simple Gaussian problem, we can not resample in much more than 10 dimensions and hope to recover a representative sample.
 
 \subsection{Deficiencies of Metropolis-type MCMC schemes}
 All MCMC methods are trivially parallelisable. One can take a method
@@ -318,7 +305,7 @@ that it takes one process to draw $N$ samples, $M$ processes can draw
 $NM$ samples. 
 
 However, we argue that this is a far from optimal
-scenario. First of all, unless we have a lot of information about the posterior, we will begin the algorithm a long way from statistical equilibrium. Some initial iterations then are not samples from the posterior, and must be thrown away. This process is known as the burn-in. In a trivially parallelised scenario, each process must perform this process independently.
+scenario. First of all, unless we have a lot of information about the posterior, we will begin the algorithm a long way from statistical equilibrium. Some initial iterations then are not samples from the posterior, and must be thrown away. This process is known as the burn-in. In a trivially parallelised scenario, each process must perform this process independently, while also tuning the scaling parameter.
 
 Moreover, many MCMC algorithms suffer from poor mixing, especially in
 multimodal systems. The time for an MCMC trajectory to switch between modes can be
@@ -341,68 +328,39 @@ motivated the development of the Parallel Adaptive Importance Sampler
 (PAIS). In the next section we will introduce the method in its most
 general form. We will then introduce the version that we have
 implemented, which utilises the resampler recently suggested by
-Reich\cite{reich2013nonparametric} described in Section
-\ref{sec:filters}, and the pCNL proposal distribution described in
-Section \ref{Sec:pCNL}
+Reich\cite{reich2013nonparametric} described in Section \ref{sec:filters}, and the pCNL proposal distribution.
 
 
-\section{The Parallel Adaptive Importance Sampler \allowbreak (PAIS)}\label{Sec:PAIS}
+\section{The Parallel Adaptive Importance Sampler \allowbreak (PAIS)}\label{sec:PAIS_alg}
 
-% In a trivially parallelised MCMC scheme, if we have enough processes
-% all sampling from the target density at the same time, then we can
-% make a very rough approximation of that density by taking the current
-% states of all of the processes as a representative sample. In the
-% PAIS, the proposal density for the importance sampler stage is a
-% mixture of all of the proposal densities for a chosen MCMC scheme,
-% using the current states. If the proposal in the MCMC scheme is
-% appropriate and our number of samples is big enough, we might hope
-% that this mixture of densities is a good enough approximation of the
-% target density, and that new samples drawn from
-% the mixture proposal are approximately draws from the target
-% measure. If this is the case, then the variance of importance weights
-% for these samples will be small, leading to a highly efficient
-% sampler.
+In a trivially parallelised MCMC scheme, if we have enough processes
+all sampling from the target density at the same time, then we can
+make a very rough approximation of that density by taking the current
+states of all of the processes as a representative sample. In the
+PAIS, the proposal density for the importance sampler stage is a
+mixture of all of the proposal densities for a chosen MCMC scheme,
+using the current states. If the proposal in the MCMC scheme is
+appropriate and our number of samples is big enough, we might hope
+that this mixture of densities is a good enough approximation of the
+target density, and that new samples drawn from
+the mixture proposal are approximately draws from the target
+measure. If this is the case, then the variance of importance weights
+for these samples will be small, leading to a highly efficient
+sampler.
 
-% The problem at this stage, is that our current states all have varying
-% importance, but in order for us to iterate this whole process again,
-% we require them to be the same. Therefore, we employ a resampler to
-% take our new set of samples with differing weights, and return a set
-% of states with equal weights, which are chosen so that the correlation
-% between the two sets is maximised. At this stage we can start the whole
-% process again. 
-
-Important samplers can be a very efficient method for sampling from a
-probability distribution. A proposal density is chosen from which we
-can draw samples, and each sample is assigned a weight given by the
-ratio of the target density and the proposal density at that
-point. They are efficient when the proposal density is concentrated in
-similar areas to the target density, and incredibly inefficient when
-this is not the case. The aim of the PAIS is to use the states of a
-set of parallel MCMC chains to construct a proposal distribution which
-will be as close as possible to the target density. Given enough
-processors, the states of all of these chains at one point
-in time may be reasonably representative sample of the target density.
-
-The proposal distribution could be constructed in many different ways,
-but we choose to use a mixture distribution, made up of MCMC proposals
-(in this paper, specifically the pCNL proposal from Section \ref{Sec:pCNL}). Once the proposal is
-constructed, we can sample a new set of states from the proposal
-distribution, and each is assigned a weight given by the ratio of the target
-density and the proposal mixture distribution density. Assuming that
-our proposal distribution is a good one, then the variance of the
-weights will be small, and we will have many useful samples. Finally, we
-need to create a set of evenly weighted samples which best represent
-this set of weighted samples. This is achieved by implementing the
-ETMC algorithm. Once we once again have a set of evenly weighted
-samples that we believe represents the target distribution well, we
-can iterate the process once again. The algorithm is given in more detail in Table \ref{tab:PAIS}. 
+The problem at this stage, is that our current states all have varying
+importance, but in order for us to iterate this whole process again,
+we require them to be the same. Therefore, we employ a resampler to
+take our new set of samples with differing weights, and return a set
+of states with equal weights, which are chosen so that the correlation
+between the two sets is maximised. At this stage we can start the whole
+process again. The algorithm is given in more detail in Table \ref{tab:PAIS}. 
 
 We wish to sample states $x \in X$ from a posterior
 probability distribution $\mu_Y$. Since we have $M$ processes, we
 represent the current state of all of the Markov chains as a vector
 $\X = [x_1,x_2,\ldots,x_M]^T$. We are also given a transition kernel
-$\nu(\cdot,\cdot)$, which might come from an MCMC method, for example
-the pCNL proposal presented in Section \ref{Sec:pCNL}.
+$\nu(\cdot,\cdot)$, which might come from an MCMC method, for example.
 
 \begin{table}
 \begin{mdframed}
@@ -428,18 +386,17 @@ the pCNL proposal presented in Section \ref{Sec:pCNL}.
 Since the resampling does not give us a statistically identical sample
 to that which is inputted, we cannot assume that the samples $\X^{(i)}$
 are samples from the posterior. Therefore, as with serial
-importance samplers, the weighted samples
-$(\W^{(i)},\Y^{(i)})_{i=1}^N$, or their statistics, are stored.
+importance samplers, the weighted samples $(\W^{(i)},\Y^{(i)})_{i=1}^N$ are stored.
 
 The key here is to choose a suitable transition kernel $\nu$ such that
-if $X^{(i)}$ is a decent representative sample of the posterior,
+if $X^{(i)}$ is a decent respresentative sample of the posterior,
 the mixture density $\chi(\cdot;\X^{(i)})$ is a reasonable
 approximation of the posterior distribution. If this is the case,
 the newly proposed states $\Y^{(i)}$ will also be a good (and relatively
 independent) sample of the posterior with low variance in the
 weights $\W^{(i)}$.
 
-In Section \ref{Sec:Num}, we will demonstrate how the algorithm
+In Section \ref{sec:num}, we will demonstrate how the algorithm
 performs, using pCNL algorithm. We do not claim that this choice is optimal, but
 is simply chosen as an example to show that sharing information across
 processes can improve on the original MCMC algorithm and lead to
@@ -448,45 +405,20 @@ the inverse problem being tackled involves computing
 the likelihood from a very large data set this could lead to a
 large saving of computational cost.
 
-\section{Automated tuning of Algorithm Parameters}\label{Sec:adapt}
+\section{Automated tuning of Algorithm Parameters}\label{sec:adap_delta}
 
-Efficient selection of scaling parameters in MCMC algorithms is critical to achieving optimal mixing rates and hence achieving fast convergence to the target density. One significant difficulty is finding an appropriate $\nu$ such that
-$\chi$ is a close approximation to the posterior density $\pi$. If the proposal distribution is too over-dispersed, then the algorithm will propose states a long way from the current state but there will be a relatively low acceptance rate, impacting the quality of inferences on the posterior. Similarly, if the posterior is under-dispersed, the process will take a long time to fully explore the space so the mixing rate, and hence convergence rate, will be slow. It is therefore necessary to find a proposal distribution which is slightly over-dispersed to ensure the entire posterior is explored\cite{gelman1992inference}, but is as close to the posterior as possible.
+Efficient selection of scaling parameters in MCMC algorithms is critical to achieving optimal mixing rates and hence achieving fast convergence to the target density. One significant difficulty with this approach, as with many kernel
+approximation approaches, is finding an appropriate $\nu$ such that
+$\chi$ is a close approximation to the posterior density $\pi$ in the
+right situation. If the proposal distribution is too overdispersed, then the algorithm will propose states a long way from the current state but there will be a relatively low acceptance rate, impacting the quality of inferences on the posterior. Similarly, if the posterior is under-dispersed, the process will take a long time to fully explore the space so the mixing rate, and hence convergence rate, will be slow. It is therefore necessary to find a proposal distribution which is slightly overdispersed to ensure the entire posterior is explored\cite{gelman1992inference}, but is as close to the posterior as possible.
 
-Proposal distributions which are slightly over-dispersed as described
-above, can be found by tuning the variance of the proposal
-distribution $\nu$ during the burn-in phase of the
-algorithm. Algorithms which use this method to find optimal proposal
-distributions are known as adaptive MCMC algorithms. Adaptive MCMC
-algorithms will converge to the stationary distribution $\pi(\cdot)$,
-irrespective of whether the adaptive parameter itself converges to an
-optimal value, under the following
-conditions\cite{roberts2007coupling,roberts2009examples}: 
-\begin{enumerate}
-\item The adaptive parameter exhibits diminishing adaptation, which says that the amount of movement in the adaptive parameter decreases with the length of the chain. 
-\item The smallest number of steps for which the kernel has sufficiently converged, from an initial state $x$, is finite, by bounded convergence.
-\end{enumerate}
+Proposal distributions which are slightly over-dispersed as described above, can be found by tuning the variance of the proposal distribution during the burn-in phase of the algorithm. Algorithms which use this method to find optimal proposal distributions are known as adaptive MCMC algorithms. Adaptive MCMC algorithms will converge to the stationary distribution $\pi(\cdot)$, irrespective of whether the adaptive parameter itself converges to an optimal value, under the following conditions\cite{roberts2007coupling,roberts2009examples}.
 
-The variance of the proposal distributions that are used within the
-proposal mixture distribution plays a key role in how well the
-proposal distribution represents the target distribution, and
-therefore how quickly the algorithm converges. A large over-dispersed
-proposal distribution will sample a lot from the tails of the
-distribution, but may also find other regions of high density with
-respect to the target distribution. A very small variance in the
-proposal distributions will lead to a very rough proposal mixture
-distribution. In practise, we wish to find the happy medium in which
-the proposal distribution is slightly more dispersed than the target
-density, whilst also being a good representation of the regions which
-have high density with respect to the target distribution.
+Condition 1: The adaptive parameter exhibits diminishing adaptation, which says that the amount of movement in the adaptive parameter decreases with the length of the chain. 
 
-Adaptively choosing the variance of the proposal distributions with a
-large initial guess allows us to first explore the state space
-globally, searching for multiple modes. Reducing the proposal variances to an
-optimal value then allows us to explore each region efficiently. The
-fact that we have multiple chains allows us to assess quickly and
-effectively what the optimal variance of the proposal distributions
-should be. 
+Condition 2: The smallest number of steps for which the kernel has sufficiently converged, from an initial state $x$, is finite, by bounded covergence.
+
+Adaptively choosing $\delta$ with a large initial guess allows us to first explore the state space, searching for multiple modes, then reducing $\delta$ to an optimal value for efficient sampling helps combat these problems. This process is effective in the PAIS algorithm since tuning $\delta$ using all of the chains is faster than in a single chain. The resampling step causes the processes to spread out across the regions of high density so that when $\delta$ is reduced for locally efficient sampling, it is not required for the chains to constantly search out new modes.
 
 In many MCMC algorithms such as the Random Walk Metropolis-Hastings (RWMH) algorithm, the optimal scaling parameter can be found by searching for the parameter value which gives an optimal acceptance rate, e.g. for near Gaussian targets we have 23.4\% for RWMH and 57.4\% for MALA\cite{roberts2001optimal}. Unlike Metropolis-Hastings algorithms, the PAIS algorithm does not accept or reject proposed values, so we need another method of measuring the optimality of $\delta$. Section~\ref{sec:statistics} gives some possible methods of tuning $\delta$.
 
@@ -504,14 +436,9 @@ where $\{x_i\}_{i=1}^N$ is a sample of size $N$ produced by the algorithm. The r
 \end{equation}
 where the points $\{R_i\}_{i=1}^{n_b}$ are the $d$-dimensional regions the histogram is defined over, so that $\bigcup_i R_i \subseteq X$ and $R_i\cap R_j=\emptyset$, $n_b$ is the number of bins, $v$ is the volume of a bin, and $B_i$ is the value of the $i$th bin. 
 
-These statistics are not practical for finding optimal values of
-$\delta$ since they require knowledge of the analytic solution, and
-require that the algorithm be run for a long time to build up a
-sufficiently large sample. However they can be used to assess the
-ability of other statistical measures to find the optimal proposal
-variances in a controlled setting.
+These statistics are usually not practical for finding optimal values of $\delta$ since they require knowledge of the analytic solution, and require that the algorithm be run for a long time to build up a sufficiantly large sample.
 
-Another related statistic, is the variance of the sample estimate of the first moment $\hat{\mu}$. Assuming that the algorithm is converging to the invariant distribution, convergence will be fastest when the variance of the estimate is minimised. This fact follows from the convergence rate of Monte Carlo algorithms, $\sigma/\sqrt{n}$. The proposal distribution which minimises the variance, $\sigma^2$, of $\hat{\mu}$, is the most desirable. This variance statistic often converges faster than the moment itself, and does not require any knowledge of the true value of the moment.
+Another related statistic, is to use the variance of the estimate of the first moment $\hat{\mu}$. Assuming that the algorithm is converging to the invariant distribution, convergence will be fastest when the variance of the estimate is minimised. This fact follows from the convergence rate of Monte Carlo algorithms, $\sigma/\sqrt{n}$. The proposal distribution which minimises the variance, $\sigma^2$, of $\hat{\mu}$, is the most desirable. This variance statistic often converges faster than the moment itself, and does not require any knowledge of the true value of the moment.
 
 The following statistics can be used for importance sampling algorithms.
 
@@ -531,9 +458,7 @@ The effective sample size can be defined in the following way:
 \[
 	\neff = \frac{\left(\sum_{i=1}^M \! w_i\right)^2}{\sum_{i=1}^M \! w_i^2} \approx \frac{M\E(w)^2}{\E(w^2)} = M\left(1 - \frac{\mbox{var}(w)}{\mathbb{E}(w^2)}\right).
 \]
-The second two expressions are true when $M\rightarrow\infty$. From
-the last expression we see that when the variance of the weights is
-zero, $\neff = M$, which is our ideal scenario. In a neighbourhood around $\delta_{\text{var}}^*$, $\neff$ decreases, when the variance increases. So if $v(w(y))$ can be equal to zero for a particular problem and proposal distribution, maximising the effective sample size is equivalent to minimising the variance of the weights. In the PAIS algorithm we have a dynamic proposal which is perturbed at every iteration.
+The second two expressions are true when $M\rightarrow\infty$. From the last expression we see that when the variance of the weights is zero, which is our ideal scenario, $\neff = M$. Also, in a neighbourhood around $\delta_{\text{var}}^*$, $\neff$ decreases, when the variance increases. So if $v(w(y))$ can be equal to zero for a particular problem and proposal distribution, maximising the effective sample size is equivalent to minimising the variance of the weights. In the PAIS algorithm we have a dynamic proposal which is perturbed at every iteration. Hence, our proposal distribution cannot be exactly proportional to the posterior.
 
 The statistic $\neff$ converges faster than the variance of the weights, and so is preferable as a means of tuning $\delta$. While $\delta_{\text{var}}^*$ and the optimal value found using the effective sample size, $\delta_{\text{eff}}^*$, coincide when $v(w(y)) = 0$, this is not usually possible, so the methods will find different optimal values of $\delta^*$.
 
@@ -549,99 +474,84 @@ The $\neff$ statistic also has another useful property; if we imagine the algori
 \end{center}
 \end{figure}
 
-If we are to use the effective sample size ratio as an indicator of
-how to tune the proposal variance, we need to look at how it behaves
-in different situations. In Section \ref{Sec:Num} we see how it behaves for different observation operators. Here we look at how the statistic behaves as we vary the ensemble size, $M$. Figure~\ref{fig:neff-M} shows results for the second problem discussed in \ref{sec:problem 2} when using the PAIS-pCNL algorithm to explore the posterior distribution. The left part of the figure shows that as the ensemble size increases, the value of $\delta$ which gives the optimal effective sample size ratio decreases. This is to be expected since we are trying to fit more kernels into the posterior distribution, so the variance of each kernel needs to be decreased.
+If we are to use the effective sample size ratio, we need to look at how it behaves in different situations. In the next section we see how it behaves for different observation operators. Here we look at how the statistic behaves as we vary the ensemble size, $M$. Figure~\ref{fig:neff-M} shows results for the second problem discussed in \ref{sec:problem 2} when using the PAIS-pCNL algorithm to explore the posterior distribution. The left part of the figure shows that as the ensemble size increases, the value of $\delta$ which gives the optimal effective sample size ratio decreases. This is to be expected since we are trying to fit more kernels into the posterior distribution, so the variance of each kernel needs to be decreased.
 
 \subsection{The Adaptive Algorithm}\label{sec:adapt}
 
-A popular approach for adaptive MCMC algorithms is to view the scaling
-parameter as a random variable which we can sample during the course
-of the MCMC iterations. However, it can be slow to converge to the
-optimal value, and we may need an
-uninformative prior for the scaling parameter. Alternatively, the parameter may be randomly sampled from some interval at various points during the chain, a benefit being that it allows some exploration of the state space but never converges to an optimal value of the scaling parameter. We choose to use a divide and conquer scheme which optimises the effective sample size. Some more sophisticated examples are described in \cite{roberts2009examples} and \cite{Ji2013adaptive}. The proposed algorithm, is not presented as an optimal strategy but as an example of the benefits of tuning the algorithm using the effective sample size statistic.
+A popular method for an adaptive MCMC algorithm is to view the scaling parameter as a random variable which we can sample during the course of the MCMC iterations. However, it can be slow and we may need an uninformative prior. Alternatively, the parameter may be randomly sampled from some interval at various points during the chain, a benefit being that it allows some exploration of the state space but never converges to an optimal value of the scaling parameter. We choose to use a divide and conquer scheme which optimises the effective sample size. Some more sophisticated examples are described in \cite{roberts2009examples} and \cite{Ji2013adaptive}. The proposed algorithm, is not presented as an optimal strategy but as an example of the benefits of tuning the algorithm using the effective sample size statistic.
 
-From hereon in, we will assume that we are using the proposal from the
-pCNL algorithm given in Section \ref{Sec:pCNL}, which is given by:
-\begin{equation}Y = (2+\delta)^{-1}\left[(2 - \delta)X_{i-1}-
-2\delta\mathcal{C}\nabla \Phi(u)+
-\sqrt{8\delta} W\right], \qquad W \sim \mu_0,
-\end{equation}
-where $X$ is our current state and $Y$ is our proposed state. The
-scaling parameter $\delta$ dictates the variance in the proposal distribution.
+In the adaptive algorithm described in Table~\ref{tab:adapt} we calculate a sequence $\{\delta^{(k)}\}_{k=1}$ which converges to the optimal scaling parameter $\delta^*$, resulting in the optimal transition density $\chi$ for our MCMC algorithm. We must choose some sequence of iterations at which to update $\delta^{(j)}$, $\{n_k\}_{k=1}$, which can be decided using a sequence in which the terms grow exponentially further apart. The algorithm is given for the PAIS method but a similar method is used to adaptively calculate $\delta^*$ for the pCNL algorithm.
 
- In the adaptive algorithm described in Table~\ref{tab:adapt} in
- Appendix \ref{Sec:App}, we calculate a sequence $\{\delta^{(k)}\}_{k=1}$ which converges to the optimal scaling parameter $\delta^*$, resulting in the optimal transition density $\chi$ for our MCMC algorithm. We must choose some sequence of iterations at which to update $\delta^{(j)}$, $\{n_k\}_{k=1}$, which can be decided using a sequence in which the terms grow exponentially further apart. The algorithm is given for the PAIS method but a similar method is used to adaptively calculate $\delta^*$ for the pCNL algorithm.
+When implemented, there are a number of parameters which must be chosen to allow efficient tuning of $\delta$. Firstly, the initial value of $\delta$ should be chosen so that the chains spread out quickly across the state space. If we always choose $\delta^{(0)}=2$ the chains may miss the high density region completely, so a smaller value of $\delta$ must be chosen. This can be seen for example in the optimisation graph for the problem described in Section~\ref{sec:problem 1}, Figure~\ref{fig:MH1 opt delta}, where there is a sudden jump at $\delta\approx 0.1$.
 
-When implemented, there are a number of parameters which must be
-chosen to allow efficient tuning of $\delta$. Firstly, the initial
-value of $\delta$ should be chosen so that the chains spread out
-quickly across the state space. However, if it is chosen to be too
-large, then the method may become unstable and inefficient. 
-
-\section{Numerical Examples}\label{Sec:Num}
-
-\subsection{Sampling from a one dimensional Gaussian distribution}\label{sec:problem 1}
-
-In this example we look at how PAIS compares to naively parallelised
-MCMC. We compare the pCNL algorithm \cite{cotter2013mcmc} with its
-PAIS variant, the PAIS-pCNL algorithm. We consider several statistics
-for measuring the efficiency of the PAIS algorithm compared to
-existing Metropolis-Hastings algorithms when applied to a simple one
-dimensional Gaussian posterior.
-
-
-Since we are comparing against trivially parallelised MCMC algorithms,
-we also need to decide which statistic $T(\delta)$ to optimise for
-these approaches. In the examples which follow, we have optimised the naively parallelised pCNL algorithm using the optimal acceptance rate $\hat{\alpha} = 0.75$. This value was found by using the L2 error minimums to calculate $\delta^*$. This means that we are minimising the statistic
+Another choice to be made is which statistic $T(\delta)$ to optimise. In the examples which follow, we have optimised the naively parallelised pCNL algorithm using the optimal acceptance rate $\hat{\alpha} = 0.75$. This value was found by using the L2 error minimums to calculate $\delta^*$. This means that we are minimising the statistic
 \[
 	T_{\text{MH}}(\delta) = \left| \frac{N_{\text{acc}}(\delta)}{N_{\text{total}}} - \hat{\alpha} \right|,
 \]
-where $N_{\text{acc}}(\delta)$ is the number of accepted moves and
-$N_{\text{total}}$ is the total number of samples produced. For the
-PAIS algorithm, we are maximising the effective sample size as
-discussed in Section~\ref{sec:ess}, so $T_{\text{PAIS}}(\delta) =
-\neff(\delta)$.
+where $N_{\text{acc}}(\delta)$ is the number of accepted moves and $N_{\text{total}}$ is the total number of samples produced. For the PAIS algorithm, we are maximising the effective sample size as discussed in Section~\ref{sec:ess}, so $T_{\text{PAIS}}(\delta) = \neff(\delta)$.
+
+In the numerics that follow in Section \ref{sec:num}, we utilise the
+adaptive scheme in Table \ref{tab:adapt} for finding the optimum value of $\delta$ in
+the proposal step in the PAIS.
+
+\begin{table}
+\begin{mdframed}
+\begin{algorithmic}
+\STATE $\X^{(0)} = \X_0 = [x_1^{(0)},x_2^{(0)},\ldots,x_M^{(0)}]^T$
+\STATE Choose $\delta^{(0)} \in (0, 2]$, $\delta_L^{(0)} = 0.99\delta^{(0)}$, $\delta_U^{(0)} = 1.01\delta^{(0)} \wedge 2$.
+\FOR{$i=0,1,2, \ldots, N$}
+\STATE Sample $y_j^{(i)}~\sim~\nu(\cdot;x_j^{(i)},\delta_L^{(i)})$ for $j=1, \ldots,M/2$.
+\STATE Sample $y_j^{(i)}~\sim~\nu(\cdot;x_j^{(i)},\delta_U^{(i)})$ for $j=M/2+1, \ldots, M$.
+\STATE $\chi(y;\X^{(i)}) = M^{-1}
+\left(\sum_{j=1}^{M/2} \nu(y;x_j^{(i)},\delta_L^{(i)})+\sum_{j=M/2+1}^{M} \nu(y;x_j^{(i)},\delta_U^{(i)})\right)$.
+\STATE $\W^{(i)} = [w_1^{(i)},w_2^{(i)},\ldots,w_M^{(i)}]^T,$ \quad $w^{(i)}_j =
+\frac{\pi(y_j^{(i)})}{\chi(y_j^{(i)};\X^{(i)})}$.
+\IF{$i$ is in $\{n_k\}_{k=1}$}
+	\STATE For $w_{kj} = w_j^{(k)}$, $N$ iterations since last update,
+	\STATE $T_L = NM(\sum_{k=i-N}^N\sum_{j=1}^{M/2} w_{kj})^2/(\sum_{k=i-N}^N\sum_{j=1}^{M/2} w_{kj}^2)$.
+	\STATE $T_U = NM(\sum_{k=i-N}^N\sum_{j=M/2+1}^M w_{kj})^2/(\sum_{k=i-N}^N\sum_{j=M/2+1}^M w_{kj}^2)$.
+	\STATE $\delta^{(i+1)} = \delta^{(i)} - \Delta\D T$.
+\ELSE
+	\STATE $\delta^{(i+1)} = \delta^{(i)}$.
+\ENDIF
+\IF{$i < K$}
+	\STATE Resample: $(w_j^{(i)},y_j^{(i)})_{j=1}^{M/2} \rightarrow (\frac{1}{M/2}, x_j^{(i+1)})_{j=1}^{M/2}$
+	\STATE Resample: $(w_j^{(i)},y_j^{(i)})_{j=M/2+1}^M \rightarrow (\frac{1}{M/2}, x_j^{(i+1)})_{j=M/2+1}^M$
+\ELSE
+	\STATE Resample: $(w_j^{(i)},y_j^{(i)})_{j=1}^M \rightarrow (\frac{1}{M}, x_j^{(i+1)})_{j=1}^M$
+\ENDIF
+\ENDFOR
+\end{algorithmic}
+\end{mdframed}\caption{A pseudo-code representation of the adaptive
+  PAIS algorithm.}
+\label{tab:adapt}
+\end{table}
+
+\section{Numerical Examples}\label{sec:num}
+
+\subsection{Sampling from a one dimensional Gaussian distribution}\label{sec:problem 1}
+
+In this example we look at how PAIS compares to naively parallelised MCMC. We compare the pCNL algorithm \cite{cotter2013mcmc} with its PAIS variant, the PAIS-pCNL algorithm. We consider several statistics for measuring the efficiency of the PAIS algorithm compared to existing Metropolis-Hastings algorithms when applied to a simple one dimensional Gaussian posterior.
 
 \subsubsection{Target distribution}
 
-Consider the simple case of a linear observation operator $\G(u) = u$, where the prior on $u$ and the observational noise follow Gaussian distributions. Then, following Equation~\ref{eqn:like}, the Gaussian posterior has the resulting form
+Consider the simple case of a linear observation operator $\G(u) = u$, where the prior on $u$ and the observational noise follow a Gaussian distribution. Then, following Equation~\ref{eqn:like}, the Gaussian posterior has the resulting form
 \begin{equation}\label{eqn:Gaussian posterior}
 	\text{law}(\mu_Y) = \pi(u|D) \propto \exp\left(-\frac{1}{2}\big\|u - D\big\|^2_\Sigma - \frac{1}{2}\big\|u\big\|^2_{\mathcal{T}}\right),
 \end{equation}
-where $\Sigma$ and $\mathcal{T}$ are the covariances of the
-observational noise and prior distributions respectively. In the
-numerics which follow, we choose $\Sigma = \sigma^2I_N$ and
-$\mathcal{T} = \tau^2I_d$ with $\tau^2 =2$ and $\sigma^2 = 0.1$, and
-we observe $u=-2.5$ noisily such that
-\[
-D = \mathcal{G}(u) + \eta \sim \mathcal{N}(\mathcal{G}(u),\Sigma).
-\]
-These values result in a posterior density in which the vast majority
-of the density is contained inside the high density region of the
-prior. This means that it should be straightforward for the algorithm
-to find the stationary distribution. The Kullback-Leibler (KL)
-divergence, which gives us a measure of how different the prior and
-posterior are, is $D_{KL}(\mu_Y || \mu_0) = 2.67$ for this problem.
+where $\Sigma$ and $\mathcal{T}$ are the covariances of the observational noise and prior distributions respectively. In the numerics which follow, we choose $\Sigma = \sigma^2I_N$ and $\mathcal{T} = \tau^2I_d$ with $\tau^2 =2$ and $\sigma^2 = 0.1$, and we observe $u=-2.5$ with noise drawn from the prior, resulting in $D = -2.6738662$. These values result in a posterior density in which the vast majority of the density is contained inside the high density region of the prior. This means that it should be straightforward for the algorithm to find the stationary distribution. The Kullback-Leibler (KL) divergence for this problem is $D_{KL}(\mu_Y || \mu_0) = 2.67$.
 
 \subsubsection{Numerical implementation}\label{sec:Implementation P1}
 
 In each of the following simulations, we perform three tasks. First we calculate the optimal value of $\delta$ by optimising the statistics described in Section~\ref{sec:statistics}. Once we have these parameters, we run the algorithms and compare the convergence speeds of the algorithms. Finally, we implement the adaptive algorithms described in Section~\ref{sec:adapt} and compare the convergence of these algorithms with the nonadaptive algorithms.
 
-{\bf (1) Finding the optimal parameters}: To find the optimal
-parameters we choose 32 values of $\delta$ evenly spaced on a log scale
-between $[10^{-5}, 2]$. We run the PAIS-pCNL algorithm for 10,000 iterations and pCNL for 100,000 iterations, each with $M=50$ processes. We took 32 repeats of both algorithms and then used the medians of the statistics to find the optimal parameters.
+{\bf (1) Finding the optimal parameters}: To find the optimal parameters we choose 32 values of $\delta$ evenly spaced in $[10^{-5}, 2]$. We run the PAIS-pCNL algorithm for 10,000 iterations and pCNL for 100,000 iterations, each with $M=50$ processes. We took 32 repeats of both algorithms and then used the medians of the statistics to find the optimal parameters.
 
 {\bf (2) Measuring convergence of nonadaptive algorithms}: We run the algorithms in Section~\ref{sec:problem 1} and Section~\ref{sec:problem 2} for 10 million iterations, again with 50 processes. The algorithms are run using the optimal parameters found in (1). The relative L2 error (Equation~\ref{eqn:L2_error}) is used as a measure of accuracy. The simulation for each algorithm was repeated 24 times.
 
-{\bf (3) Measuring convergence of adaptive algorithms}: We run the
-adaptive algorithms under the same conditions as the nonadaptive
-algorithms, and again use the relative L2 error to compare
-efficiency. The initial value of $\delta$ is given in the discussion
-of each simulation.
+{\bf (3) Measuring convergence of adaptive algorithms}: We run the adaptive algorithms under the same conditions as the nonadaptive algorithms, and again use the relative L2 error to compare efficiency. The initial value of $\delta$ is given in the discussion of each simulation.
 
-
-\subsubsection{Optimal values of $\delta$}\label{sec:Optimal values P1}
+\subsubsection{Numerical optimal values of $\delta$}\label{sec:Optimal values P1}
 
 \begin{figure}[htb]
 \centering
@@ -693,7 +603,7 @@ Figure~\ref{fig:P1 opt delta} (right) shows the effective sample size ratio comp
 \label{fig:MH1 L2}
 \end{figure}
 
-Figure~\ref{fig:MH1 L2} shows that the PAIS-pCNL algorithm converges to the posterior distribution faster than the standard function space pCNL algorithm, in both L2 error and relative error in the moments. To reach a desired tolerance, the PAIS-pCNL algorithm requires 40\% fewer iterations than the pCNL algorithm.
+Figure~\ref{fig:MH1 L2} shows that the PAIS-pCNL algorithm converges to the posterior distribution faster than the standard function space pCNL algorithm, in both L2 error and relative error in the moments. To reach a desired tolerance, after convergence the PAIS-pCNL algorithm requires 40\% fewer iterations than the pCNL algorithm.
 
 Both adaptive algorithms are run with initial values of $\delta_0=0.1$. From Figure~\ref{fig:MH1 L2} we can see that the APAIS-pCNL algorithm converges at least as quickly as the PAIS-pCNL algorithm. The ApCNL algorithm initially has trouble converging to the posterior; during the initial burn-in phase, some chains find themselves a long way out in the tails where due to the high gradient they will overshoot the high density region and reject almost all proposed values.
 
@@ -709,17 +619,7 @@ Throughout this paper, we use an ensemble size $M=50$, but it is interesting to 
 \end{center}
 \end{figure}
 
-Figure~\ref{fig:PAIS_saving} was produced using the method of finding
-optimal $\delta$ described in Section~\ref{sec:Implementation P1}(1),
-then running 32 repeats at each ensemble size. The convergence rates
-are then found by regressing through the data. The graph is still very
-noisy but demonstrates that increasing the ensemble size continues to
-reduce the number of iterations required in comparison with naive
-MCMC. When $M<8$, the algorithm takes a long time to reach
-stationarity. This indicates superlinear improvement of PAIS with
-respect to ensemble size, in terms of the number of iterations
-required, which is a demonstration of our belief that parallelism of
-MCMC should give us added value over and above that provided by naive parallelism.
+Figure~\ref{fig:PAIS_saving} was produced using the method of finding optimal $\delta$ described in Section~\ref{sec:Implementation P1}(1), then running 32 repeats at each ensemble size. The convergence rates are then found by regressing through the data. The graph is still very noisy but demonstrates that increasing the sample size continues to reduce the number of iterations required. When $M<8$, the algorithm takes a long time to reach stationarity.
 
 \subsection{Sampling from a one dimensional Gaussian with a higher KL divergence}\label{sec:problem 2}
 
@@ -727,16 +627,9 @@ In this example we use the same setup used in Section~\ref{sec:problem 1}. We ch
 
 \subsubsection{Target distribution}
 
-As in the previous example, we use the identity observation operator
-$\G(u)=u$, which results in the Gaussian posteriors in
-Equation~\ref{eqn:Gaussian posterior}. However, this time we choose
-$\sigma^2=0.01$ and $\tau^2=0.01$ so the posterior distribution is
-$\N(D/(1+\sigma^2/\tau^2), \tau^2\sigma^2/(\sigma^2+\tau^2)) = \N(D/2,
-0.005)$ which for large $D$ is a long way out in the tail of the prior
-with a very small variance. For the simulations which follow we
-observe a reading of $u=4$, with observational noise drawn from $\N(0, \sigma^2)$.
+As in the previous example, we use the identity observation operator $\G(u)=u$, which results in the Gaussian posterior s in Equation~\ref{eqn:Gaussian posterior}. However, this time we choose $\sigma^2=0.01$ and $\tau^2=0.01$ so the posterior distribution is $\N(D/(1+\sigma^2/\tau^2), \tau^2\sigma^2/(\sigma^2+\tau^2)) = \N(D/2, 0.005)$ which for large $D$ is a long way out in the tail of the prior with a very small variance. For the simulations which follow we observe a reading of $u=4$, with noise drawn from $\N(0, \sigma^2)$, resulting in $D = 3.9979631942$.
 
-\subsubsection{Optimal values of $\delta$}
+\subsubsection{Numerical optimal values of $\delta$}
 
 \begin{figure}[htb]
 \centering
@@ -776,7 +669,7 @@ observe a reading of $u=4$, with observational noise drawn from $\N(0, \sigma^2)
 
 We find the optimal values of $\delta$ using the same methods described in Sections~\ref{sec:Implementation P1} and \ref{sec:Optimal values P1}. The results are displayed in Figure~\ref{fig:P2 opt delta} and Table~\ref{table:P2 opt delta}. There is a huge difference between the two error estimates of $\delta$ for pCNL, although the corresponding variance graph is very flat making it sensitive to Monte Carlo error. The variance of the mean estimate has an 81\% acceptance rate, which is larger than the pCNL acceptance rate found previously.
 
-For the PAIS-pCNL algorithm, it is again clear that the effective sample size ratio is a useful statistic for judging the optimal value of $\delta$. The relative L2 error estimate of $\delta^*$, shown in Table~\ref{table:P2 opt delta}, is slightly higher than the other two estimates, but from the graph there again seems to be a fairly flat wide minimum which is in the same region as the optimal effective sample size ratio. The variance of the weights becomes so small in the critical region that we get numerical zeroes, which means that we could not use this method to tune the scaling parameter adaptively.
+For the PAIS-pCNL algorithm, it is again clear that the effective sample size ratio is a useful statistic for judging the optimal value of $\delta$. The relative L2 error estimate of $\delta^*$, shown in Table~\ref{table:P2 opt delta}, is slightly higher than the other two estimates, but from the graph there again seems to be a fairly flat wide minimum which is in the same region as the optimal effective sample size ratio. The variance of the weights becomes so small in the critical region that we get numerical zeroes, this means that we could not use this method to tune the scaling parameter adaptively.
 
 \subsubsection{Convergence of pCNL vs PAIS-pCNL}
 
@@ -784,22 +677,15 @@ For the PAIS-pCNL algorithm, it is again clear that the effective sample size ra
 \centering
 \includegraphics[width=0.45\textwidth]{"figures/pCNL2l"}
 \includegraphics[width=0.45\textwidth]{"figures/pCNL2m"}
-\caption{Relative error in the first moment (right) and histograms (left) produced by the (A)pCNL and (A)PAIS-pCNL algorithms against iterations for problem~\ref{sec:problem 2}. The setup is as described in Section~\ref{sec:Implementation P1} (2,3).}
+\caption{Relative error in the first moment (right) and histograms (left) produced by the (A)pCNL and (A)PAIS-pCNL algorithms against iteratons for problem~\ref{sec:problem 2}. The setup is as described in Section~\ref{sec:Implementation P1} (2,3).}
 \label{fig:MH2 L2}
 \end{figure}
 
-Figure~\ref{fig:MH2 L2} shows that the PAIS-pCNL algorithm, converges to the posterior distribution faster than the pCNL algorithm. The adaptive algorithms both struggle with the first moment for the first million iterations, but produce better estimates after 10 million iterations. We see that to obtain a given tolerance level, the PAIS-pCNL algorithm requires 35\% fewer iterations than the pCNL algorithm.
+Figure~\ref{fig:MH2 L2} that the PAIS-pCNL algorithm, converges to the posterior distribution faster than the pCNL algorithm. The adaptive algorithms both struggle with the first moment for the first million iterations, but produce better estimates after 10 million iterations. We see that to obtain a given tolerance level, the PAIS-pCNL algorithm requires 35\% fewer iterations than the pCNL algorithm.
 
 \subsection{Sampling from Bimodal Distributions}
 
-In this section we investigate the behaviour of the PAIS algorithm
-when applied to bimodal problems. Metropolis-Hastings methods can
-struggle with multimodal problems, particularly where switches between
-the modes are rare, resulting incorrectly proportioned modes in the
-histograms produced. With the PAIS algorithm, we see that the
-resampling step allows redistribute chains to new modes as they are
-found. This means that we expect the number of chains in a mode to be
-approximately proportional to the probability mass in that mode. As a result, reconstructed posteriors with disproportional modes, as is familiar with the Metropolis-Hastings algorithms, are not produced. We again look at an `easy' problem, BM(1), which has a KL divergence of 0.880, and a `harder' problem, BM(2), which has a KL divergence of 3.647. Problem BM(1) has two modes which are separated by a smaller energy barrier. In BM(2) we increase the distance between the two modes which has the effect of increasing the required energy to jump between modes. These posteriors are shown in Figure~\ref{fig:problem 3 posteriors}.
+In this section we investigate the behaviour of the PAIS algorithm when applied to symmetric bimodal problems. We see that the resampling step allows the algorithm to redistribute chains to new modes as they are found. This means that we expect the number of chains in a mode to be related to the probability mass in that mode. As a result reconstructed posteriors with disproportional modes, as is familiar with the Metropolis-Hastings algorithms, are not produced. We again look at an `easy' problem, BM(1), which has a KL divergence of 0.880, and a `harder' problem, BM(2), which has a KL divergence of 3.647. Problem BM(1) has two modes which are separated by a smaller energy barrier. In BM(2) we increase the distance between the two modes which has the effect of increasing the required energy to jump between modes. These posteriors are shown in Figure~\ref{fig:problem 3 posteriors}.
 
 \subsubsection{Target Distribution}
 
@@ -807,7 +693,7 @@ The following setup is the same for both problems. We consider an observation op
 \[
 	\pi(u|D) \propto \exp\left(-\frac{1}{2\sigma^2}\|u^2 - D\|^2 - \frac{1}{2\tau^2}\|u\|^2\right).
 \]
-To create the `easy' problem we say that the true value of $\G(u) = 0.75$, and the `hard' problem is generated using $\G(u) = 2$. In the numerics which follow we draw noise from $\mu_\varepsilon$ to generate our data point.
+To create the `easy' problem we say that the true value of $\G(u) = 0.75$, and the `hard' problem is generated using $\G(u) = 2$. In the numerics which follow we draw noise from $\mu_\varepsilon$ to generate our data point, we obtain $D = 0.92131223$ for BM(1) and $D = 1.948664$ for BM(2).
 
 \begin{figure}[htpb]
 \begin{center}
@@ -850,27 +736,11 @@ Calculating the optimal values of the scaling parameters for this problem is sim
 	\label{table:BM_opt_delta}
 \end{table}
 
-In problem BM(1), the pCNL algorithm has the
-higher value of $\delta$, which corresponds to a close to independence
-sampling, effectively sampling from the prior. This is because the
-regions with the majority of the target density are well covered by
-the prior. The PAIS-pCNL algorithm samples more efficiently from its
-mixture $\chi$, and so a lower value of $\delta$ is more efficient.
+We expect the PAIS algorithm to generally have higher values of the scaling parameter $\delta$. In BM(1), the pCNL algorithm has the higher value of $\delta$, this is because the prior is more efficient to sample from than any single proposal kernel. The PAIS-pCNL algorithm samples more efficiently from its mixture $\chi$.
 
-Problem BM(2) is much harder than BM(1); transitions between the modes
-are extremely unlikely for the standard pCNL algorithm. This means that we need to consider the
-convergence on two levels; we should consider the algorithm's ability
-to find all the modes, and to sample them thoroughly and in the correct proportions.
+Problem BM(2) is much harder than BM(1); transitions between the modes are extremely unlikely. This means that we need to consider the density on two levels; we should consider the overall convergence to two correctly proportioned modes as well as local convergence to smooth modes.
 
-To get correctly proportioned modes with the pCNL algorithm it is
-important that the chains can transition between the modes, which
-means that $\delta$ must be large. However, this leads to a lower
-acceptance rate, and so we sacrifice convergence locally. The prior distribution $\mu_0$ is
-not a good approximation of the posterior distribution, and so too
-large a value of $\delta$ (which leads to an independence sampler
-using the prior as a proposal distribution) leads to an inefficient
-method sampling. For these reasons, the pCNL algorithm is very slow to
-converge for problems of this type.
+To get correctly proportioned modes with the pCNL algorithm it is important that the chains can transition between the modes. Otherwise mode height will be decided by chance. This means that $\delta$ must be large. The prior distribution $\mu_0$ is not a good approximation of the posterior distribution in this case leading to an inefficient method of sampling.
 
 We can achieve these two regimes in pCNL by tuning $\delta$ using the acceptance rate for local convergence, and by L2 error for global convergence. Similarly in PAIS-pCNL we can use the effective sample size for local convergence, and the L2 error for global convergence.
 
@@ -883,24 +753,19 @@ We see a significant speed with the PAIS-pCNL algorithm for BM(1). Figure~\ref{f
 \begin{figure}[htpb]
 \begin{center}
 \includegraphics[width=\textwidth]{"figures/BM1_L2"}
-\caption{Error analysis for the PAIS-pCNL and pCNL algorithms for
-  problem BM(1). The solid blue line, and dashed red line compare the algorithms with fixed optimal scaling parameters, and the blue crossed and magenta crossed lines compare the adaptive algorithms. The setup is as described in Section~\ref{sec:Implementation P2} (2,3).}
+\caption{Error analysis for the PAIS-pCNL and pCNL algorithms. The solid blue line, and dashed red line compare the algorithms with fixed optimal scaling parameters, and the blue crossed and magenta crossed lines compare the adaptive algorithms. The setup is as described in Section~\ref{sec:Implementation P2} (2,3).}
 \label{fig:BM1_L2}
 \end{center}
 \end{figure}
 
-We can see that the adaptive algorithms compare closely with the
-respective nonadaptive algorithms and the improvement PAIS offers
-remains significant. The PAIS-pCNL algorithm requires 45\% fewer
-iterations than the naively parallelised pCNL algorithm.
+We can see that the adaptive algorithms compare closely with the respective nonadaptive algorithms and the improvement PAIS offers remains significant. The PAIS-pCNL algorithm requires 45\% fewer iterations than the standard pCNL algorithm.
 
 For BM(2) the algorithms are run with the global optimal value of $\delta^*$, and with the local optimal value of $\delta^*$. Figure~\ref{fig:BM2_L2} shows that the algorithms using the globally optimal $\delta^*$ convergence diagnostics converge slowly towards the true posterior after a long burn-in period, whereas the algorithms using the local optimal $\delta^*$ converge quickly, but get stuck in one mode meaning that the convergence rate flattens out.
 
 \begin{figure}[h]
 \begin{center}
 \includegraphics[width=\textwidth]{"figures/BM2_L2"}
-\caption{pCNL and PAIS-pCNL convergence statistics using locally and
-  globally optimal $\delta$, for problem BM(2). The setup is as described in Section~\ref{sec:Implementation P2} (2).}
+\caption{pCNL and PAIS-pCNL convergence statistics using locally and globally optimal $\delta$. The setup is as described in Section~\ref{sec:Implementation P2} (2).}
 \label{fig:BM2_L2}
 \end{center}
 \end{figure}
@@ -912,7 +777,7 @@ Figure~\ref{fig:BM2_AL2} shows the success of the (A)PAIS-pCNL algorithms in con
 \begin{figure}
 \begin{center}
 \includegraphics[width=\textwidth]{"figures/BM2_AL2"}
-\caption{Convergence graphs for problem BM(2), the (A)pCNL and (A)PAIS-pCNL algorithms have been run with optimal $\delta^*$ for the L2 error and the adaptive algorithm described in Section~\ref{sec:adapt}. The setup is as described in Section~\ref{sec:Implementation P2} (3).}
+\caption{Convergence graphs for Problem BM(2), the (A)pCNL and (A)PAIS-pCNL algorithms have been run with optimal $\delta^*$ for the L2 error and the adaptive algorithm described in Section~\ref{sec:adapt}. The setup is as described in Section~\ref{sec:Implementation P2} (3).}
 \label{fig:BM2_AL2}
 \end{center}
 \end{figure}
@@ -927,11 +792,9 @@ Figure~\ref{fig:BM2_AL2} shows the success of the (A)PAIS-pCNL algorithms in con
 \end{center}
 \end{figure}
 
-The biggest issue for the Metropolis-Hastings algorithms when sampling
-from a posterior such as the one in BM(2) is that it is unlikely that
-the correct ratio of chains will occur in each of the modes, and since there is no interaction between the chains, there is no way to remedy this problem. The PAIS algorithm tackles this problem with its resampling step. The algorithm uses its dynamic kernel to build up an approximation of the posterior at each iteration, and then compares this to the posterior distribution via the weights function. Any large discrepancy in the approximation will result in a large or small weight being assigned to the relevant chain, meaning the chain will either pull other chains towards it or be sucked towards a chain with a larger weight. In this way, the algorithm allows chains to `teleport' to regions of the posterior which are in need of more exploration. Figure~\ref{fig:BM2_suction} shows Problem BM(2) with initially 1 chain in the positive mode, and 49 chains in the negative mode. It takes only a handful of iterations for the algorithm to balance out the chains into 25 chains in each mode. The chains switch modes without having to climb the energy gradient in the middle.
+The biggest issue for the Metropolis-Hastings algorithms when sampling from a posterior such as the one in BM(2) is that it is unlikely that the same number of chains will occur in each of the modes, and since there is no interaction between the chains, there is no way to remedy this problem. The PAIS algorithm tackles this problem with its resampling step. The algorithm uses its dynamic kernel to build up an approximation of the posterior at each iteration, and then compares this to the posterior distribution via the weights function. Any large discrepancy in the approximation will result in a large or small weight being assigned to the relevant chain, meaning the chain will either pull other chains towards it or be sucked towards a chain with a larger weight. In this way, the algorithm allows chains to `teleport' to regions of the posterior which are in need of more weight. Figure~\ref{fig:BM2_suction} shows Problem BM(2) with initially 1 chain in the positive mode, and 49 chains in the negative mode. It takes only a handful of iterations for the algorithm to balance out the chains into 25 chains in each mode. The chains switch modes without having to climb the energy gradient in the middle.
 
-\section{Discussion and Conclusions}\label{Sec:Conc}
+\section{Concluding Remarks}
 
 We have explored the application of parallelised MCMC algorithms in low dimensional Inverse problems. We have demonstrated numerically that these algorithms converge faster than the analogous Metropolis-Hastings algorithms, further experimentation with the Random Walk Metropolis-Hastings (RWMH), Metropolis Adjusted Langevin Algorithm (MALA) and preconditioned Crank-Nicolson (pCN) proposals has yielded similar results.
 
@@ -971,42 +834,5 @@ humiliatingly so.
 
 \bibliographystyle{siam}
 \bibliography{refs}
-
-\begin{appendix}
-\section{The adaptive PAIS algorithm}\label{Sec:App}
-
-\begin{table}
-\begin{mdframed}
-\begin{algorithmic}
-\STATE $\X^{(0)} = \X_0 = [x_1^{(0)},x_2^{(0)},\ldots,x_M^{(0)}]^T$
-\STATE Choose $\delta^{(0)} \in (0, 2]$, $\delta_L^{(0)} = 0.99\delta^{(0)}$, $\delta_U^{(0)} = 1.01\delta^{(0)} \wedge 2$.
-\FOR{$i=0,1,2, \ldots, N$}
-\STATE Sample $y_j^{(i)}~\sim~\nu(\cdot;x_j^{(i)},\delta_L^{(i)})$ for $j=1, \ldots,M/2$.
-\STATE Sample $y_j^{(i)}~\sim~\nu(\cdot;x_j^{(i)},\delta_U^{(i)})$ for $j=M/2+1, \ldots, M$.
-\STATE $\chi(y;\X^{(i)}) = M^{-1}
-\left(\sum_{j=1}^{M/2} \nu(y;x_j^{(i)},\delta_L^{(i)})+\sum_{j=M/2+1}^{M} \nu(y;x_j^{(i)},\delta_U^{(i)})\right)$.
-\STATE $\W^{(i)} = [w_1^{(i)},w_2^{(i)},\ldots,w_M^{(i)}]^T,$ \quad $w^{(i)}_j =
-\frac{\pi(y_j^{(i)})}{\chi(y_j^{(i)};\X^{(i)})}$.
-\IF{$i$ is in $\{n_k\}_{k=1}$}
-	\STATE For $w_{kj} = w_j^{(k)}$, $N$ iterations since last update,
-	\STATE $T_L = NM(\sum_{k=i-N}^N\sum_{j=1}^{M/2} w_{kj})^2/(\sum_{k=i-N}^N\sum_{j=1}^{M/2} w_{kj}^2)$.
-	\STATE $T_U = NM(\sum_{k=i-N}^N\sum_{j=M/2+1}^M w_{kj})^2/(\sum_{k=i-N}^N\sum_{j=M/2+1}^M w_{kj}^2)$.
-	\STATE $\delta^{(i+1)} = \delta^{(i)} - \Delta\D T$.
-\ELSE
-	\STATE $\delta^{(i+1)} = \delta^{(i)}$.
-\ENDIF
-\IF{$i < K$}
-	\STATE Resample: $(w_j^{(i)},y_j^{(i)})_{j=1}^{M/2} \rightarrow (\frac{1}{M/2}, x_j^{(i+1)})_{j=1}^{M/2}$
-	\STATE Resample: $(w_j^{(i)},y_j^{(i)})_{j=M/2+1}^M \rightarrow (\frac{1}{M/2}, x_j^{(i+1)})_{j=M/2+1}^M$
-\ELSE
-	\STATE Resample: $(w_j^{(i)},y_j^{(i)})_{j=1}^M \rightarrow (\frac{1}{M}, x_j^{(i+1)})_{j=1}^M$
-\ENDIF
-\ENDFOR
-\end{algorithmic}
-\end{mdframed}\caption{A pseudo-code representation of the adaptive
-  PAIS algorithm.}
-\label{tab:adapt}
-\end{table}
-\end{appendix}
 
 \end{document}
