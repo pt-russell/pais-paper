@@ -578,7 +578,7 @@ When implemented, there are a number of parameters which must be
 chosen to allow efficient tuning of $\delta$. Firstly, the initial
 value of $\delta$ should be chosen so that the chains spread out
 quickly across the state space. However, if it is chosen to be too
-large, then the method may become unstable and inefficient. 
+large, then the method may become unstable and inefficient. We also choose two iteration numbers at which we change our adaptive strategy. At iteration $N_\text{join}$ we resample using the full ensemble size instead of using to subsets of the full ensemble. This allows us to fine-tune the scaling parameter using the full resampler, but slows down the rate of convergence of the scaling parameter. Finally we choose a time, $N_\text{stop}$, at which we stop updating our parameter to guarantee ergodicity of the MCMC algorithm.
 
 \section{Numerical Examples}\label{Sec:Num}
 
