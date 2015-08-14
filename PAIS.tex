@@ -50,6 +50,7 @@
 \newcommand{\data}{D}
 \newcommand{\neff}{n_{\text{eff}}}
 \newcommand{\E}{{\mathbb E}}
+
 \newcommand{\picturesAB}[6]{
 \centerline{
 \hskip #4
@@ -693,7 +694,7 @@ Figure~\ref{fig:P1 opt delta} (right) shows the effective sample size ratio comp
 \label{fig:MH1 L2}
 \end{figure}
 
-Figure~\ref{fig:MH1 L2} shows that the PAIS-pCNL algorithm converges to the posterior distribution faster than the standard function space pCNL algorithm, in both L2 error and relative error in the moments. To reach a desired tolerance, the PAIS-pCNL algorithm requires 40\% fewer iterations than the pCNL algorithm.
+Figure~\ref{fig:MH1 L2} shows that the PAIS-pCNL algorithm converges to the posterior distribution faster than the standard function space pCNL algorithm, in both L2 error and relative error in the moments. A description of the speed up attained by this algorithm is given in Section~\ref{sec:calc_saving}.
 
 Both adaptive algorithms are run with initial values of $\delta_0=0.1$. From Figure~\ref{fig:MH1 L2} we can see that the APAIS-pCNL algorithm converges at least as quickly as the PAIS-pCNL algorithm. The ApCNL algorithm initially has trouble converging to the posterior; during the initial burn-in phase, some chains find themselves a long way out in the tails where due to the high gradient they will overshoot the high density region and reject almost all proposed values.
 
@@ -788,7 +789,7 @@ For the PAIS-pCNL algorithm, it is again clear that the effective sample size ra
 \label{fig:MH2 L2}
 \end{figure}
 
-Figure~\ref{fig:MH2 L2} shows that the PAIS-pCNL algorithm, converges to the posterior distribution faster than the pCNL algorithm. The adaptive algorithms both struggle with the first moment for the first million iterations, but produce better estimates after 10 million iterations. We see that to obtain a given tolerance level, the PAIS-pCNL algorithm requires 35\% fewer iterations than the pCNL algorithm.
+Figure~\ref{fig:MH2 L2} shows that the PAIS-pCNL algorithm, converges to the posterior distribution faster than the pCNL algorithm. The adaptive algorithms both struggle with the first moment for the first million iterations, but produce better estimates after 10 million iterations. 
 
 \subsection{Sampling from Bimodal Distributions}
 
@@ -891,8 +892,7 @@ We see a significant speed with the PAIS-pCNL algorithm for BM(1). Figure~\ref{f
 
 We can see that the adaptive algorithms compare closely with the
 respective nonadaptive algorithms and the improvement PAIS offers
-remains significant. The PAIS-pCNL algorithm requires 45\% fewer
-iterations than the naively parallelised pCNL algorithm.
+remains significant.
 
 For BM(2) the algorithms are run with the global optimal value of $\delta^*$, and with the local optimal value of $\delta^*$. Figure~\ref{fig:BM2_L2} shows that the algorithms using the globally optimal $\delta^*$ convergence diagnostics converge slowly towards the true posterior after a long burn-in period, whereas the algorithms using the local optimal $\delta^*$ converge quickly, but get stuck in one mode meaning that the convergence rate flattens out.
 
@@ -917,9 +917,48 @@ Figure~\ref{fig:BM2_AL2} shows the success of the (A)PAIS-pCNL algorithms in con
 \end{center}
 \end{figure}
 
-\subsubsection{A useful property of the PAIS algorithm for multimodal distributions}
+\subsubsection{Calculating the Speed Up in Convergence}\label{sec:calc_saving}
 
 \begin{figure}
+\begin{center}
+\includegraphics[width=\textwidth]{"figures/calc_saving"}
+\caption{Illustration of calculating the number of PAIS-pCNL iterations required to reach a tolerance of $10^{-2}$ as a percentage of pCNL iterations. The relative L2 error graphs are from the problem in Section~\ref{sec:problem 1}.}
+\label{fig:calc_saving}
+\end{center}
+\end{figure}
+
+The graphs in the previous section clearly show that the PAIS-pCNL algorithm converges faster than the pCNL algorithm. We can calculate the number of iterations required to achieve a particular tolerance level in our solution for each algorithm and compare these to calculate a percentage saving. In Figure~\ref{fig:calc_saving} we demonstrate our calculation of the savings. We regress through the relative L2 error curve for both algorithms fixing the exponent at $-1/2$, i.e. look for the constants $c_1$ and $c_2$ such that
+\[
+	\text{pCNL L2 error} = c_1x^{-1/2}, \quad \text{and} \quad \text{PAIS-pCNL L2 error} = c_2x^{-1/2}.
+\]
+Then, for a chosen tolerance, $c_1x_1^{-1/2} = c_2x_2^{-1/2}$, where $x_1$ and $x_2$ are the number of iterations it takes the pCNL and PAIS-pCNL algorithms to reach a particular tolerance, given by the vertical lines on Figure~\ref{fig:calc_saving}. To find a percentage of iterations required by the PAIS-pCNL algorithm to achieve the same tolerance as the pCNL algorithm, we then use the expression
+\[
+	\frac{x_2}{x_1} = \left(\frac{c_2}{c_1}\right)^2.
+\]
+A summary of the percentage of iterations required using the PAIS algorithm compared with the respective Metropolis-Hastings algorithms is given in Table~\ref{table:calc_savings}.
+
+\begin{table}[!h]
+\centering
+\begin{tabular}{|l|r|r|}
+\hline
+		& Gaussian (low KL div) & Gaussian (high KL div) \\ \hline
+	RWMH & 14\% & 14\% \\
+	pCN & 33\% & - \\
+	MALA & 41\% & 42\% \\
+	pCNL & 62\% & 66\% \\ \hline
+		& Bimodal (low KL div) & Bimodal (high KL div) \\ \hline
+	RWMH & 40\% & 44\% \\
+	pCN & 32\% & 4\% \\
+	MALA & 36\% & 40\% \\
+	pCNL & 56\% & 0.02\% \\ \hline
+\end{tabular}
+\caption{Iterations for the PAIS algorithms required to achieve a desired tolerance as a percentage of the number of iterations required by the respective Metropolis algorithms.}
+\label{table:calc_savings}
+\end{table}
+
+\subsubsection{A Useful Property of the PAIS Algorithm for Multimodal Distributions}
+
+\begin{figure}[!h]
 \begin{center}
 \includegraphics[width=\textwidth]{"figures/BM2_suction"}
 \caption{This figure demonstrates the redistribution property of the PAIS algorithm. Initially there is one chain in the positive mode, and 49 chains in the negative mode.}
@@ -989,32 +1028,44 @@ to more efficient use of the computer architecture.
 
 \begin{appendix}
 \section{The adaptive PAIS algorithm}\label{Sec:App}
-
-\begin{table}
+\begin{table}[!h]
 \begin{mdframed}
 \begin{algorithmic}
-\STATE $\X^{(0)} = \X_0 = [x_1^{(0)},x_2^{(0)},\ldots,x_M^{(0)}]^T$
-\STATE Choose $\delta^{(0)} \in (0, 2]$, $\delta_L^{(0)} = 0.99\delta^{(0)}$, $\delta_U^{(0)} = 1.01\delta^{(0)} \wedge 2$.
-\FOR{$i=0,1,2, \ldots, N$}
-\STATE Sample $y_j^{(i)}~\sim~\nu(\cdot;x_j^{(i)},\delta_L^{(i)})$ for $j=1, \ldots,M/2$.
-\STATE Sample $y_j^{(i)}~\sim~\nu(\cdot;x_j^{(i)},\delta_U^{(i)})$ for $j=M/2+1, \ldots, M$.
-\STATE $\chi(y;\X^{(i)}) = M^{-1}
-\left(\sum_{j=1}^{M/2} \nu(y;x_j^{(i)},\delta_L^{(i)})+\sum_{j=M/2+1}^{M} \nu(y;x_j^{(i)},\delta_U^{(i)})\right)$.
-\STATE $\W^{(i)} = [w_1^{(i)},w_2^{(i)},\ldots,w_M^{(i)}]^T,$ \quad $w^{(i)}_j =
-\frac{\pi(y_j^{(i)})}{\chi(y_j^{(i)};\X^{(i)})}$.
+\STATE $x_j^{(0)} \sim \mu_0$, for $j \in L\cup U$, where $L = \{j\}_{j=1}^{M/2},\ U = \{j\}_{j=M/2+1}^M$.
+\STATE Choose $\delta^{(1)} \in (0, 2]$. Set $\delta_{L,U}^{(1)} = (1\pm 0.01)\delta^{(1)}\wedge 2$.
+\FOR{$i=1,2, \ldots, N$}
+\STATE $y_j^{(i)}~\sim~Q(x_j^{(i-1)},\delta_L^{(i)})$ for $j \in L$, and $y_j^{(i)}~\sim~Q(x_j^{(i-1)},\delta_U^{(i)})$ for $j \in U$.
+\STATE Calculate 
+\[
+	w^{(i)}_j = \frac{\pi(y_j^{(i)})}{\nu(y_j^{(i)};X^{(i-1)})},
+\]
+where
+\[
+	\nu(y;X) = \frac{1}{M}\sum_{j\in L} q(y;x_j,\delta_L)+\frac{1}{M}\sum_{j\in U} q(y;x_j,\delta_U).
+\]
+
 \IF{$i$ is in $\{n_k\}_{k=1}$}
-	\STATE For $w_{kj} = w_j^{(k)}$, $N$ iterations since last update,
-	\STATE $T_L = NM(\sum_{k=i-N}^N\sum_{j=1}^{M/2} w_{kj})^2/(\sum_{k=i-N}^N\sum_{j=1}^{M/2} w_{kj}^2)$.
-	\STATE $T_U = NM(\sum_{k=i-N}^N\sum_{j=M/2+1}^M w_{kj})^2/(\sum_{k=i-N}^N\sum_{j=M/2+1}^M w_{kj}^2)$.
-	\STATE $\delta^{(i+1)} = \delta^{(i)} - \Delta\D T$.
+	\STATE For $w_{kj} = w_j^{(k)}$, $S = n_k - n_{k-1}$,
+	\STATE $T_L = SM(\sum_{k=i-S}^S\sum_{j\in L} w_{kj})^2/(\sum_{k=i-S}^S\sum_{j\in L} w_{kj}^2)$.
+	\STATE $T_U = SM(\sum_{k=i-S}^S\sum_{j\in U} w_{kj})^2/(\sum_{k=i-S}^S\sum_{j\in U} w_{kj}^2)$.
+	\STATE $\delta^{(i+1)} = \delta^{(i)} - \Delta t \displaystyle\frac{T_U - T_L}{\delta_U^{(i)}-\delta_L^{(i)}}$.
 \ELSE
 	\STATE $\delta^{(i+1)} = \delta^{(i)}$.
 \ENDIF
-\IF{$i < K$}
-	\STATE Resample: $(w_j^{(i)},y_j^{(i)})_{j=1}^{M/2} \rightarrow (\frac{1}{M/2}, x_j^{(i+1)})_{j=1}^{M/2}$
-	\STATE Resample: $(w_j^{(i)},y_j^{(i)})_{j=M/2+1}^M \rightarrow (\frac{1}{M/2}, x_j^{(i+1)})_{j=M/2+1}^M$
+
+\IF{$i < N_\text{stop}$}
+	\IF{$i < N_\text{join}$}
+		\STATE Resample 
+	\[
+		(w_j^{(i)},y_j^{(i)})_{j\in L} \rightarrow (\frac{1}{M}, x_j^{(i)})_{j\in L}, \quad (w_j^{(i)},y_j^{(i)})_{j\in U} \rightarrow (\frac{1}{M}, x_j^{(i)})_{j\in U}.
+\]
+	\ELSE
+		\STATE Resample $(w^{(i)},Y^{(i)}) \rightarrow (\frac{1}{M}\mathbf{1}, X^{(i)})$.
+	\ENDIF
+	\STATE $\delta_{L,U}^{(i)} = \delta^{(i)} \pm 2\sqrt{2}\delta^{(i)}/\sqrt{NM} \wedge 2$.
 \ELSE
-	\STATE Resample: $(w_j^{(i)},y_j^{(i)})_{j=1}^M \rightarrow (\frac{1}{M}, x_j^{(i+1)})_{j=1}^M$
+		\STATE Resample $(w^{(i)},Y^{(i)}) \rightarrow (\frac{1}{M}\mathbf{1}, X^{(i)})$.
+		\STATE $\delta_L^{(i+1)} = \delta_U^{(i+1)} = \delta^{(i+1)}$.
 \ENDIF
 \ENDFOR
 \end{algorithmic}
