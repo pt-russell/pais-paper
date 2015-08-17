@@ -81,10 +81,9 @@
 \begin{document}
 \maketitle
 \begin{abstract}
-  Markov chain Monte Carlo methods are commonly used and powerful
+  Markov chain Monte Carlo methods are a powerful and commonly used
   family of numerical methods for sampling from complex probability
-  distributions. As the applications that these methods are being
-  applied to increase in size and complexity, the need for efficient
+  distributions. As applications of these methods increase in size and complexity, the need for efficient
   methods which can exploit the parallel architectures which are
   prevalent in high performance computing increases. In this paper, we
   aim to develop a framework for scalable parallel MCMC algorithms. At
@@ -108,19 +107,15 @@
 Markov chain Monte Carlo (MCMC) methods are a powerful family of tools
 that allow us to sample from complex probability distributions. MCMC
 methods were first developed in the 70s\cite{hastings1970monte}, and with the development of
-faster more powerful computers, have become ever more important in a
-whole range of fields in statistics, science and engineering. However,
-despite the advances in hardware that have made it possible to fully
-characteries the posterior distributions of many problems, it remains
-unfeasible to use MCMC methods for many more. In particular, when
+to use MCMC methods for many more. In particular, when
 considering Bayesian inverse problems, each MCMC step may involve the
 numerical solution of one or more PDE. As many samples are usually
 required before Monte Carlo error is reduced to acceptable levels,
 these types of problem remain frustratingly out of our grasp.
 
-Many advances have been made in the field of MCMC, to design ever more
-complex methods, which more intelligently propose moves which leads to
-faster converging methods. Function space versions of standard methods
+Many advances have been made in the field of MCMC to design ever more
+complex methods that propose moves more intelligently, leading to
+rapidly converging methods. Function space versions of standard methods
 such as the random walk Metropolis-Hastings (RWMH) algorithm or the
 Metropolis adjusted Langevin algorithm (MALA), whose convergence rates
 are independent of dimension have been
@@ -135,17 +130,17 @@ of the target density to produce more efficient MCMC
 proposals\cite{girolami2011riemann}. This methodology has been
 successfully applied to MALA-type proposals and methods which exploit
 even higher order gradient information\cite{bui2014solving}.  These
-methods allow us to more fully explore the posterior distribution, at
-the cost of fewer iterations of the method.
+methods allow us explore the posterior distribution more fully 
+with fewer iterations.
 
 Simultaneously, great strides are continually being made in the
 development of computing hardware. Moore's law, which predicted that
-the number of transistors that it is possible to fit on a single
-microchip will double every two years, has been largely followed
-since the early 70s\cite{moore1998cramming}. However, the main revolution with regards to
-scientific computing in recent decades has been the increasing focus on parallel
-architectures. The efficient exploitation of these facilities is the key to
-solving many of the computational challenges that we currently face.
+the number of transistors that can to fit on a single microchip will
+double every two years, has been largely followed since the early
+70s\cite{moore1998cramming}. In recent times, it has become necessary
+to use parallel architectures to exploit Moore's law. The efficient
+exploitation of these facilities is the key to solving many of the
+computational challenges that we currently face.
 
 As such, the development of efficient parallel MCMC algorithms is an
 important area for research. Since MCMC methods can be trivially
@@ -160,10 +155,15 @@ parallelisation of MCMC methods was presented, which demonstrated
 speed ups of up to two orders of magnitude when compared with serial methods.
 
 In this paper, we present a framework for parallelisation of
-importance sampling, which allows us to use any of the current
+importance sampling, which can be built around any of the current
 Metropolis-based methodologies in order to create an efficient target
 proposal from the current state of all of the chains in the
-ensemble. In Section \ref{Sec:Prelim} we outline some preliminaries,
+ensemble. The idea is to consider the parallel chains as an ensemble,
+and to resample using a transformation based on optimal transport.
+Samplers based on optimal transport have also been considered in
+\cite{el2012bayesian}.
+
+In Section \ref{Sec:Prelim} we outline some preliminaries,
 including the general set up for Bayesian inverse problems, the
 preconditioned Crank-Nicolson Langevin (pCNL) algorithm and a
 brief review of the optimal transport resampler,  both of which we will be
@@ -171,10 +171,10 @@ employing within the algorithm. We describe the Parallel Adaptive
 Importance Sampler (PAIS) in Section \ref{Sec:PAIS}, and in Section
 \ref{Sec:adapt} we describe how algorithmic parameters can be
 automatically tuned to provide optimal convergence. In
-Section \ref{Sec:Num}, we present some numerical experiments which
-demonstrate the savings that can be made by employing this approach as
+Section \ref{Sec:Num}, we present some numerical experiments that
+demonstrate the savings available by employing this approach as
 opposed to a naive/trivial parallelisation of existing MCMC
-methods. In Section \ref{Sec:Conc}, we will summarise our results and
+methods. In Section \ref{Sec:Conc}, we summarise our results and
 suggest some areas for future investigation.
 
 
@@ -190,7 +190,7 @@ suggest some areas for future investigation.
 In this Section we will introduce preliminary topics and algorithms
 that will be referred to throughout the paper.
 \subsection{Bayesian inverse problems}
-In this paper, we particularly focus on the use of MCMC methods in characterising
+In this paper, we focus on the use of MCMC methods for characterising
 posterior probability distributions in Bayesian inverse problems. We
 wish to learn about a particular unknown quantity $u$, of which we are
 able to make direct or indirect noisy observations. For now
@@ -198,8 +198,8 @@ we say that $u$ is a member of a Hilbert
 space $X$. 
 
 The parameter $u$ is observed
-through the observation operator $\mathcal{G}:X \to
-\mathbb{R}^d$. Since observations are rarely, if ever, perfect, we
+through the observation operator $\mathcal{G}:X \to\mathbb{R}^d$. 
+Since observations are never perfect, we
 assume that these measurements $\data$ are subject to Gaussian noise, so that
 \begin{equation}\label{eqn:obs}
 	\data = \mathcal{G}(u) + \varepsilon, \qquad \varepsilon \sim \mu_{\varepsilon} = \mathcal{N}(0,\Sigma).
@@ -286,9 +286,9 @@ this is to employ a resampling scheme. The aim of a successful
 resample is to take your unevenly weighted ensemble and return a new
 ensemble of particles with even weights which is highly correlated to the original samples.
 
-The Ensemble Transform (ET) method proposed by Reich \cite{reich2013nonparametric} makes use of optimal transportation as described in \cite{villani2003topics,villani2008optimal}. The transform takes a sample of weighted particles $\{y_i\}_{i=1}^M$ from $\mu_Y$ and converts it into a sample of evenly weighted particles $\{x_i\}_{i=1}^M$ from $\mu_X$, by means of defining a coupling $T^*$ between $Y$ and $X$. Given that a trivial coupling $T^t$ always exists in the space of transference plans, $\Pi(\mu_{X}, \mu_{Y})$, we can find a coupling $T^*$ which maximises the correlation between $X$ and $Y$ \cite{cotter2012ensemble}. This coupling is the solution to a linear programming problem in $M^2$ variables with $2M-1$ constraints as defined in \cite{reich2013nonparametric}. Maximising the correlation ensures that the new sample is as much like the original sample as possible with the additional property that the sample is evenly weighted.
+The Ensemble Transform (ET) method proposed by Reich \cite{reich2013nonparametric} makes use of optimal transportation as described in \cite{villani2003topics,villani2008optimal}. The transform takes a sample of weighted particles $\{y_i\}_{i=1}^M$ from $\mu_Y$ and converts it into a sample of evenly weighted particles $\{x_i\}_{i=1}^M$ from $\mu_X$, by means of defining a coupling $T^*$ between $Y$ and $X$. Given that a trivial coupling $T^t$ always exists in the space of transference plans, $\Pi(\mu_{X}, \mu_{Y})$, we can find a coupling $T^*$ which maximises the correlation between $X$ and $Y$ \cite{cotter2012ensemble}. This coupling is the solution to a linear programming problem in $M^2$ variables with $2M-1$ constraints. Maximising the correlation ensures that the new sample is as much like the original sample as possible with the additional property that the sample is evenly weighted.
 
-As proposed in \cite{reich2013nonparametric} a Monte Carlo algorithm can be implemented to resample from a weighted ensemble. We create a weighted sample, then solve the optimal transport problem which produces the coupling described above, we can draw a new sample from the evenly weighted distribution. Reich suggests using the mean of the evenly weighted distribution to produce a consistent estimator.
+A Monte Carlo algorithm can be implemented to resample from a weighted ensemble. We create a weighted sample, then solve the optimal transport problem which produces the coupling described above, we can draw a new sample from the evenly weighted distribution. Reich suggests using the mean of the evenly weighted distribution to produce a consistent estimator.
 
 Analysis of this method shows that as the ensemble size increases, the statistics of the evenly weighted sample approach those of the posterior distribution, at least well enough for a proposal distribution as described in Section~\ref{Sec:PAIS}. The histogram of the evenly weighted sample exhibits small oscillations in the tails of the posterior, and also struggles to deal with discontinuities.
 
@@ -416,7 +416,7 @@ the pCNL proposal presented in Section \ref{Sec:pCNL}.
 \sum_{j=1}^M \nu(y;x_j^{(i)})$.
 \STATE $\W^{(i)} = [w_1^{(i)},w_2^{(i)},\ldots,w_M^{(i)}]^T,$ \quad $w^{(i)}_j =
 \frac{\pi(y_j^{(i)})}{\chi(y_j^{(i)};\X^{(i)})}$.
-\STATE Resample: $(\W^{(i)},\Y^{(i)}) \rightarrow (\frac{1}{M}\mathbf{1}, \X^{(i+1)})$
+\STATE Resample using ETMC: $(\W^{(i)},\Y^{(i)}) \rightarrow (\frac{1}{M}\mathbf{1}, \X^{(i+1)})$
 \ENDFOR 
 \end{algorithmic}
 \end{mdframed}
@@ -452,7 +452,7 @@ large saving of computational cost.
 \section{Automated tuning of Algorithm Parameters}\label{Sec:adapt}
 
 Efficient selection of scaling parameters in MCMC algorithms is critical to achieving optimal mixing rates and hence achieving fast convergence to the target density. One significant difficulty is finding an appropriate $\nu$ such that
-$\chi$ is a close approximation to the posterior density $\pi$. If the proposal distribution is too over-dispersed, then the algorithm will propose states a long way from the current state but there will be a relatively low acceptance rate, impacting the quality of inferences on the posterior. Similarly, if the posterior is under-dispersed, the process will take a long time to fully explore the space so the mixing rate, and hence convergence rate, will be slow. It is therefore necessary to find a proposal distribution which is slightly over-dispersed to ensure the entire posterior is explored\cite{gelman1992inference}, but is as close to the posterior as possible.
+$\chi$ is a close approximation to the posterior density $\pi$. If the proposal distribution is over-dispersed, then the algorithm will propose states a long way from the current state at the cost of a relatively low acceptance rate, impacting the quality of inferences on the posterior. Similarly, if the posterior is under-dispersed, the process will take a long time to fully explore the space so the mixing rate, and hence convergence rate, will be slow. It is therefore necessary to find a proposal distribution which is slightly over-dispersed to ensure the entire posterior is explored\cite{gelman1992inference}, but is as close to the posterior as possible.
 
 Proposal distributions which are slightly over-dispersed as described
 above, can be found by tuning the variance of the proposal
@@ -495,7 +495,7 @@ In many MCMC algorithms such as the Random Walk Metropolis-Hastings (RWMH) algor
 
 \subsubsection{Determining optimal scaling parameter $\delta$ using error analysis}
 
-MCMC algorithms can be assessed by comparing their approximation of the posterior to the analytic distribution. To assess this, a distance metric must be decided on, such as the relative error between the sample moments and the true moments, or the relative L2 error between the true density, $\pi(x|D)$, and the constructed histogram. The relative error in the $m$-th moment is
+MCMC algorithms can be assessed by comparing their approximation of the posterior to the analytic distribution. To assess this, a distance metric must be chosen. Examples are the relative error between the sample moments and the true moments, or the relative L2 error between the true density, $\pi(x|D)$, and the constructed histogram. The relative error in the $m$-th moment is
 \[
 	\left|\frac{N^{-1}\sum_{i=1}^N \! x_i^m - \mathbb{E}[X^m]}{\mathbb{E}[X^m]}\right|,
 \]
@@ -503,7 +503,7 @@ where $\{x_i\}_{i=1}^N$ is a sample of size $N$ produced by the algorithm. The r
 \begin{equation}\label{eqn:L2_error}
 	e^2 = \sum\limits_{i=1}^{n_b}\left[\displaystyle\int_{R_i} \! \pi(a|D) \, \mbox{d}a - vB_i\right]^2 \Big/ \sum\limits_{i=1}^{n_b}\left[\displaystyle\int_{R_i} \! \pi(a|D) \, \mbox{d}a\right]^2,
 \end{equation}
-where the points $\{R_i\}_{i=1}^{n_b}$ are the $d$-dimensional regions the histogram is defined over, so that $\bigcup_i R_i \subseteq X$ and $R_i\cap R_j=\emptyset$, $n_b$ is the number of bins, $v$ is the volume of a bin, and $B_i$ is the value of the $i$th bin. 
+where the points $\{R_i\}_{i=1}^{n_b}$ are the $d$-dimensional histogram bins, so that $\bigcup_i R_i \subseteq X$ and $R_i\cap R_j=\emptyset$, $n_b$ is the number of bins, $v$ is the volume of a bin, and $B_i$ is the value of the $i$th bin. 
 
 These statistics are not practical for finding optimal values of
 $\delta$ since they require knowledge of the analytic solution, and
@@ -534,7 +534,7 @@ The effective sample size can be defined in the following way:
 \]
 The second two expressions are true when $M\rightarrow\infty$. From
 the last expression we see that when the variance of the weights is
-zero, $\neff = M$, which is our ideal scenario. In a neighbourhood around $\delta_{\text{var}}^*$, $\neff$ decreases, when the variance increases. So if $v(w(y))$ can be equal to zero for a particular problem and proposal distribution, maximising the effective sample size is equivalent to minimising the variance of the weights. In the PAIS algorithm we have a dynamic proposal which is perturbed at every iteration.
+zero, $\neff = M$; this is our ideal scenario. In a neighbourhood around $\delta_{\text{var}}^*$, $\neff$ decreases when the variance increases. So if $v(w(y))$ can be equal to zero for a particular problem and proposal distribution, maximising the effective sample size is equivalent to minimising the variance of the weights. In the PAIS algorithm we have a dynamic proposal which is perturbed at every iteration.
 
 The statistic $\neff$ converges faster than the variance of the weights, and so is preferable as a means of tuning $\delta$. While $\delta_{\text{var}}^*$ and the optimal value found using the effective sample size, $\delta_{\text{eff}}^*$, coincide when $v(w(y)) = 0$, this is not usually possible, so the methods will find different optimal values of $\delta^*$.
 
@@ -796,9 +796,9 @@ Figure~\ref{fig:MH2 L2} shows that the PAIS-pCNL algorithm, converges to the pos
 In this section we investigate the behaviour of the PAIS algorithm
 when applied to bimodal problems. Metropolis-Hastings methods can
 struggle with multimodal problems, particularly where switches between
-the modes are rare, resulting incorrectly proportioned modes in the
-histograms produced. With the PAIS algorithm, we see that the
-resampling step allows redistribute chains to new modes as they are
+the modes are rare, resulting in incorrectly proportioned modes in the
+histograms, for example. With the PAIS algorithm, we see that the
+resampling step redistributes chains to new modes as they are
 found. This means that we expect the number of chains in a mode to be
 approximately proportional to the probability mass in that mode. As a result, reconstructed posteriors with disproportional modes, as is familiar with the Metropolis-Hastings algorithms, are not produced. We again look at an `easy' problem, BM(1), which has a KL divergence of 0.880, and a `harder' problem, BM(2), which has a KL divergence of 3.647. Problem BM(1) has two modes which are separated by a smaller energy barrier. In BM(2) we increase the distance between the two modes which has the effect of increasing the required energy to jump between modes. These posteriors are shown in Figure~\ref{fig:problem 3 posteriors}.
 
@@ -973,7 +973,7 @@ the correct ratio of chains will occur in each of the modes, and since there is 
 \section{Discussion and Conclusions}\label{Sec:Conc} 
 
 We have explored the application of parallelised MCMC algorithms in
-low dimensional Inverse problems. We have demonstrated numerically
+low dimensional inverse problems. We have demonstrated numerically
 that these algorithms converge faster than the analogous naively parallelised
 Metropolis-Hastings algorithms. Further experimentation with the
 Random Walk Metropolis-Hastings (RWMH), Metropolis Adjusted Langevin
