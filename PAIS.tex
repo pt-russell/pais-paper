@@ -106,8 +106,10 @@
 %\subsection{Function Space MCMC}
 Markov chain Monte Carlo (MCMC) methods are a powerful family of tools
 that allow us to sample from complex probability distributions. MCMC
-methods were first developed in the 70s\cite{hastings1970monte}, and with the development of
-to use MCMC methods for many more. In particular, when
+methods were first developed in the 70s\cite{hastings1970monte}, and
+with the development of and with the development of faster more
+powerful computers, have become ever more important in a whole range
+of fields in statistics, science and engineering.  In particular, when
 considering Bayesian inverse problems, each MCMC step may involve the
 numerical solution of one or more PDE. As many samples are usually
 required before Monte Carlo error is reduced to acceptable levels,
@@ -337,7 +339,7 @@ general form. We will then introduce the version that we have
 implemented, which utilises the resampler recently suggested by
 Reich\cite{reich2013nonparametric} described in Section
 \ref{sec:filters}, and the pCNL proposal distribution described in
-Section \ref{Sec:pCNL}
+Section \ref{Sec:pCNL}.
 
 
 \section{The Parallel Adaptive Importance Sampler \allowbreak (PAIS)}\label{Sec:PAIS}
@@ -365,9 +367,9 @@ Section \ref{Sec:pCNL}
 % between the two sets is maximised. At this stage we can start the whole
 % process again. 
 
-Important samplers can be a very efficient method for sampling from a
-probability distribution. A proposal density is chosen from which we
-can draw samples, and each sample is assigned a weight given by the
+Important sampling can be a very efficient method for sampling from a
+probability distribution. A proposal density is chosen, from which we
+can draw samples. Each sample is assigned a weight given by the
 ratio of the target density and the proposal density at that
 point. They are efficient when the proposal density is concentrated in
 similar areas to the target density, and incredibly inefficient when
@@ -975,28 +977,20 @@ number of cores or processors at our disposal. Our approach
 demonstrates a better-than-linear speed-up with the number
 processors/cores used. Thus, our approach is not only embarrassingly
 parallel (as coined by Cleve Moler in \cite{moler1986matrix}), but
-humiliatingly so.
+humiliatingly so, provided that an optimal transport algorithm can be
+efficiently implemented in parallel and so does not dominate the
+communication costs.
 
 The PAIS has a number of favourable features, for example the
 algorithm's ability to redistribute, through the resampling regime,
 the chains to regions which require more exploration. This allows the
 method to be used to sample from complex multimodal distribution.
 
-The PAIS approach is limited by the curse of dimensionality, since the
-cost of the resampling algorithm becomes prohibitively large. The cost
-of the resampler is $\mathcal{O}(n^2)$, where $n$ is the number of
-particles in the ensemble. Other resamplers exist which are not as
-costly, but for which there is some sacrifice in terms of optimality
-of the output. For example, the resampler proposed in
-\cite{schefzik2013uncertainty}  has computational complexity
-$\mathcal{O}(n)$. This might allow the PAIS to be used in higher
-dimensional problems, and is an avenue for future investigation.
-
 Another strength of the PAIS is that it can also be used with any MCMC
 proposal. There are a growing number of increasing sophisticated MCMC
-algorithms (HMC, Riemann manifold MCMC etc) which could be incorporated into this framework, leading to
-even more efficient algorithms, and this is another opportunity for
-future work.
+algorithms (HMC, Riemann manifold MCMC etc) which could be
+incorporated into this framework, leading to even more efficient
+algorithms, and this is another opportunity for future work. 
 
 One disadvantage of parallelised algorithms is that often different
 processors will complete their tasks in different amount of times, for
@@ -1007,7 +1001,22 @@ using the last values of the other processors that were communicated
 to it. This incomplete approach would still be valid, and could lead
 to more efficient use of the computer architecture.
 
-
+One limitation of the PAIS approach as described above is that a
+direct solver (such as FastEMD \cite{FastEMD}) has computational cost
+$\mathcal{O}(n^3\log n)$, where $n$ is the number of particles in the
+ensemble.  The use of approximate solutions from iterative solvers
+might allow the PAIS to be used in higher dimensional problems, and is
+an avenue for future investigation. A second limitation is associated
+with the problem of accurately approximating measures with empirical
+measures in high dimensional phase space. This is a well-known issue
+in filtering, where one possible solution is to ``localise'' the
+impact of observations, as rigorously analysed in
+\cite{rebeschini2013can}. An established technique in Ensemble Kalman
+filters, localisation has also been incorporated into the Ensemble
+Transform Particle Filter \cite{ChRe2015}. This issue could be
+addressed in the PAIS by using localisation when computing the
+transform, but keeping the unlocalised weights in the importance
+sampling for consistency.
 
 \bibliographystyle{siam}
 \bibliography{refs}
