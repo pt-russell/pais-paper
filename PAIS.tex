@@ -3,7 +3,7 @@
 \usepackage{cite}
 \usepackage{graphicx,bbm,pstricks}
 \usepackage{pifont}
-\usepackage{bbm,algorithmic,mdframed,placeins}
+\usepackage{bbm,algorithmic,mdframed,placeins,multirow,booktabs}
 \setlength{\parindent}{0in}
 \usepackage{amsmath,amsfonts,amsbsy}
 \newcommand{\RARR}[3]{#1
@@ -292,24 +292,17 @@ A Monte Carlo algorithm can be implemented to resample from a weighted ensemble.
 
 Analysis of this method shows that as the ensemble size increases, the statistics of the evenly weighted sample approach those of the posterior distribution, at least well enough for a proposal distribution as described in Section~\ref{Sec:PAIS}. The histogram of the evenly weighted sample exhibits small oscillations in the tails of the posterior, and also struggles to deal with discontinuities.
 
-Ideally the dimension of particles in a filter will not affect the convergence of the method. Unfortunately, the approximation of continuous density functions is computationally infeasible in high dimensions and the required ensemble size scales exponentially with the dimension of the problem\cite{silverman1986density,snyder2008obstacles}.
+%Ideally the dimension of particles in a filter will not affect the convergence of the method. Unfortunately, the approximation of continuous density functions is computationally infeasible in high dimensions and the required ensemble size scales exponentially with the dimension of the problem\cite{silverman1986density,snyder2008obstacles}.
 
-\begin{figure}[htb]
-\begin{center}
-\includegraphics[width=\textwidth]{figures/ET_dim_scaling}
-\caption{Demonstration of the ETMC algorithm rapidly failing as the dimension increases. The relative error shown is that between the sampled mean and the true mean.}
-\label{fig:ET_dim_scaling}
-\end{center}
-\end{figure}
+%\begin{figure}[htb]
+%\begin{center}
+%\includegraphics[width=\textwidth]{figures/ET_dim_scaling}
+%\caption{Demonstration of the ETMC algorithm rapidly failing as the dimension increases. The relative error shown is that between the sampled mean and the true mean.}
+%\label{fig:ET_dim_scaling}
+%\end{center}
+%\end{figure}
 
-Figure~\ref{fig:ET_dim_scaling} shows how quickly the ETMC algorithm
-loses its ability to accurately preserve the mean of the posterior
-distribution as the dimension increases. Clearly for a simple Gaussian
-problem, we can not resample in much more than 10 dimensions and hope
-to recover a representative sample, without hugely increasing the
-number of particles in the ensemble. As the cost of the ETMC is
-$\mathcal{O}(n^2)$, this does limit the dimension for which this
-approach can be used.
+%Figure~\ref{fig:ET_dim_scaling} shows how quickly the ETMC algorithm loses its ability to accurately preserve the mean of the posterior distribution as the dimension increases. Clearly for a simple Gaussian problem, we can not resample in much more than 10 dimensions and hope to recover a representative sample, without hugely increasing the number of particles in the ensemble. As the cost of the ETMC is $\mathcal{O}(n^2)$, this does limit the dimension for which this approach can be used.
 
 \subsection{Deficiencies of Metropolis-type MCMC schemes}
 All MCMC methods are trivially parallelisable. One can take a method
@@ -927,30 +920,23 @@ Figure~\ref{fig:BM2_AL2} shows the success of the (A)PAIS-pCNL algorithms in con
 \end{center}
 \end{figure}
 
-The graphs in the previous section clearly show that the PAIS-pCNL algorithm converges faster than the pCNL algorithm. We can calculate the number of iterations required to achieve a particular tolerance level in our solution for each algorithm and compare these to calculate a percentage saving. In Figure~\ref{fig:calc_saving} we demonstrate our calculation of the savings. We regress through the relative L2 error curve for both algorithms fixing the exponent at $-1/2$, i.e. look for the constants $c_1$ and $c_2$ such that
-\[
-	\text{pCNL L2 error} = c_1x^{-1/2}, \quad \text{and} \quad \text{PAIS-pCNL L2 error} = c_2x^{-1/2}.
-\]
-Then, for a chosen tolerance, $c_1x_1^{-1/2} = c_2x_2^{-1/2}$, where $x_1$ and $x_2$ are the number of iterations it takes the pCNL and PAIS-pCNL algorithms to reach a particular tolerance, given by the vertical lines on Figure~\ref{fig:calc_saving}. To find a percentage of iterations required by the PAIS-pCNL algorithm to achieve the same tolerance as the pCNL algorithm, we then use the expression
-\[
-	\frac{x_2}{x_1} = \left(\frac{c_2}{c_1}\right)^2.
-\]
-A summary of the percentage of iterations required using the PAIS algorithm compared with the respective Metropolis-Hastings algorithms is given in Table~\ref{table:calc_savings}.
+The graphs in the previous section clearly show that the PAIS-pCNL algorithm converges faster than the pCNL algorithm when both are parallelised with the same number of threads. We can calculate the number of iterations required to achieve a particular tolerance level in our solution for each algorithm and compare these to calculate a percentage saving. In Figure~\ref{fig:calc_saving} we demonstrate our calculation of the savings. The constants $c_1$ and $c_2$ are found by regressing through the data with a fixed exponent of $-1/2$ excluding the intial data points where the graph has not finished burning in.
+
+A summary of the percentage of iterations required using the PAIS algorithm compared with the respective Metropolis-Hastings algorithms is given in Table~\ref{table:calc_savings}. The blank entries correspond to occasions when the MH algorithms haven't converged to the posterior distribution.
 
 \begin{table}[!h]
 \centering
-\begin{tabular}{|l|r|r|}
+\begin{tabular}{|l|l|r|r|}
 \hline
-		& Gaussian (low KL div) & Gaussian (high KL div) \\ \hline
-	RWMH & 14\% & 14\% \\
-	pCN & 33\% & - \\
-	MALA & 41\% & 42\% \\
-	pCNL & 62\% & 66\% \\ \hline
-		& Bimodal (low KL div) & Bimodal (high KL div) \\ \hline
-	RWMH & 40\% & 44\% \\
-	pCN & 32\% & 4\% \\
-	MALA & 36\% & 40\% \\
-	pCNL & 56\% & 0.02\% \\ \hline
+		& & Low KL div & High KL div \\ \hline
+	\multirow{4}{*}{Gaussian}	&RWMH & 14\% & 14\% \\
+	&pCN & 33\% & - \\
+	&MALA & 41\% & 42\% \\
+	&pCNL & 62\% & 66\% \\ \hline
+	\multirow{4}{*}{Bimodal}	&RWMH & 40\% & 44\% \\
+	&pCN & 32\% & - \\
+	&MALA & 36\% & 40\% \\
+	&pCNL & 56\% & - \\ \hline
 \end{tabular}
 \caption{Iterations for the PAIS algorithms required to achieve a desired tolerance as a percentage of the number of iterations required by the respective Metropolis algorithms.}
 \label{table:calc_savings}

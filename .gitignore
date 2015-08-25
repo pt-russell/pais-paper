@@ -2,9 +2,10 @@
 *.blg
 *.dvi
 *.log
-*~*
+*~
 *.pdf
 *.gz
 *.bbl
+*.dvi
 Paper.*
 
