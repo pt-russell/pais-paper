@@ -922,7 +922,7 @@ Figure~\ref{fig:BM2_AL2} shows the success of the (A)PAIS-pCNL algorithms in con
 \end{center}
 \end{figure}
 
-The graphs in the previous section clearly show that the PAIS-pCNL algorithm converges faster than the pCNL algorithm when both are parallelised with the same number of threads. We can calculate the number of iterations required to achieve a particular tolerance level in our solution for each algorithm and compare these to calculate a percentage saving. In Figure~\ref{fig:calc_saving} we demonstrate our calculation of the savings. The constants $c_1$ and $c_2$ are found by regressing through the data with a fixed exponent of $-1/2$ excluding the intial data points where the graph has not finished burning in.
+The graphs in the previous section clearly show that the PAIS-pCNL algorithm converges faster than the pCNL algorithm when both are parallelised with the same number of threads. We can calculate the number of iterations required to achieve a particular tolerance level in our solution for each algorithm and compare these to calculate a percentage saving. In Figure~\ref{fig:calc_saving} we demonstrate our calculation of the savings. The constants $c_1$ and $c_2$ are found by regressing through the data with a fixed exponent of $-1/2$ excluding the initial data points where the graph has not finished burning in.
 
 A summary of the percentage of iterations required using the PAIS algorithm compared with the respective Metropolis-Hastings algorithms is given in Table~\ref{table:calc_savings}. The blank entries correspond to occasions when the MH algorithms haven't converged to the posterior distribution.
 
