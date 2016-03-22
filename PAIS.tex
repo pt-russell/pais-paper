@@ -529,11 +529,11 @@ The effective sample size can be defined in the following way:
 \]
 The second two expressions are true when $M\rightarrow\infty$. From
 the last expression we see that when the variance of the weights is
-zero, $\neff = M$; this is our ideal scenario. In a neighbourhood around $\delta_{\text{var}}^*$, $\neff$ decreases when the variance increases. So if $v(w(y))$ can be equal to zero for a particular problem and proposal distribution, maximising the effective sample size is equivalent to minimising the variance of the weights. In the PAIS algorithm we have a dynamic proposal which is perturbed at every iteration.
+zero, $\neff = M$; this is our ideal scenario. Maximising the effective sample size is equivalent to minimising the variance of the weights.
 
-The statistic $\neff$ converges faster than the variance of the weights, and so is preferable as a means of tuning $\delta$. While $\delta_{\text{var}}^*$ and the optimal value found using the effective sample size, $\delta_{\text{eff}}^*$, coincide when $v(w(y)) = 0$, this is not usually possible, so the methods will find different optimal values of $\delta^*$.
+The statistic $\neff$ is better scaled than the variance of the weights, and is easier to interpret, so is preferable as a means of tuning $\delta$. In the following numerics, we use the effective sample size calculated at each iteration and averaged across the entire run to tune the scaling parameters. We do this because this is the method we use to tune the scaling parameters on the fly, comparison to the optimal scaling parameter found using the global optimum of the variance of the weights is also included for comparison.
 
-The $\neff$ statistic also has another useful property; if we imagine the algorithm in the burn-in phase, for example, we have $M$ processes in the tail of a Gaussian curve searching for the area of high density. If the processes are evenly spaced, then the particle closest to the mean will have an exponentially higher weight assigned to it. The effective sample size in this scenario will be close to 1. As the algorithm burns in, the processes find the flatter area near the mean so the number of samples contributing information to the posterior will increase. By this argument we can see that rising $\neff$ signals the end of the burn-in period.
+The effective sample size also has another useful property; if we imagine the algorithm in the burn-in phase, for example, we have $M$ processes in the tail of a Gaussian curve searching for the area of high density. If the processes are evenly spaced, then the particle closest to the mean will have an exponentially higher weight assigned to it. The effective sample size in this scenario will be close to 1. As the algorithm burns in, the processes find the flatter area near the mean so the number of samples contributing information to the posterior will increase. By this argument we can see that rising $\neff$ signals the end of the burn-in period.
 
 \subsubsection{Behaviour of the effective sample size for varying ensemble size}
 
@@ -547,7 +547,7 @@ The $\neff$ statistic also has another useful property; if we imagine the algori
 
 If we are to use the effective sample size ratio as an indicator of
 how to tune the proposal variance, we need to look at how it behaves
-in different situations. In Section \ref{Sec:Num} we see how it behaves for different observation operators. Here we look at how the statistic behaves as we vary the ensemble size, $M$. Figure~\ref{fig:neff-M} shows results for the second problem discussed in \ref{sec:problem 2} when using the PAIS-pCNL algorithm to explore the posterior distribution. The left part of the figure shows that as the ensemble size increases, the value of $\delta$ which gives the optimal effective sample size ratio decreases. This is to be expected since we are trying to fit more kernels into the posterior distribution, so the variance of each kernel needs to be decreased.
+in different situations. In Section \ref{Sec:Num} we see how it behaves for different observation operators. Here we look at how the statistic behaves as we vary the ensemble size, $M$. Figure~\ref{fig:neff-M} shows results for the Gaussian posterior discussed in \ref{sec:problem 2} when using the PAIS-MALA algorithm. The left part of the figure shows that as the ensemble size increases, the value of $\delta$ which gives the optimal effective sample size ratio decreases. This is to be expected since we are trying to fit more kernels into the posterior distribution, so the variance of each kernel needs to be decreased.
 
 \subsection{The Adaptive Algorithm}\label{sec:adapt}
 
