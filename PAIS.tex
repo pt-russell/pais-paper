@@ -3,7 +3,7 @@
 \usepackage{cite}
 \usepackage{graphicx,bbm,pstricks}
 \usepackage{pifont}
-\usepackage{bbm,algorithmic,mdframed,placeins,multirow,booktabs}
+\usepackage{bbm,algorithmic,mdframed,placeins,multirow,booktabs,subfigure}
 \setlength{\parindent}{0in}
 \usepackage{amsmath,amsfonts,amsbsy}
 \newcommand{\RARR}[3]{#1
@@ -580,16 +580,16 @@ large, then the method may become unstable and inefficient. We also choose two i
 \subsection{Sampling from a one dimensional Gaussian distribution}\label{sec:problem 1}
 
 In this example we look at how PAIS compares to naively parallelised
-MCMC. We compare the pCNL algorithm \cite{cotter2013mcmc} with its
-PAIS variant, the PAIS-pCNL algorithm. We consider several statistics
+MH. We compare the RWMH algorithm \cite{cotter2013mcmc} with its
+PAIS variant, the PAIS-RW algorithm. We consider several statistics
 for measuring the efficiency of the PAIS algorithm compared to
 existing Metropolis-Hastings algorithms when applied to a simple one
 dimensional Gaussian posterior.
 
 
-Since we are comparing against trivially parallelised MCMC algorithms,
+Since we are comparing against naively parallelised MCMC algorithms,
 we also need to decide which statistic $T(\delta)$ to optimise for
-these approaches. In the examples which follow, we have optimised the naively parallelised pCNL algorithm using the optimal acceptance rate $\hat{\alpha} = 0.75$. This value was found by using the L2 error minimums to calculate $\delta^*$. This means that we are minimising the statistic
+these approaches. In the examples which follow, we have optimised the naively parallelised RWMH algorithm using the optimal acceptance rate $\hat{\alpha} = 0.5$. This value differs from the theoretical symptotic value of 0.234 which applies in higher dimensions, this higher value is commonly used for one dimensional Gaussian posteriors. This means that we are minimising the statistic
 \[
 	T_{\text{MH}}(\delta) = \left| \frac{N_{\text{acc}}(\delta)}{N_{\text{total}}} - \hat{\alpha} \right|,
 \]
@@ -601,24 +601,23 @@ discussed in Section~\ref{sec:ess}, so $T_{\text{PAIS}}(\delta) =
 
 \subsubsection{Target distribution}
 
-Consider the simple case of a linear observation operator $\G(u) = u$, where the prior on $u$ and the observational noise follow Gaussian distributions. Then, following Equation~\ref{eqn:like}, the Gaussian posterior has the resulting form
+Consider the simple case of a linear observation operator $\G(u) = u$, where the prior on $u$ and the observational noise follow Gaussian distributions. Then, following Equation~\ref{eqn:like}, the Gaussian posterior has the form
 \begin{equation}\label{eqn:Gaussian posterior}
 	\text{law}(\mu_Y) = \pi(u|D) \propto \exp\left(-\frac{1}{2}\big\|u - D\big\|^2_\Sigma - \frac{1}{2}\big\|u\big\|^2_{\mathcal{T}}\right),
 \end{equation}
 where $\Sigma$ and $\mathcal{T}$ are the covariances of the
 observational noise and prior distributions respectively. In the
 numerics which follow, we choose $\Sigma = \sigma^2I_N$ and
-$\mathcal{T} = \tau^2I_d$ with $\tau^2 =2$ and $\sigma^2 = 0.1$, and
-we observe $u=-2.5$ noisily such that
+$\mathcal{T} = \tau^2I_d$ with $\tau^2 =0.01$ and $\sigma^2 = 0.01$, and
+we observe $u=4$ noisily such that
 \[
 D = \mathcal{G}(u) + \eta \sim \mathcal{N}(\mathcal{G}(u),\Sigma).
 \]
 These values result in a posterior density in which the vast majority
-of the density is contained inside the high density region of the
-prior. This means that it should be straightforward for the algorithm
-to find the stationary distribution. The Kullback-Leibler (KL)
+of the density is out in the tails of the
+prior distribution. The Kullback-Leibler (KL)
 divergence, which gives us a measure of how different the prior and
-posterior are, is $D_{KL}(\mu_Y || \mu_0) = 2.67$ for this problem.
+posterior are, is $D_{KL}(\mu_Y || \mu_0) = 4.67$ for this problem.
 
 \subsubsection{Numerical implementation}\label{sec:Implementation P1}
 
@@ -626,9 +625,9 @@ In each of the following simulations, we perform three tasks. First we calculate
 
 {\bf (1) Finding the optimal parameters}: To find the optimal
 parameters we choose 32 values of $\delta$ evenly spaced on a log scale
-between $[10^{-5}, 2]$. We run the PAIS-pCNL algorithm for 10,000 iterations and pCNL for 100,000 iterations, each with $M=50$ processes. We took 32 repeats of both algorithms and then used the medians of the statistics to find the optimal parameters.
+between $[10^{-5}, 2]$. We run the PAIS-pCNL algorithm for 10,000 iterations and pCNL for 100,000 iterations, each with $M=50$ processes. We took 32 repeats of both algorithms and then used the geometric means of the sample statistics to find the optimal parameters.
 
-{\bf (2) Measuring convergence of nonadaptive algorithms}: We run the algorithms in Section~\ref{sec:problem 1} and Section~\ref{sec:problem 2} for 10 million iterations, again with 50 processes. The algorithms are run using the optimal parameters found in (1). The relative L2 error (Equation~\ref{eqn:L2_error}) is used as a measure of accuracy. The simulation for each algorithm was repeated 24 times.
+{\bf (2) Measuring convergence of nonadaptive algorithms}: We run the algorithms in Section~\ref{sec:problem 1} and Section~\ref{sec:problem 2} for 10 million iterations, again with 50 processes. The algorithms are run using the optimal parameters found in (1). The relative L2 error, given in Equation~\ref{eqn:L2_error}, is used as a measure of accuracy. The simulation for each algorithm was repeated 24 times.
 
 {\bf (3) Measuring convergence of adaptive algorithms}: We run the
 adaptive algorithms under the same conditions as the nonadaptive
@@ -641,9 +640,9 @@ of each simulation.
 
 \begin{figure}[htb]
 \centering
-\includegraphics[width=0.45\textwidth]{"figures/pCNL1o"}
-\includegraphics[width=0.45\textwidth]{"figures/PAISpCNL1o"}
-\caption{Finding optimal values of $\delta$ for the pCNL (left) algorithm and PAIS-pCNL (right) algorithm for the problem in Section~\ref{sec:problem 1}. The setup is as in Section~\ref{sec:Implementation P1}.}
+\subfigure[RWMH algorithm.]{\includegraphics[width=0.45\textwidth]{"figures/pCNL2o"}}
+\subfigure[PAIS-RW algorithm.]{\includegraphics[width=0.45\textwidth]{"figures/PAISpCNL2o"}}
+\caption{Finding optimal values of $\delta$ for the problem in Section~\ref{sec:problem 1}. The setup is as in Section~\ref{sec:Implementation P1}.}
 \label{fig:P1 opt delta}
 \end{figure}
 
@@ -671,21 +670,22 @@ of each simulation.
 	\hline
 	\end{tabular}
     \end{minipage}
+	\vspace{1mm}
 	\caption{Optimal values of $\delta$ summarised from Figure~\ref{fig:P1 opt delta}. Statistics calculated as described in Section~\ref{sec:statistics}.}
 	\label{table:prob1 opt delta}
 \end{table}
 
-Figure~\ref{fig:P1 opt delta} (left) shows the two values of $\delta$ which may be optimal for the pCNL algorithm, found at the turning points. The first estimate comes from the relative L2 error, and the second comes from the variance of the estimate of the mean. The optimal acceptance rates of the function space algorithms are expected to be slightly higher than their finite dimensional versions. Since the L2 error estimate of the histogram gives an acceptance rate which is near to 100\%, we say that the optimal acceptance rate is that as given by the variance of the mean, roughly 75\%. The results in Figure~\ref{fig:P1 opt delta} are summarised in Table~\ref{table:prob1 opt delta} (left).
+Figure~\ref{fig:P1 opt delta} (a) shows the two values of $\delta$ which may be optimal for the pCNL algorithm, found at the turning points. The first estimate comes from the relative L2 error, and the second comes from the variance of the estimate of the mean. The results in Figure~\ref{fig:P1 opt delta} are summarised in Table~\ref{table:prob1 opt delta}.
 
-Figure~\ref{fig:P1 opt delta} (right) shows the effective sample size ratio compared to the error analysis and the variance of the weights. Although the L2 error graph is noisy, the maximum in the effective sample size is close to the minimum in the L2 error. The minimum in the variance of the weights however is a long way away. We choose the effective sample size as the best estimator of the optimal scaling parameter because of this, and because the effective sample size statistic converges to a smooth graph faster than either the variance of the weights or the L2 error.
+Figure~\ref{fig:P1 opt delta} (b) shows the effective sample size ratio compared to the error analysis and the variance of the weights. Although the L2 error graph is noisy, the maximum in the effective sample size is close to the minimum in the L2 error. The minimum in the variance of the weights however is a long way away. Due to this we say that the estimate of the effective sample size found by averaging the statistic over each iteration is a good indicator for the optimal scaling parameter. In general this indicator underestimates the estimate found by using the entire sample.
 
 \subsubsection{Convergence of pCNL vs PAIS-pCNL}
 
 \begin{figure}[htb]
 \centering
-\includegraphics[width=0.45\textwidth]{"figures/pCNL1l"}
-\includegraphics[width=0.45\textwidth]{"figures/pCNL1m"}
-\caption{Relative error in the first moment (right) and histograms (left) produced by the (A)pCNL and (A)PAIS-pCNL algorithms against iterations for problem~\ref{sec:problem 1}. The setup is as in Section~\ref{sec:Implementation P1} (2, 3).}
+\subfigure[Relative L2 error.]{\includegraphics[width=0.45\textwidth]{"figures/pCNL2l"}}
+\subfigure[Relative error in first moment.]{\includegraphics[width=0.45\textwidth]{"figures/pCNL2m"}}
+\caption{Error analysis for the (A)RWMH and (A)PAIS-RW algorithms. The setup is as in Section~\ref{sec:Implementation P1} (2, 3).}
 \label{fig:MH1 L2}
 \end{figure}
 
@@ -716,75 +716,6 @@ stationarity. This indicates superlinear improvement of PAIS with
 respect to ensemble size, in terms of the number of iterations
 required, which is a demonstration of our belief that parallelism of
 MCMC should give us added value over and above that provided by naive parallelism.
-
-\subsection{Sampling from a one dimensional Gaussian with a higher KL divergence}\label{sec:problem 2}
-
-In this example we use the same setup used in Section~\ref{sec:problem 1}. We choose a posterior distribution which has most of its mass far out in the tails of the prior distribution. The KL divergence is $D_{KL}(\mu_Y||\mu_0) = 4.670$. This means that the algorithm will have to ``work harder'' to find the area of high probability in the posterior density.
-
-\subsubsection{Target distribution}
-
-As in the previous example, we use the identity observation operator
-$\G(u)=u$, which results in the Gaussian posteriors in
-Equation~\ref{eqn:Gaussian posterior}. However, this time we choose
-$\sigma^2=0.01$ and $\tau^2=0.01$ so the posterior distribution is
-$\N(D/(1+\sigma^2/\tau^2), \tau^2\sigma^2/(\sigma^2+\tau^2)) = \N(D/2,
-0.005)$ which for large $D$ is a long way out in the tail of the prior
-with a very small variance. For the simulations which follow we
-observe a reading of $u=4$, with observational noise drawn from $\N(0, \sigma^2)$.
-
-\subsubsection{Optimal values of $\delta$}
-
-\begin{figure}[htb]
-\centering
-\includegraphics[width=0.45\textwidth]{"figures/pCNL2o"}
-\includegraphics[width=0.45\textwidth]{"figures/PAISpCNL2o"}
-\caption{Finding optimal values of $\delta$ for the pCNL (left) algorithm and PAIS-pCNL (right) algorithm for the problem in Section~\ref{sec:problem 2}. The setup is as in Section~\ref{sec:Implementation P1}.}
-\label{fig:P2 opt delta}
-\end{figure}
-
-\begin{table}[!htb]
-    \begin{minipage}{.5\linewidth}
-      \centering
-        \begin{tabular}{|c|r|}
-	\hline
-	Statistic											& pCNL \\ \hline
-	$\delta_{\text{L2}}^*$								& 8.6e-2 \\
-	$\delta_{\text{var}(\hat{\mu})}^*$					& 9.1e-1 \\
-	Acceptance Rate ($\delta_{\text{L2}}^*$	)			& 9.9e-1 \\
-	Acceptance Rate ($\delta_{\text{var}(\hat{\mu})}^*$)	& 8.1e-1 \\
-	\hline
-	\end{tabular}
-    \end{minipage}%
-    \begin{minipage}{.5\linewidth}
-      \centering
-        \begin{tabular}{|l|r|r|}
-	\hline
-	Statistic							& PAIS-pCNL \\ \hline
-	$\delta_{\text{eff}}^*$				& 2.6e-1 \\
-	$\delta_{\text{var}(w(y))}^*$		& 2.6e-1 \\
-	$\delta_{\text{L2}}^*$				& 2.8e-1 \\
-	\hline
-	\end{tabular}
-    \end{minipage}
-	\caption{Optimal values of $\delta$ summarised from Figure~\ref{fig:P2 opt delta}. Statistics calculated as described in Section~\ref{sec:statistics}.}
-	\label{table:P2 opt delta}
-\end{table}
-
-We find the optimal values of $\delta$ using the same methods described in Sections~\ref{sec:Implementation P1} and \ref{sec:Optimal values P1}. The results are displayed in Figure~\ref{fig:P2 opt delta} and Table~\ref{table:P2 opt delta}. There is a huge difference between the two error estimates of $\delta$ for pCNL, although the corresponding variance graph is very flat making it sensitive to Monte Carlo error. The variance of the mean estimate has an 81\% acceptance rate, which is larger than the pCNL acceptance rate found previously.
-
-For the PAIS-pCNL algorithm, it is again clear that the effective sample size ratio is a useful statistic for judging the optimal value of $\delta$. The relative L2 error estimate of $\delta^*$, shown in Table~\ref{table:P2 opt delta}, is slightly higher than the other two estimates, but from the graph there again seems to be a fairly flat wide minimum which is in the same region as the optimal effective sample size ratio. The variance of the weights becomes so small in the critical region that we get numerical zeroes, which means that we could not use this method to tune the scaling parameter adaptively.
-
-\subsubsection{Convergence of pCNL vs PAIS-pCNL}
-
-\begin{figure}[htb]
-\centering
-\includegraphics[width=0.45\textwidth]{"figures/pCNL2l"}
-\includegraphics[width=0.45\textwidth]{"figures/pCNL2m"}
-\caption{Relative error in the first moment (right) and histograms (left) produced by the (A)pCNL and (A)PAIS-pCNL algorithms against iterations for problem~\ref{sec:problem 2}. The setup is as described in Section~\ref{sec:Implementation P1} (2,3).}
-\label{fig:MH2 L2}
-\end{figure}
-
-Figure~\ref{fig:MH2 L2} shows that the PAIS-pCNL algorithm, converges to the posterior distribution faster than the pCNL algorithm. The adaptive algorithms both struggle with the first moment for the first million iterations, but produce better estimates after 10 million iterations. 
 
 \subsection{Sampling from Bimodal Distributions}
 
