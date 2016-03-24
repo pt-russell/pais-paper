@@ -580,7 +580,7 @@ large, then the method may become unstable and inefficient. We also choose two i
 \subsection{Sampling from a one dimensional Gaussian distribution}\label{sec:problem 1}
 
 In this example we look at how PAIS compares to naively parallelised
-MH. We compare the RWMH algorithm \cite{cotter2013mcmc} with its
+MH. We compare the RWMH algorithm with its
 PAIS variant, the PAIS-RW algorithm. We consider several statistics
 for measuring the efficiency of the PAIS algorithm compared to
 existing Metropolis-Hastings algorithms when applied to a simple one
@@ -589,7 +589,7 @@ dimensional Gaussian posterior.
 
 Since we are comparing against naively parallelised MCMC algorithms,
 we also need to decide which statistic $T(\delta)$ to optimise for
-these approaches. In the examples which follow, we have optimised the naively parallelised RWMH algorithm using the optimal acceptance rate $\hat{\alpha} = 0.5$. This value differs from the theoretical symptotic value of 0.234 which applies in higher dimensions, this higher value is commonly used for one dimensional Gaussian posteriors. This means that we are minimising the statistic
+these approaches. In the examples which follow, we have optimised the naively parallelised RWMH algorithm using the optimal acceptance rate $\hat{\alpha} = 0.5$. This value differs from the theoretical asymptotic value of 0.234 which applies in higher dimensions, this higher acceptance rate is commonly used for one dimensional Gaussian posteriors. To optimise the algorithm we minimise the statistic
 \[
 	T_{\text{MH}}(\delta) = \left| \frac{N_{\text{acc}}(\delta)}{N_{\text{total}}} - \hat{\alpha} \right|,
 \]
@@ -621,13 +621,13 @@ posterior are, is $D_{KL}(\mu_Y || \mu_0) = 4.67$ for this problem.
 
 \subsubsection{Numerical implementation}\label{sec:Implementation P1}
 
-In each of the following simulations, we perform three tasks. First we calculate the optimal value of $\delta$ by optimising the statistics described in Section~\ref{sec:statistics}. Once we have these parameters, we run the algorithms and compare the convergence speeds of the algorithms. Finally, we implement the adaptive algorithms described in Section~\ref{sec:adapt} and compare the convergence of these algorithms with the nonadaptive algorithms.
+In each of the following simulations, we perform three tasks. First we calculate the optimal value of $\delta$ by optimising the statistics described in Section~\ref{sec:statistics}. We then run the algorithms with optimal parameters to calculate and compare the convergence rates. Finally, we implement the adaptive algorithms described in Section~\ref{sec:adapt} and compare the convergence rates of these algorithms with the nonadaptive algorithms.
 
 {\bf (1) Finding the optimal parameters}: To find the optimal
 parameters we choose 32 values of $\delta$ evenly spaced on a log scale
-between $[10^{-5}, 2]$. We run the PAIS-pCNL algorithm for 10,000 iterations and pCNL for 100,000 iterations, each with $M=50$ processes. We took 32 repeats of both algorithms and then used the geometric means of the sample statistics to find the optimal parameters.
+in he interval $[10^{-5}, 2]$. We run the PAIS-RW algorithm for 100,000 iterations and RWMH for 1,000,000 iterations, each with $M=50$ processes. We took 32 repeats of both algorithms and then used the geometric means of the sample statistics to find the optimal parameters.
 
-{\bf (2) Measuring convergence of nonadaptive algorithms}: We run the algorithms in Section~\ref{sec:problem 1} and Section~\ref{sec:problem 2} for 10 million iterations, again with 50 processes. The algorithms are run using the optimal parameters found in (1). The relative L2 error, given in Equation~\ref{eqn:L2_error}, is used as a measure of accuracy. The simulation for each algorithm was repeated 24 times.
+{\bf (2) Measuring convergence of nonadaptive algorithms}: We run the algorithms in Section~\ref{sec:problem 1} for 1 million iterations, again with 50 processes. The simulations are repeated 32 times using the optimal parameters found in (1). The performance of the algorithms is judged by the convergence of the relative L2 error statistic in Equation~\ref{eqn:L2_error}.
 
 {\bf (3) Measuring convergence of adaptive algorithms}: We run the
 adaptive algorithms under the same conditions as the nonadaptive
@@ -640,8 +640,8 @@ of each simulation.
 
 \begin{figure}[htb]
 \centering
-\subfigure[RWMH algorithm.]{\includegraphics[width=0.45\textwidth]{"figures/pCNL2o"}}
-\subfigure[PAIS-RW algorithm.]{\includegraphics[width=0.45\textwidth]{"figures/PAISpCNL2o"}}
+\subfigure[RWMH algorithm.]{\includegraphics[width=0.45\textwidth]{"figures/G2_rwmho"}}
+\subfigure[PAIS-RW algorithm.]{\includegraphics[width=0.45\textwidth]{"figures/G2_paiso"}}
 \caption{Finding optimal values of $\delta$ for the problem in Section~\ref{sec:problem 1}. The setup is as in Section~\ref{sec:Implementation P1}.}
 \label{fig:P1 opt delta}
 \end{figure}
@@ -652,10 +652,10 @@ of each simulation.
         \begin{tabular}{|c|r|}
 	\hline
 	Statistic											& pCNL \\ \hline
-	$\delta_{\text{L2}}^*$								& 3.7e-3 \\
-	$\delta_{\text{var}(\hat{\mu})}^*$					& 5.8e-2 \\
-	Acceptance Rate ($\delta_{\text{L2}}^*$)				& 9.9e-1 \\
-	Acceptance Rate ($\delta_{\text{var}(\hat{\mu})}^*$)	& 7.4e-1 \\
+	$\delta_{\text{L2}}^*$								& 2.3e-4 \\
+	$\delta_{\%}^*$									& 1.2e-1 \\
+	Acceptance Rate ($\delta_{\text{L2}}^*$)				& 9.0e-1 \\
+	Acceptance Rate ($\delta_{\%}^*$)					& 5.0e-1 \\
 	\hline
 	\end{tabular}
     \end{minipage}%
@@ -664,9 +664,9 @@ of each simulation.
         \begin{tabular}{|l|r|r|}
 	\hline
 	Statistic							& PAIS-pCNL \\ \hline
-	$\delta_{\text{eff}}^*$				& 1.5e-2 \\
-	$\delta_{\text{var}(w(y))}^*$		& 6.4e-2 \\
-	$\delta_{\text{L2}}^*$				& 1.7e-2 \\
+	$\delta_{\text{eff}}^*$				& 1.1e-3 \\
+	$\delta_{\text{var}(w(y))}^*$			& 1.7e-3 \\
+	$\delta_{\text{L2}}^*$				& 7.6e-4 \\
 	\hline
 	\end{tabular}
     \end{minipage}
@@ -675,23 +675,23 @@ of each simulation.
 	\label{table:prob1 opt delta}
 \end{table}
 
-Figure~\ref{fig:P1 opt delta} (a) shows the two values of $\delta$ which may be optimal for the pCNL algorithm, found at the turning points. The first estimate comes from the relative L2 error, and the second comes from the variance of the estimate of the mean. The results in Figure~\ref{fig:P1 opt delta} are summarised in Table~\ref{table:prob1 opt delta}.
+Figure~\ref{fig:P1 opt delta} (a) shows the two values of $\delta$ which are optimal according to the acceptance rate and relative L2 error criteria for the RWMH algorithm. The smaller estimate comes from the relative L2 error, and the larger from the acceptance rate. The results in Figure~\ref{fig:P1 opt delta} are summarised in Table~\ref{table:prob1 opt delta}. Since in general we cannot calculate the relative L2 error, we must optimise the algorithm using the acceptance rate. From the relative L2 error curve we can see that the minimum is very wide and despite the optimal values being very different there is not a large difference in the convergence rate.
 
-Figure~\ref{fig:P1 opt delta} (b) shows the effective sample size ratio compared to the error analysis and the variance of the weights. Although the L2 error graph is noisy, the maximum in the effective sample size is close to the minimum in the L2 error. The minimum in the variance of the weights however is a long way away. Due to this we say that the estimate of the effective sample size found by averaging the statistic over each iteration is a good indicator for the optimal scaling parameter. In general this indicator underestimates the estimate found by using the entire sample.
+Figure~\ref{fig:P1 opt delta} (b) shows the effective sample size ratio compared to the error analysis and the variance of the weights. The relative L2 error graph is noisy, but it is clear that the maximum in the effective sample size and the minimum in the variance of the weights are both close to the minimum in the relative L2 error. Due to this we say that the estimate of the effective sample size found by averaging the statistic over each iteration is a good indicator for the optimal scaling parameter. In general this indicator underestimates the estimate found by using the entire sample.
 
-\subsubsection{Convergence of pCNL vs PAIS-pCNL}
+\subsubsection{Convergence of RWMH vs PAIS-RW}
 
 \begin{figure}[htb]
 \centering
-\subfigure[Relative L2 error.]{\includegraphics[width=0.45\textwidth]{"figures/pCNL2l"}}
-\subfigure[Relative error in first moment.]{\includegraphics[width=0.45\textwidth]{"figures/pCNL2m"}}
+\subfigure[Relative L2 error.]{\includegraphics[width=0.45\textwidth]{"figures/G2_l2"}}
+\subfigure[Relative error in first moment.]{\includegraphics[width=0.45\textwidth]{"figures/G2_moments"}}
 \caption{Error analysis for the (A)RWMH and (A)PAIS-RW algorithms. The setup is as in Section~\ref{sec:Implementation P1} (2, 3).}
 \label{fig:MH1 L2}
 \end{figure}
 
-Figure~\ref{fig:MH1 L2} shows that the PAIS-pCNL algorithm converges to the posterior distribution faster than the standard function space pCNL algorithm, in both L2 error and relative error in the moments. A description of the speed up attained by this algorithm is given in Section~\ref{sec:calc_saving}.
+Figure~\ref{fig:MH1 L2} shows that the PAIS-RW algorithm converges to the posterior distribution significantly faster than the RWMH algorithm, in both L2 error and relative error in the moments. A description of the speed up attained by this algorithm is given in Section~\ref{sec:calc_saving}.
 
-Both adaptive algorithms are run with initial values of $\delta_0=0.1$. From Figure~\ref{fig:MH1 L2} we can see that the APAIS-pCNL algorithm converges at least as quickly as the PAIS-pCNL algorithm. The ApCNL algorithm initially has trouble converging to the posterior; during the initial burn-in phase, some chains find themselves a long way out in the tails where due to the high gradient they will overshoot the high density region and reject almost all proposed values.
+Both adaptive algorithms are run with initial values of $\delta_0=2.0$. Figure~\ref{fig:MH1 L2} shows that after an initial burn-in period the APAIS-RW algorithm catches up to the PAIS-RW algorithm, and by the end of the simulation window is matching its performance. The ARWMH algorithm does not perform quite as well, this is possibly due to the fact that the acceptance rate cost function is not smooth making it difficult to find the optimal parameter.
 
 \subsubsection{Scaling of the PAIS algorithm with ensemble size}
 
@@ -741,7 +741,7 @@ To create the `easy' problem we say that the true value of $\G(u) = 0.75$, and t
 \includegraphics[width=\textwidth]{"figures/posteriors3"}
 \caption{Posterior distributions for problem BM(1) and BM(2). Problem BM(1) has a noisy data value of  0.921312 which results in an energy barrier which is relatively easy to cross, as well as their common prior distribution.}
 \label{fig:problem 3 posteriors}
-\end{center}
+\end{center}repo
 \end{figure}
 
 \subsubsection{Numerical Implementation}\label{sec:Implementation P2}
@@ -758,8 +758,8 @@ Calculating the optimal values of the scaling parameters for this problem is sim
         \begin{tabular}{|l|r|r|}
 	\hline
 	Algorithm							& $\delta^*_{\text{acc}}$	& $\delta^*_{\text{eff}}$ \\ \hline
-	pCNL								& 1.9e-1					& - \\
-	PAIS-pCNL							& -						& 3.9e-2\\
+	RWMH								& 1.2e-2					& - \\
+	PAIS-RW								& -						& 3.9e-2\\
 	\hline
 	\end{tabular}
     \end{minipage}%
