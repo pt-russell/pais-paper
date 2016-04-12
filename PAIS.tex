@@ -294,18 +294,6 @@ A Monte Carlo algorithm can be implemented to resample from a weighted ensemble.
 
 Analysis of this method shows that as the ensemble size increases, the statistics of the evenly weighted sample approach those of the posterior distribution, at least well enough for a proposal distribution as described in Section~\ref{Sec:PAIS}. The histogram of the evenly weighted sample exhibits small oscillations in the tails of the posterior, and also struggles to deal with discontinuities.
 
-%Ideally the dimension of particles in a filter will not affect the convergence of the method. Unfortunately, the approximation of continuous density functions is computationally infeasible in high dimensions and the required ensemble size scales exponentially with the dimension of the problem\cite{silverman1986density,snyder2008obstacles}.
-
-%\begin{figure}[htb]
-%\begin{center}
-%\includegraphics[width=\textwidth]{figures/ET_dim_scaling}
-%\caption{Demonstration of the ETMC algorithm rapidly failing as the dimension increases. The relative error shown is that between the sampled mean and the true mean.}
-%\label{fig:ET_dim_scaling}
-%\end{center}
-%\end{figure}
-
-%Figure~\ref{fig:ET_dim_scaling} shows how quickly the ETMC algorithm loses its ability to accurately preserve the mean of the posterior distribution as the dimension increases. Clearly for a simple Gaussian problem, we can not resample in much more than 10 dimensions and hope to recover a representative sample, without hugely increasing the number of particles in the ensemble. As the cost of the ETMC is $\mathcal{O}(n^2)$, this does limit the dimension for which this approach can be used.
-
 \subsection{Deficiencies of Metropolis-type MCMC schemes}
 All MCMC methods are trivially parallelisable. One can take a method
 and simply implement it simultaneously over a set of processes. All
@@ -367,7 +355,7 @@ Section \ref{Sec:pCNL}.
 % between the two sets is maximised. At this stage we can start the whole
 % process again. 
 
-Important sampling can be a very efficient method for sampling from a
+Importance sampling can be a very efficient method for sampling from a
 probability distribution. A proposal density is chosen, from which we
 can draw samples. Each sample is assigned a weight given by the
 ratio of the target density and the proposal density at that
@@ -493,10 +481,6 @@ the algorithm must be run for a long time to build up a
 sufficiently large sample. However they can be used to assess the
 ability of other indicators to find the optimal proposal
 variances in a controlled setting.
-
-
-%%% remove this paragraph?
-Another related statistic, is the variance of the sample estimate of the first moment $\hat{\mu}$. Assuming that the algorithm is converging to the invariant distribution, convergence will be fastest when the variance of the estimate is minimised. This fact follows from the convergence rate of Monte Carlo algorithms, $\sigma/\sqrt{n}$. The proposal distribution which minimises the variance, $\sigma^2$, of $\hat{\mu}$, is the most desirable. This variance statistic often converges faster than the moment itself, and does not require any knowledge of the true value of the moment.
 
 The following statistics can be used specifically for importance sampling algorithms.
 
@@ -725,10 +709,6 @@ To create the `easy' problem we say that the true value of $\G(u) = 0.75$, and t
 \end{center}
 \end{figure}
 
-\subsubsection{Numerical Implementation}\label{sec:Implementation P2}
-
-The numerical implementation for the following simulations follow the same setup as described in Section~\ref{sec:Implementation P1}.
-
 \subsubsection{Calculating values of Optimal $\delta^*$}\label{sec:BM1_opt_delta}
 
 Calculating the optimal values of the scaling parameters for this problem is similar to the Gaussian case; we check only the acceptance rate to find the optimal values for RWMH and we use the effective sample size to find the optimal values for PAIS-RW. Table~\ref{table:BM_opt_delta} gives the optimal values of $\delta$ for both problems.
@@ -750,9 +730,7 @@ Calculating the optimal values of the scaling parameters for this problem is sim
 	\hline
 	Algorithm							& $\delta^*_{\text{acc}}$	& $\delta^*_{\text{eff}}$	& $\delta^*_{\text{L2}}$ \\ \hline
 	RWMH								& 2.6e-2					& - 						& 9.1e-1\\
-	PAIS-RW								& -						& 1.1e-3 					& 8.1e-3\\
-	MALA								& 2.6e-2					& - 						& 1.3e-1\\
-	PAIS-MALA							& -						& 3.7e-3 					& 8.1e-3\\
+	PAIS-RW								& -						& 1.3e-3 					& 8.1e-3\\
 	\hline
 	\end{tabular}
     \end{minipage}
@@ -761,10 +739,9 @@ Calculating the optimal values of the scaling parameters for this problem is sim
 	\label{table:BM_opt_delta}
 \end{table}
 
-Problem $B_2$ is much harder than $B_1$; transitions between the modes
-are extremely unlikely for the standard pCNL algorithm. This means that we need to consider the
+It is relatively simple to find optimal scaling parameters for problem $B_1$. These values are given in Table~\ref{table:BM_opt_delta} (left). However problem $B_2$ is much harder; transitions between the modes are extremely unlikely for the standard RWMH algorithm. This means that we need to consider the
 convergence on two levels; we should consider the algorithm's ability
-to find all the modes, and to sample them thoroughly and in the correct proportions.
+to find all the modes, and also whether it can sample them in the correct proportions.
 
 To get correctly proportioned modes with the RWMH algorithm it is
 important that the chains can transition between the modes, which
@@ -774,75 +751,71 @@ converge for problems of this type.
 
 We can achieve these two regimes in RWMH by tuning $\delta$ using the acceptance rate for local convergence, and by L2 error for global convergence. Similarly in PAIS-RW we can use the effective sample size for local convergence, and the L2 error for global convergence.
 
-From Table~\ref{table:BM_opt_delta} (right) we see that there is a large difference between the optimal value of $\delta$ for each regime in both RWMH and MALA, meaning that both will result in inefficient sampling. The PAIS-RW algorithm manages to sample the local detail and the large scale behaviour with similar values of $\delta^*$: a clear advantage to using this algorithm for this problem.
+From Table~\ref{table:BM_opt_delta} (right) we see that there is a large difference between the optimal value of $\delta$ for each regime in RWMH, and so will result in inefficient sampling. The PAIS-RW algorithm manages to sample the local detail and the large scale behaviour with similar values of $\delta^*$: a clear advantage to using this algorithm for this problem.
 
 \subsubsection{Convergence of RWMH vs PAIS-RW}
 
-\begin{figure}[htpb]
-\begin{center}
-\includegraphics[width=\textwidth]{"figures/BM1_L2"}
-\caption{Error analysis for the PAIS-pCNL and pCNL algorithms for
-  problem $B_1$. The solid blue line, and dashed red line compare the algorithms with fixed optimal scaling parameters, and the blue crossed and magenta crossed lines compare the adaptive algorithms. The setup is as described in Section~\ref{sec:Implementation P2} (2,3).}
+
+\begin{figure}[htb]
+\centering
+\subfigure[Relative L2 error.]{\includegraphics[width=0.45\textwidth]{"figures/BM1_L2"}}
+\subfigure[Absolute error in first moment.]{\includegraphics[width=0.45\textwidth]{"figures/BM1_moments"}}
+\caption{Convergence of the PAIS-RW and RWMH algorithms for Problem $B_1$. Set up described in Section~\ref{sec:Implementation P1}.}
 \label{fig:BM1_L2}
-\end{center}
 \end{figure}
 
 As in the Gaussian example we see a significant speed up with the PAIS-RW algorithm for $B_1$. Figure~\ref{fig:BM1_L2} shows the adaptive and nonadaptive convergence rates. We can see that the adaptive algorithms compare closely with the
-respective nonadaptive algorithms and the improvement PAIS offers
-remains significant.
+respective nonadaptive algorithms and the improvement PAIS offers remains significant.
 
-For $B_2$ the algorithms are run with the global optimal value of $\delta^*$, and with the local optimal value of $\delta^*$. Figure~\ref{fig:BM2_L2} shows that the algorithms using the globally optimal $\delta^*$ convergence diagnostics converge slowly towards the true posterior after a long burn-in period, whereas the algorithms using the local optimal $\delta^*$ converge quickly, but get stuck in one mode meaning that the convergence rate flattens out.
-
-\begin{figure}[h]
-\begin{center}
-\includegraphics[width=\textwidth]{"figures/BM2_L2"}
-\caption{pCNL and PAIS-pCNL convergence statistics using locally and
-  globally optimal $\delta$, for problem $B_2$. The setup is as described in Section~\ref{sec:Implementation P2} (2).}
+\begin{figure}[htb]
+\centering
+\subfigure[Relative L2 error using the optimal scaling parameters.]{\includegraphics[width=0.45\textwidth]{"figures/BM2_L2"}}
+\subfigure[Comparing of the relative L2 error of the algorithms optimised by L2 minimisation with locally optimised PAIS-RW with a scout chain.]{\includegraphics[width=0.45\textwidth]{"figures/BM2_scout"}}
+\caption{Convergence of the PAIS-RW and RWMH algorithms for Problem $B_2$. Set up described in Section~\ref{sec:Implementation P1}.}
 \label{fig:BM2_L2}
-\end{center}
 \end{figure}
 
-The adaptive algorithm as stated in Section~\ref{sec:adapt} is one way of combining the two regimes. Another method uses a small number of `scout' chains with a large $\delta$ to continually search out new modes. Other methods of mode searches are described in \cite{lan2013wormhole}, and the regeneration method is applicable\cite{nummelin1984general}.
+For $B_2$ the algorithms are run with the global optimal value of $\delta^*$, and with the local optimal value of $\delta^*$. Figure~\ref{fig:BM2_L2} (a) shows that the algorithms using the globally optimal $\delta^*$ convergence at the desired rate, whereas the algorithms optimised using the acceptance rate and effective sample size initially converge faster but at some point forget the location of one of the modes, causing the convergence to flatten out.
 
-Figure~\ref{fig:BM2_AL2} shows the success of the (A)PAIS-pCNL algorithms in converging to the posterior, compared to the (A)pCNL algorithms. We can see that using the pCNL algorithm for this problem would be infeasible.
+Using the PAIS algorithm we can minimise the impact of forgotten modes by constantly allowing the algorithm to search them out. Since we have parallel chains, we can run PAIS-RW with the majority of chains using the locally optimal value of $\delta$, and one or two chains with a larger scaling parameter. These chains with larger scaling parameters act both as `scouts' for new modes, and act to aid in the overdispersal of the proposal distribution. Figure~\ref{fig:BM2_L2} (b) shows the results of using 49 chains with the local optimal scaling parameter, and one chain with ten times the local optimal scaling parameter. We see that modes are not forgotten and the algorithm converges with the improvement we see from PAIS-RW in the other problems. Other methods of mode searches are described in \cite{lan2013wormhole}.
 
-\begin{figure}
+The adaptive algorithm can just as easily be applied to the PAIS algorithm with the `scout' chains described in the previous paragraph. Since we need two equally sized sub-ensembles, we will use two groups of 24 ensembles with the same proposal distributions, and each group will also have a `scout' chain with a scaling parameter ten times that of the rest of the group.
+
+\begin{figure}[htb]
 \begin{center}
-\includegraphics[width=\textwidth]{"figures/BM2_AL2"}
-\caption{Convergence graphs for problem $B_2$, the (A)pCNL and (A)PAIS-pCNL algorithms have been run with optimal $\delta^*$ for the L2 error and the adaptive algorithm described in Section~\ref{sec:adapt}. The setup is as described in Section~\ref{sec:Implementation P2} (3).}
+\includegraphics[width=0.7\textwidth]{"figures/BM2_AL2"}
+\caption{Convergence of the relative L2 error for problem $B_2$, comparing the globally optimised nonadaptive algorithms with the locally optimised adaptive algorithms. The setup is as described in Section~\ref{sec:Implementation P1} (3).}
 \label{fig:BM2_AL2}
 \end{center}
 \end{figure}
+
+Comparing the convergence of the adaptive algorithms against the nonadaptive algorithms in Figure~\ref{fig:BM2_AL2} shows that the algorithms behave as expected. The adaptive RWMH algorithm tuned using the acceptance rate converges at the same rate as the L2 optimised algorithm until the scaling parameter gets small where the algorithm forgets one of the modes. The adaptive PAIS-RW with scout chains tuned to the effective sample size converges at about the same rate as the locally optimised nonadaptive algorithm also with scouts.
 
 \subsubsection{Calculating the Speed Up in Convergence}\label{sec:calc_saving}
 
 \begin{figure}
 \begin{center}
 \includegraphics[width=\textwidth]{"figures/calc_saving"}
-\caption{Illustration of calculating the number of PAIS-pCNL iterations required to reach a tolerance of $10^{-2}$ as a percentage of pCNL iterations. The relative L2 error graphs are from the problem in Section~\ref{sec:problem 1}.}
+\caption{Illustration of calculating the number of PAIS-pCNL iterations required to reach a tolerance of $10^{-2.5}$ as a percentage of pCNL iterations. The relative L2 error graphs are from the problem in Section~\ref{sec:problem 1}.}
 \label{fig:calc_saving}
 \end{center}
 \end{figure}
 
-The graphs in the previous section clearly show that the PAIS-pCNL algorithm converges faster than the pCNL algorithm when both are parallelised with the same number of threads. We can calculate the number of iterations required to achieve a particular tolerance level in our solution for each algorithm and compare these to calculate a percentage saving. In Figure~\ref{fig:calc_saving} we demonstrate our calculation of the savings. The constants $c_1$ and $c_2$ are found by regressing through the data with a fixed exponent of $-1/2$ excluding the initial data points where the graph has not finished burning in.
+The graphs in the previous section clearly show that the PAIS-RW algorithm converges faster than the RWMH algorithm when both are parallelised with the same ensemble size. We can calculate the number of iterations required to achieve a particular tolerance level in our solution for each algorithm and compare these to calculate a percentage saving. In Figure~\ref{fig:calc_saving} we demonstrate our calculation of the savings. The constants $c_1$ and $c_2$ are found by regressing through the data with a fixed exponent of $-1/2$ excluding the initial data points where the graph has not finished burning in.
 
-A summary of the percentage of iterations required using the PAIS algorithm compared with the respective Metropolis-Hastings algorithms is given in Table~\ref{table:calc_savings}. The blank entries correspond to occasions when the MH algorithms haven't converged to the posterior distribution.
+A summary of the percentage of iterations required using the PAIS algorithm compared with the respective Metropolis-Hastings algorithms is given in Table~\ref{table:calc_savings}. The blank entries correspond to occasions when either the MH algorithm or PAIS algorithm hasn't converged to the posterior distribution.
 
 \begin{table}[!h]
 \centering
-\begin{tabular}{|l|l|r|r|}
+\begin{tabular}{|l|r|r|r|}
 \hline
-		& & Low KL div & High KL div \\ \hline
-	\multirow{4}{*}{Gaussian}	&RWMH & 14\% & 14\% \\
-	&pCN & 33\% & - \\
-	&MALA & 41\% & 42\% \\
-	&pCNL & 62\% & 66\% \\ \hline
-	\multirow{4}{*}{Bimodal}	&RWMH & 40\% & 44\% \\
-	&pCN & 32\% & - \\
-	&MALA & 36\% & 40\% \\
-	&pCNL & 56\% & - \\ \hline
+		& Gaussian & $B_1$ & $B_2$ \\ \hline
+	RWMH & 10\% & 32\% & 12.6\% (scout) \\
+	pCN & - & 32\% & - \\
+	MALA & 42\% & 36\% & 40\% \\
+	pCNL & 66\% & 56\% & - \\ \hline
 \end{tabular}
-\caption{Iterations for the PAIS algorithms required to achieve a desired tolerance as a percentage of the number of iterations required by the respective Metropolis algorithms.}
+\caption{Iterations for the PAIS algorithms required to achieve a desired tolerance as a percentage of the number of iterations required by the respective MH algorithms. The pCN and pCNL proposal distributions are taken from~\cite{cotter2013mcmc}.}
 \label{table:calc_savings}
 \end{table}
 
