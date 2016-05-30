@@ -5,7 +5,7 @@
 \usepackage{pifont}
 \usepackage{bbm,algorithmic,mdframed,placeins,multirow,booktabs,subfigure}
 \setlength{\parindent}{0in}
-\usepackage{amsmath,amsfonts,amsbsy}
+\usepackage{amsmath,amsfonts,amsbsy,amssymb}
 \newcommand{\RARR}[3]{#1
   \;\displaystyle\mathop{\displaystyle\longrightarrow}^{#3}\; #2}
 \newcommand{\RARRlong}[3]{#1
@@ -73,6 +73,24 @@
 \hskip #5
 \epsfig{file=#2,height=#3}
 }}
+
+\makeatletter  
+\newcommand{\xleftrightarrows}[2][]{\mathrel{%  
+ \raise.40ex\hbox{$  
+       \ext@arrow 3095\leftarrowfill@{\phantom{#1}}{#2}$}%  
+ \setbox0=\hbox{$\ext@arrow 0359\rightarrowfill@{#1}{\phantom{#2}}$}%  
+ \kern-\wd0 \lower.4ex\box0}}  
+ 
+\newcommand{\xrightleftarrows}[2][]{\mathrel{%  
+ \raise.40ex\hbox{$\ext@arrow 3095\rightarrowfill@{\phantom{#1}}{#2}$}%  
+ \setbox0=\hbox{$\ext@arrow 0359\leftarrowfill@{#1}{\phantom{#2}}$}%  
+ \kern-\wd0 \lower.4ex\box0}}  
+ 
+\def\leftrightarrowfill@{%
+ \arrowfill@\leftarrow\relbar\rightarrow%
+ }  
+\makeatother 
+
 \author{Colin Cotter\thanks{Department of Mathematics, Imperial
     College, London, UK} \and Simon Cotter\thanks{School of
     Mathematics, University of Manchester, Manchester, UK. e: simon.cotter@manchester.ac.uk} \and Paul Russell\thanks{School of
@@ -833,6 +851,91 @@ The biggest issue for the Metropolis-Hastings algorithms when sampling
 from a posterior such as the one in $B_2$ is that it is unlikely that
 the correct ratio of chains will occur in each of the modes, and since there is no interaction between the chains, there is no way to remedy this problem. The PAIS algorithm tackles this problem with its resampling step. The algorithm uses its dynamic kernel to build up an approximation of the posterior at each iteration, and then compares this to the posterior distribution via the weights function. Any large discrepancy in the approximation will result in a large or small weight being assigned to the relevant chain, meaning the chain will either pull other chains towards it or be sucked towards a chain with a larger weight. In this way, the algorithm allows chains to `teleport' to regions of the posterior which are in need of more exploration. Figure~\ref{fig:BM2_suction} shows Problem $B_2$ with initially 1 chain in the positive mode, and 49 chains in the negative mode. It takes only a handful of iterations for the algorithm to balance out the chains into 25 chains in each mode. The chains switch modes without having to climb the energy gradient in the middle.
 
+\subsection{Sampling from non-Gaussian bivariate distributions}\label{sec:chem}
+%***some introduction to chemical systems and QSSA
+In this section we apply the PAIS algorithm to a more complicated posterior distribution. The field of biochemical kinetics gives rise to multiscale stochastic problems which remain a challenge both theoretically and computationally. Biochemical reactions occur in single cells between a number of chemical populations and the rates of these reactions can vary on vastly different timescales. It is these reaction rates which we are interested in finding descriptions for.
+
+It is often possible to isolate subsystems of fast and slow reactions. The quasi-steady-state assumption (QSSA) is that these fast subsystems converge in distribution much faster than the slow subsystem. Approximating the fast subsystem as a steady state results in a simple analysis for the fast reaction rates which we can use to simulate the full system and obtain distributions for each of the reaction rates.
+
+We introduce the simple chemical system,
+\begin{equation}\label{eqn:full_system}
+	\emptyset \xrightarrow{k_1} X \xleftrightarrows[k_3]{k_2} Y \xrightarrow{k_4} \emptyset,
+\end{equation}
+where reactions $X\rightarrow Y$ and $Y\rightarrow X$ happen much faster than the creation and destruction of $X$ and $Y$. Using the QSSA we can combine the chemical species $X$ and $Y$ into a single species $S=X+Y$, and represent our system as,
+\begin{equation}\label{eqn:QSSA_system}
+	\emptyset \xrightarrow{k_1} S \xrightarrow{\hat{k}_4} \emptyset.
+\end{equation}
+Here, the new reaction rate $\hat{k}_4$ is found to be
+\[
+	\hat{k}_4(s) = \mathbb{E}\left[k_4Y|S=s\right] = \frac{k_2k_4S}{k_2+k_3}, \quad \text{since} \quad Y \sim \text{Bin}\left(S, \frac{k_2}{k_2+k_3}\right).
+\]
+By observing the system in Equation~\ref{eqn:QSSA_system}, we indirectly observe the rates $k_2$ and $k_3$ through $\hat{k}_4$, resulting in infinitely many possibilities for $k_2$ and $k_3$. Along with the intrinsic randomness and errors in observations, which we assume to follow a Gamma distribution with some variance $\sigma^2$, this results in a long and thin posterior distribution when put into the framework of a Bayesian inverse problem.
+
+% solution to QSSA ode and Gamma noise assumption
+\subsubsection{Target Distribution}
+
+We now formalise the posterior of interest. We look for a distribution over the parameter $\mathbf{k} = (k_2, k_3)^T$, given that we know $k_1 = 100$ and $k_4=1$. We generate our data by making ten observations of the system at $t_i = 2, 4, \dots, 20$, here simulated by solving the full system, Equation~\ref{eqn:full_system}, governed by the differential equations
+\begin{align*}
+	\frac{\text{d}X}{\text{d}t} &= k_1 - k_2X(t)+k_3Y(t), \\
+	\frac{\text{d}Y}{\text{d}t} &= k_2X(t) - (k_3+k_4)Y(t),
+\end{align*}
+with initial conditions $X(0)=Y(0) = 0$, and parameter values $\mathbf{k} = (50, 100)^T$. We then add noise taken from a Gamma distribution with variance $\sigma^2 = 225$ and centred at each $S(t_i)=X(t_i)+Y(t_i)$.
+
+In our modelling we use the QSSA to simplify this system of differential equations into the one parameter system based on Equation~\ref{eqn:QSSA_system},
+\[
+	\frac{\text{d}S}{\text{d}t} = k_1 - \frac{k_2k_4}{k_2+k_3}S(t).
+\]
+The observation operator, $\mathcal{G}: (\mathbf{k},t) \mapsto S(t)$, maps from parameter space onto population space at a time $t$. This means that for the $i$th observation we assume,
+\[
+	 D_i \sim \text{Gamma}(\alpha_i, \beta_i),
+\]
+where
+\[
+	 \alpha_i = \frac{\mathcal{G}(\mathbf{k}, t_i)^2}{\sigma^2},\  \beta_i = \frac{\mathcal{G}(\mathbf{k}, t_i)}{\sigma^2}, \quad i = 1, \dots, 10.
+\]
+
+We assign Gamma priors to $\mathbf{k}$ with mean $\alpha_0/\beta_0 = 75$ and variance $\alpha_0/\beta_0^2 = 100$, resulting in the posterior
+\[
+	\pi(\mathbf{k}|\mathbf{D}) \propto \left[\prod\limits_{i=1}^{10} \text{Gamma}(D_i; \alpha_i, \beta_i)\right]\text{Gamma}(k_2; \alpha_0, \beta_0)\text{Gamma}(k_3; \alpha_0, \beta_0).
+\]
+
+
+\subsubsection{Implementation}\label{sec:chem_implementation}
+% explanation of l2 convergence measure
+For this problem there is no analytic form for the normalisation constant, and numerical methods implemented in MATLAB and Mathematica have proven to be unreliable. To demonstrate the convergence of the algorithm, we first run a MH algorithm for much longer than we normally would ($8\times 10^{10}$ samples), and consider the histogram produced to be the truth. We then perform our usual simulations with the PAIS and MH algorithms to compare the rate at which the histograms converge to the `true' histogram over the same grid.
+% modifications to algorithm + spikes
+In this problem we modify our PAIS algorithm to use a mixture of Gamma distributions in the proposal distribution instead of a Gaussian mixture. Similarly we use a Gamma proposal in the MH algorithm. This ensures that we only propose positive parameters. Having a heavier right tail in the proposal distribution also means that the posterior is absolutely continuous with respect to the proposal. When this is not the case, the weight function can tend to zero or infinity when $k_i \rightarrow \infty$. Sampling under these conditions can result in very spiky approximations of the tails of the posterior distribution resulting in slow convergence.
+%*** AMR and increase in sample size
+
+
+%***numerics.
+\subsubsection{Convergence of PAIS-RW and PAIS-LA vs MH with Gamma proposals}\label{sec:chem_conv}
+
+In the numerics which follow we have used the AMR algorithm to resample with an ensemble size of $M=2500$. The method otherwise remains the same as in previous sections. We perform test runs to find the optimal scaling parameters for both RW proposals and MALA-type proposals. We then calculate the convergence rates of the algorithms by producing 50 million samples from the posterior with each algorithm, and repeat the simulation 32 times.
+
+\begin{figure}[htb]
+\centering
+\subfigure[Optimal values of the scaling parameter.]{\includegraphics[width=0.45\textwidth]{"figures/C1_ESS"}}
+\subfigure[Relative L2 error against number of iterations.]{\includegraphics[width=0.45\textwidth]{"figures/C1_L2"}}
+\caption{Convergence of the PAIS-RW and PAIS-LA algorithms for the chemical system problem described in Section~\ref{sec:chem}. Implementation described in Sections~\ref{sec:chem_implementation} and \ref{sec:chem_conv}.}
+\label{fig:C1_ESS}
+\end{figure}
+
+\begin{table}[!htb]
+      \centering
+        \begin{tabular}{|l|r|r|r|}
+	\hline
+	Algorithm	& MH-Gam & PAIS-RW & PAIS-LA \\ \hline
+	$\delta^*$	& 7.2e-0     & 8.9e-1    & 1.0e-0 \\
+	\hline
+	\end{tabular}
+	\vspace{1mm}
+	\caption{Optimal values of the scaling parameter. The MH algorithm is optimised using the acceptance rate, and the PAIS algorithms are optimised using the effective sample size.}
+	\label{table:C1_opt_delta}
+\end{table}
+
+In Figure~\ref{fig:C1_ESS} (a) we see that the two PAIS algorithms have similar optimal values of the scaling parameter, also shown in Table~\ref{table:C1_opt_delta}, however the MALA-type proposal achieves a higher effective sample size with the same ensemble size. Convergence after the first 50 million samples is shown in Figure~\ref{fig:C1_ESS} (b) and demonstrates that the PAIS algorithm converges faster than the MH algorithm. The slightly unstable convergence in the PAIS-RW algorithm is the effect of spikes appearing in the tails of the posterior distribution. This is also what has caused the slightly lower effective sample size.
+
 \section{Discussion and Conclusions}\label{Sec:Conc} 
 
 We have explored the application of parallelised MCMC algorithms in
@@ -841,9 +944,7 @@ that these algorithms converge faster than the analogous naively parallelised
 Metropolis-Hastings algorithms. Further experimentation with the
 Random Walk Metropolis-Hastings (RWMH), Metropolis Adjusted Langevin
 Algorithm (MALA) and preconditioned Crank-Nicolson (pCN) proposals has
-yielded similar results\cite{Paul}.%  Importantly, we have demonstrated
-% that the convergence rate improves superlinearly with respect to the
-% number of processors used.
+yielded similar results\cite{Paul}.
 
 Importantly, we have compared the efficiency of our parallel scheme
 with a naive parallelisation of serial methods. Thus our increase in
