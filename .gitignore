@@ -3,7 +3,7 @@
 *.dvi
 *.log
 *~
-*.pdf
+PAIS.pdf
 *.gz
 *.bbl
 *.dvi

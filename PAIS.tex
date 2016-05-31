@@ -477,7 +477,7 @@ fact that we have multiple chains allows us to assess quickly and
 effectively what the optimal variance of the proposal distributions
 should be. This is discussed in Section~\ref{sec:adapt}.
 
-In many MCMC algorithms such as the Random Walk Metropolis-Hastings (RWMH) algorithm, the optimal scaling parameter can be found by searching for the parameter value which gives an optimal acceptance rate, e.g. for near Gaussian targets we have 23.4\% for RWMH and 57.4\% for MALA\cite{roberts2001optimal}. Unlike Metropolis-Hastings algorithms, the PAIS algorithm does not accept or reject proposed values, so we need another method of measuring the optimality of $\delta$. Section~\ref{sec:statistics} gives some possible methods for tuning $\delta$.
+In many MCMC algorithms such as the Random Walk Metropolis-Hastings (RWMH) algorithm, the optimal scaling parameter can be found by searching for the parameter value which gives an optimal acceptance rate, e.g. for near Gaussian targets we have 23.4\% for RWMH and 57.4\% for MALA\cite{roberts2001optimal}. Unlike Metropolis-Hastings algorithms, the PAIS algorithm does not accept or reject proposed values, so we need another method of measuring the optimality of $\beta$. Section~\ref{sec:statistics} gives some possible methods for tuning $\beta$.
 
 \subsection{Statistics for Determining the Optimal Scaling Parameter}\label{sec:statistics}
 
@@ -494,7 +494,7 @@ where $\{x_i\}_{i=1}^N$ is a sample of size $N$. The relative L2 error between a
 where the regions $\{R_i\}_{i=1}^{n_b}$ are the $d$-dimensional histogram bins, so that $\bigcup_i R_i \subseteq X$ and $R_i\cap R_j=\emptyset$, $n_b$ is the number of bins, $v$ is the volume of each bin, and $B_i$ is the value of the $i$th bin. 
 
 These statistics cannot be used in practise to find optimal values of
-$\delta$ since they require knowledge of the analytic solution, and
+$\beta$ since they require knowledge of the analytic solution, and
 the algorithm must be run for a long time to build up a
 sufficiently large sample. However they can be used to assess the
 ability of other indicators to find the optimal proposal
@@ -504,11 +504,11 @@ The following statistics can be used specifically for importance sampling algori
 
 \subsubsection{The variance of the weights}
 
-Importance samplers assign a weight to each sample they produce based on a ratio of the posterior to the proposal at that point. This method is most efficient when the target is proportional to the proposal distribution, in this case the weights are constant and so the variance of the weights, $var(w(y))$, is zero. Hence, we would like to choose the value of $\delta$ which minimises the variance of the weights,
+Importance samplers assign a weight to each sample they produce based on a ratio of the posterior to the proposal at that point. This method is most efficient when the target is proportional to the proposal distribution, in this case the weights are constant and so the variance of the weights, $var(w(y))$, is zero. Hence, we would like to choose the value of $\beta$ which minimises the variance of the weights,
 \[
-	\delta^*_{\text{var}} = \arg\min_{\delta} \text{var}(w(y)).
+	\beta^*_{\text{var}} = \arg\min_{\beta} \text{var}(w(y)).
 \]
-The mean of the estimator $\text{var}(w(y))$ is smooth enough that it can be used to tune $\delta$ during the burn-in phase of MCMC algorithms. However the variance of the estimator can be large, especially far away from the optimal value, so it can take a large number of iterations to calculate descent directions.
+The mean of the estimator $\text{var}(w(y))$ is smooth enough that it can be used to tune $\beta$ during the burn-in phase of MCMC algorithms. However the variance of the estimator can be large, especially far away from the optimal value, so it can take a large number of iterations to calculate descent directions.
 
 \subsubsection{The effective sample size}\label{sec:ess}
 
@@ -522,7 +522,7 @@ The second two expressions are true when $M\rightarrow\infty$. From
 the last expression we see that when the variance of the weights is
 zero, $\neff = M$; this is our ideal scenario. Maximising the effective sample size is equivalent to minimising the variance of the weights.
 
-The statistic $\neff$ is better scaled than the variance of the weights, and is easier to interpret, so is preferable as a means of tuning $\delta$. In the following numerics, we use the effective sample size calculated at each iteration and averaged across the entire run to tune the scaling parameters. We do this because this is the method we use to tune the scaling parameters on the fly, comparison to the optimal scaling parameter found using the global optimum of the variance of the weights is also included for comparison.
+The statistic $\neff$ is better scaled than the variance of the weights, and is easier to interpret, so is preferable as a means of tuning the scaling parameter. In the following numerics, we use the effective sample size calculated at each iteration and averaged across the entire run to tune the scaling parameters. We do this because this is the method we use to tune the scaling parameters on the fly, comparison to the optimal scaling parameter found using the global optimum of the variance of the weights is also included for comparison.
 
 The effective sample size also has another useful property; if we imagine the algorithm in the burn-in phase, for example, we have $M$ processes in the tail of a Gaussian curve searching for the area of high density. If the processes are evenly spaced, then the particle closest to the mean will have an exponentially higher weight assigned to it. The effective sample size in this scenario will be close to 1. As the algorithm burns in, the processes find the flatter area near the mean so the number of samples contributing information to the posterior will increase. By this argument we can see that rising $\neff$ signals the end of the burn-in period.
 
@@ -538,7 +538,7 @@ The effective sample size also has another useful property; if we imagine the al
 
 If we are to use the effective sample size ratio as an indicator of
 how to tune the proposal variance, we need to look at how it behaves
-in different situations. Here we look at how the statistic behaves as we vary the ensemble size, $M$. Figure~\ref{fig:neff-M} shows results for the Gaussian posterior discussed in Section~\ref{sec:problem 1} when using the PAIS-RW algorithm. Figure~\ref{fig:neff-M} (a) shows that as the ensemble size increases, the value of $\delta$ which gives the optimal effective sample size ratio decreases. This is to be expected since we are trying to fit more kernels into the posterior distribution, so the variance of each kernel needs to be decreased.
+in different situations. Here we look at how the statistic behaves as we vary the ensemble size, $M$. Figure~\ref{fig:neff-M} shows results for the Gaussian posterior discussed in Section~\ref{sec:problem 1} when using the PAIS-RW algorithm. Figure~\ref{fig:neff-M} (a) shows that as the ensemble size increases, the scaling parameter which gives the optimal effective sample size ratio decreases. This is to be expected since we are trying to fit more kernels into the posterior distribution, so the variance of each kernel needs to be decreased.
 
 Figure~\ref{fig:neff-M} (b) shows that as the ensemble size increases, the efficiency of the sampler also increases.
 
@@ -550,18 +550,18 @@ of the MCMC iterations. However, it can be slow to converge to the
 optimal value, and we may need an
 uninformative prior for the scaling parameter. Alternatively, the parameter may be randomly sampled from some interval at various points during the chain. This results in some iterations which explore the state space, and some which make local moves. Algorithms of this type do not converges to an optimal value of the scaling parameter.
 
-We choose to use a divide and conquer scheme which optimises the effective sample size (or any other diagnostic). Some more sophisticated examples are described in \cite{roberts2009examples} and \cite{Ji2013adaptive}. Algorithm~\ref{tab:adapt} in Appedix~\ref{Sec:App}, is not presented as an optimal strategy but as a demonstration that the PAIS algorithm can be adaptively tuned effectively.
+We choose to use a divide and conquer scheme which optimises the effective sample size (or any other diagnostic). Some more sophisticated examples are described in \cite{roberts2009examples} and \cite{Ji2013adaptive}. Algorithm~\ref{tab:adapt} in Appendix~\ref{Sec:App}, is not presented as an optimal strategy but as a demonstration that the PAIS algorithm can be adaptively tuned effectively.
 
 From here on in, we will use the random walk proposal,
 \begin{equation}Y = X_{i-1}+\beta W_{i-1}, \qquad W_{i-1} \sim \mathcal{N}(0,1),
 \end{equation}
-where $X_{i-1}$ is our current state, $Y$ is our proposed state, and $\beta = \sqrt{8\delta}/(2+\delta)$. In the numerics section we will refer to $\delta$ as the scaling parameter.
+where $X_{i-1}$ is our current state and $Y$ is our proposed state. In the numerics section we will refer to $\beta$ as the scaling parameter.
 
- In Algorithm~\ref{tab:adapt}, we calculate a sequence $\{\delta^{(k)}\}_{k=1}$ which converges roughly to the optimal scaling parameter $\delta^*$, resulting in the optimal transition density $\chi$ for our MCMC algorithm. We must choose some sequence of iterations, $\{n_k\}_{k=1}$, at which to update $\delta$. These $n_k$ can be constructed by a sequence in which the terms grow exponentially further apart. The algorithm is given for the PAIS method but a similar method is used to adaptively calculate the optimal scaling parameter, $\delta^*$, for the MH algorithm.
+ In Algorithm~\ref{tab:adapt}, we calculate a sequence $\{\beta^{(k)}\}_{k=1}$ which converges roughly to the optimal scaling parameter $\beta^*$, resulting in the optimal transition density $\chi$ for our MCMC algorithm. We must choose some sequence of iterations, $\{n_k\}_{k=1}$, at which to update $\beta$. These $n_k$ can be constructed by a sequence in which the terms grow exponentially further apart. The algorithm is given for the PAIS method but a similar method is used to adaptively calculate the optimal scaling parameter, $\beta^*$, for the MH algorithm.
 
 When implemented, there are a number of parameters which must be
-chosen to ensure efficient tuning of $\delta$. Firstly, the initial
-value of $\delta$ should be chosen so that the chains quickly explore the parameter space. However, if $\delta$ is chosen to be too
+chosen to ensure efficient tuning of $\beta$. Firstly, the initial
+value of $\beta$ should be chosen so that the chains quickly explore the parameter space. However, if $\beta$ is chosen to be too
 large, then the method may become unstable. We also choose two iteration numbers at which we change our adaptive strategy. At iteration $N_\text{join}$ we resample using the full ensemble instead of using two subsets of the full ensemble. When using two subsets we are training the scaling parameter using the wrong ensemble size, this allows faster convergence but leads to a sub-optimal scaling parameter. Resampling with the full ensemble towards the end of the tuning allows fast convergence to the right order of magnitude, followed by fine tuning to the optimal scaling parameter. Finally we choose a time, $N_\text{stop}$, at which we stop updating our parameter.
 
 \section{Numerical Examples}\label{Sec:Num}
@@ -573,16 +573,16 @@ PAIS variant, the PAIS-RW algorithm. We perform this comparison using the relati
 
 
 Since we are comparing against naively parallelised MH algorithms,
-we also need to decide which statistic $T(\delta)$ to optimise for
+we also need to decide which statistic $T(\beta)$ to optimise for
 these approaches. In the examples which follow, we have optimised the naively parallelised RWMH algorithm using the optimal acceptance rate $\hat{\alpha} = 0.5$. This value differs from the theoretical asymptotic value of 0.234 which applies in higher dimensions, this higher acceptance rate is commonly used for one dimensional Gaussian posteriors. To optimise the algorithm we minimise the statistic
 \[
-	T_{\text{MH}}(\delta) = \left| \frac{N_{\text{acc}}(\delta)}{N_{\text{total}}} - \hat{\alpha} \right|,
+	T_{\text{MH}}(\beta) = \left| \frac{N_{\text{acc}}(\beta)}{N_{\text{total}}} - \hat{\alpha} \right|,
 \]
-where $N_{\text{acc}}(\delta)$ is the number of accepted moves and
+where $N_{\text{acc}}(\beta)$ is the number of accepted moves and
 $N_{\text{total}}$ is the total number of samples produced. For the
 PAIS algorithm, we are maximising the effective sample size as
-discussed in Section~\ref{sec:ess}, so $T_{\text{PAIS}}(\delta) =
-\neff(\delta)$.
+discussed in Section~\ref{sec:ess}, so $T_{\text{PAIS}}(\beta) =
+\neff(\beta)$.
 
 \subsubsection{Target distribution}
 
@@ -605,10 +605,10 @@ posterior are, is $D_{KL}(\mu_Y || \mu_0) = 4.67$ for this problem.
 
 \subsubsection{Numerical implementation}\label{sec:Implementation P1}
 
-In each of the following simulations, we perform three tasks. First we calculate the optimal value of $\delta$ by optimising the statistics described in Section~\ref{sec:statistics}. We then run the algorithms with optimal parameters to calculate and compare the convergence rates. Finally, we implement the adaptive algorithms described in Section~\ref{sec:adapt} and compare the convergence rates of these algorithms with the nonadaptive algorithms.
+In each of the following simulations, we perform three tasks. First we calculate the optimal value of $\beta$ by optimising the statistics described in Section~\ref{sec:statistics}. We then run the algorithms with optimal parameters to calculate and compare the convergence rates. Finally, we implement the adaptive algorithms described in Section~\ref{sec:adapt} and compare the convergence rates of these algorithms with the nonadaptive algorithms.
 
 {\bf (1) Finding the optimal parameters}: To find the optimal
-parameters we choose 32 values of $\delta$ evenly spaced on a log scale
+parameters we choose 32 values of $\beta$ evenly spaced on a log scale
 in the interval $[10^{-5}, 2]$. We run the PAIS-RW and RWMH algorithms for one million iterations, each with an ensemble size of $M=50$. We took 32 repeats of both algorithms and then used the geometric means of the sample statistics to find the optimal parameters.
 
 {\bf (2) Measuring convergence of nonadaptive algorithms}: We run the algorithms in Section~\ref{sec:problem 1} for one million iterations, again with $M=50$. The simulations are repeated 32 times using the optimal parameters found in (1). The performance of the algorithms is judged by the convergence of the relative L2 error statistic in Equation~\ref{eqn:L2_error}.
@@ -616,17 +616,17 @@ in the interval $[10^{-5}, 2]$. We run the PAIS-RW and RWMH algorithms for one m
 {\bf (3) Measuring convergence of adaptive algorithms}: We run the
 adaptive algorithms under the same conditions as the nonadaptive
 algorithms, and again use the relative L2 error to compare
-efficiency. The adaptive algorithms are initialised with $\delta^{(1)}$ = 2.
+efficiency. The adaptive algorithms are initialised with $\beta^{(1)}$ = 2.
 
 
-\subsubsection{Optimal values of $\delta$}\label{sec:Optimal values P1}
+\subsubsection{Optimal values of $\beta$}\label{sec:Optimal values P1}
 
 \begin{figure}[htb]
 \centering
 \subfigure[RWMH algorithm.]{\includegraphics[width=0.45\textwidth]{"figures/G2_rwmho"}}
 \subfigure[PAIS-RW algorithm.]{\includegraphics[width=0.45\textwidth]{"figures/G2_paiso"}}
-\caption{Finding optimal values of $\delta$ for the problem in Section~\ref{sec:problem 1}. The setup is as in Section~\ref{sec:Implementation P1}.}
-\label{fig:P1 opt delta}
+\caption{Finding optimal values of $\beta$ for the problem in Section~\ref{sec:problem 1}. The setup is as in Section~\ref{sec:Implementation P1}.}
+\label{fig:P1 opt beta}
 \end{figure}
 
 \begin{table}[!htb]
@@ -634,11 +634,11 @@ efficiency. The adaptive algorithms are initialised with $\delta^{(1)}$ = 2.
       \centering
         \begin{tabular}{|c|r|}
 	\hline
-	Statistic											& pCNL \\ \hline
-	$\delta_{\text{L2}}^*$								& 2.3e-4 \\
-	$\delta_{\%}^*$									& 1.2e-1 \\
-	Acceptance Rate ($\delta_{\text{L2}}^*$)				& 9.0e-1 \\
-	Acceptance Rate ($\delta_{\%}^*$)					& 5.0e-1 \\
+	Statistic											& RWMH \\ \hline
+	$\beta_{\text{L2}}^*$								& 2.1e-2 \\
+	$\beta_{\%}^*$									& 1.5e-1 \\
+	Acceptance Rate ($\beta_{\text{L2}}^*$)				& 9.0e-1 \\
+	Acceptance Rate ($\beta_{\%}^*$)					& 5.0e-1 \\
 	\hline
 	\end{tabular}
     \end{minipage}%
@@ -646,21 +646,21 @@ efficiency. The adaptive algorithms are initialised with $\delta^{(1)}$ = 2.
       \centering
         \begin{tabular}{|l|r|r|}
 	\hline
-	Statistic							& PAIS-pCNL \\ \hline
-	$\delta_{\text{eff}}^*$				& 1.1e-3 \\
-	$\delta_{\text{var}(w(y))}^*$			& 1.7e-3 \\
-	$\delta_{\text{L2}}^*$				& 7.6e-4 \\
+	Statistic							& PAIS-RW \\ \hline
+	$\beta_{\text{eff}}^*$				& 4.7e-2 \\
+	$\beta_{\text{var}(w(y))}^*$		& 5.8e-2 \\
+	$\beta_{\text{L2}}^*$				& 3.9e-2 \\
 	\hline
 	\end{tabular}
     \end{minipage}
 	\vspace{1mm}
-	\caption{Optimal values of $\delta$ summarised from Figure~\ref{fig:P1 opt delta}. Statistics calculated as described in Section~\ref{sec:statistics}.}
-	\label{table:prob1 opt delta}
+	\caption{Optimal values of $\beta$ summarised from Figure~\ref{fig:P1 opt beta}. Statistics calculated as described in Section~\ref{sec:statistics}.}
+	\label{table:prob1 opt beta}
 \end{table}
 
-Figure~\ref{fig:P1 opt delta} (a) shows the two values of $\delta$ which are optimal according to the acceptance rate and relative L2 error criteria for the RWMH algorithm. The smaller estimate comes from the relative L2 error, and the larger from the acceptance rate. The results in Figure~\ref{fig:P1 opt delta} are summarised in Table~\ref{table:prob1 opt delta}. Since in general we cannot calculate the relative L2 error, we must optimise the algorithm using the acceptance rate. From the relative L2 error curve we can see that the minimum is very wide and despite the optimal values being very different there is not a large difference in the convergence rate.
+Figure~\ref{fig:P1 opt beta} (a) shows the two values of $\beta$ which are optimal according to the acceptance rate and relative L2 error criteria for the RWMH algorithm. The smaller estimate comes from the relative L2 error, and the larger from the acceptance rate. The results in Figure~\ref{fig:P1 opt beta} are summarised in Table~\ref{table:prob1 opt beta}. Since in general we cannot calculate the relative L2 error, we must optimise the algorithm using the acceptance rate. From the relative L2 error curve we can see that the minimum is very wide and despite the optimal values being very different there is not a large difference in the convergence rate.
 
-Figure~\ref{fig:P1 opt delta} (b) shows the effective sample size ratio compared to the error analysis and the variance of the weights. The relative L2 error graph is noisy, but it is clear that the maximum in the effective sample size and the minimum in the variance of the weights are both close to the minimum in the relative L2 error. Due to this we say that the estimate of the effective sample size found by averaging the statistic over each iteration is a good indicator for the optimal scaling parameter. In general this indicator underestimates the estimate found by using the entire sample.
+Figure~\ref{fig:P1 opt beta} (b) shows the effective sample size ratio compared to the error analysis and the variance of the weights. The relative L2 error graph is noisy, but it is clear that the maximum in the effective sample size and the minimum in the variance of the weights are both close to the minimum in the relative L2 error. Due to this we say that the estimate of the effective sample size found by averaging the statistic over each iteration is a good indicator for the optimal scaling parameter. In general this indicator underestimates the estimate found by using the entire sample.
 
 \subsubsection{Convergence of RWMH vs PAIS-RW}
 
@@ -674,7 +674,7 @@ Figure~\ref{fig:P1 opt delta} (b) shows the effective sample size ratio compared
 
 Figure~\ref{fig:MH1 L2} shows that the PAIS-RW algorithm converges to the posterior distribution significantly faster than the RWMH algorithm, in both L2 error and relative error in the moments. A description of the speed up attained by this algorithm is given in Section~\ref{sec:calc_saving}.
 
-Both adaptive algorithms are run with initial values of $\delta_0=2.0$. Figure~\ref{fig:MH1 L2} shows that after an initial burn-in period the APAIS-RW algorithm catches up to the PAIS-RW algorithm, and by the end of the simulation window is matching its performance. The ARWMH algorithm does not perform quite as well, this is possibly due to the fact that the acceptance rate cost function is not smooth at the optimal value making it difficult to minimise.
+Both adaptive algorithms are run with initial values of $\beta_0=2.0$. Figure~\ref{fig:MH1 L2} shows that after an initial burn-in period the APAIS-RW algorithm catches up to the PAIS-RW algorithm, and by the end of the simulation window is matching its performance. The ARWMH algorithm does not perform quite as well, this is possibly due to the fact that the acceptance rate cost function is not smooth at the optimal value making it difficult to minimise.
 
 \subsubsection{Scaling of the PAIS algorithm with ensemble size}
 
@@ -689,7 +689,7 @@ Throughout this paper, we use an ensemble size $M=50$, but it is interesting to 
 \end{figure}
 
 Figure~\ref{fig:PAIS_saving} was produced using the method of finding
-optimal $\delta$ described in Section~\ref{sec:Implementation P1} (1),
+optimal $\beta$ described in Section~\ref{sec:Implementation P1} (1),
 then running 32 repeats at each ensemble size. The convergence rates
 are then found by regressing through the data. The graph is still very
 noisy but demonstrates that increasing the ensemble size continues to
@@ -727,18 +727,18 @@ To create the `easy' problem we say that the true value of $\G(u) = 0.75$, and t
 \end{center}
 \end{figure}
 
-\subsubsection{Calculating values of Optimal $\delta^*$}\label{sec:BM1_opt_delta}
+\subsubsection{Calculating values of Optimal $\beta^*$}\label{sec:BM1_opt_beta}
 
-Calculating the optimal values of the scaling parameters for this problem is similar to the Gaussian case; we check only the acceptance rate to find the optimal values for RWMH and we use the effective sample size to find the optimal values for PAIS-RW. Table~\ref{table:BM_opt_delta} gives the optimal values of $\delta$ for both problems.
+Calculating the optimal values of the scaling parameters for this problem is similar to the Gaussian case; we check only the acceptance rate to find the optimal values for RWMH and we use the effective sample size to find the optimal values for PAIS-RW. Table~\ref{table:BM_opt_beta} gives the optimal values of $\beta$ for both problems.
 
 \begin{table}[!htb]
     \begin{minipage}{.5\linewidth}
       \centering
         \begin{tabular}{|l|r|r|}
 	\hline
-	Algorithm							& $\delta^*_{\text{acc}}$	& $\delta^*_{\text{eff}}$ \\ \hline
-	RWMH								& 1.3e-1					& - \\
-	PAIS-RW								& -						& 5.4e-3\\
+	Algorithm							& $\beta^*_{\text{acc}}$	& $\beta^*_{\text{eff}}$ \\ \hline
+	RWMH								& 4.8e-1					& - \\
+	PAIS-RW								& -						& 1.0e-1\\
 	\hline
 	\end{tabular}
     \end{minipage}%
@@ -746,30 +746,30 @@ Calculating the optimal values of the scaling parameters for this problem is sim
       \centering
         \begin{tabular}{|l|r|r|r|}
 	\hline
-	Algorithm							& $\delta^*_{\text{acc}}$	& $\delta^*_{\text{eff}}$	& $\delta^*_{\text{L2}}$ \\ \hline
-	RWMH								& 2.6e-2					& - 						& 9.1e-1\\
-	PAIS-RW								& -						& 1.3e-3 					& 8.1e-3\\
+	Algorithm							& $\beta^*_{\text{acc}}$	& $\beta^*_{\text{eff}}$	& $\beta^*_{\text{L2}}$ \\ \hline
+	RWMH								& 2.3e-1					& - 						& 9.3e-1\\
+	PAIS-RW								& -						& 5.1e-2 					& 1.3e-1\\
 	\hline
 	\end{tabular}
     \end{minipage}
 	\vspace{1mm}
-	\caption{Optimal values of $\delta$ for $B_1$ (left) and $B_2$ (right).}
-	\label{table:BM_opt_delta}
+	\caption{Optimal values of $\beta$ for $B_1$ (left) and $B_2$ (right).}
+	\label{table:BM_opt_beta}
 \end{table}
 
-It is relatively simple to find optimal scaling parameters for problem $B_1$. These values are given in Table~\ref{table:BM_opt_delta} (left). However problem $B_2$ is much harder; transitions between the modes are extremely unlikely for the standard RWMH algorithm. This means that we need to consider the
+It is relatively simple to find optimal scaling parameters for problem $B_1$. These values are given in Table~\ref{table:BM_opt_beta} (left). However problem $B_2$ is much harder; transitions between the modes are extremely unlikely for the standard RWMH algorithm. This means that we need to consider the
 convergence on two levels; we should consider the algorithm's ability
 to find all the modes, and also whether it can sample them in the correct proportions.
 
 To get correctly proportioned modes with the RWMH algorithm it is
 important that the chains can transition between the modes, which
-means that $\delta$ must be large. However, this leads to a lower
+means that $\beta$ must be large. However, this leads to a lower
 acceptance rate, and so we sacrifice convergence locally. For this reason, the RWMH algorithm is very slow to
 converge for problems of this type.
 
-We can achieve these two regimes in RWMH by tuning $\delta$ using the acceptance rate for local convergence, and by L2 error for global convergence. Similarly in PAIS-RW we can use the effective sample size for local convergence, and the L2 error for global convergence.
+We can achieve these two regimes in RWMH by tuning $\beta$ using the acceptance rate for local convergence, and by L2 error for global convergence. Similarly in PAIS-RW we can use the effective sample size for local convergence, and the L2 error for global convergence.
 
-From Table~\ref{table:BM_opt_delta} (right) we see that there is a large difference between the optimal value of $\delta$ for each regime in RWMH, and so will result in inefficient sampling. The PAIS-RW algorithm manages to sample the local detail and the large scale behaviour with similar values of $\delta^*$: a clear advantage to using this algorithm for this problem.
+From Table~\ref{table:BM_opt_beta} (right) we see that there is a large difference between the optimal value of $\beta$ for each regime in RWMH, and so will result in inefficient sampling. The PAIS-RW algorithm manages to sample the local detail and the large scale behaviour with similar values of $\beta^*$: a clear advantage to using this algorithm for this problem.
 
 \subsubsection{Convergence of RWMH vs PAIS-RW}
 
@@ -793,9 +793,9 @@ respective nonadaptive algorithms and the improvement PAIS offers remains signif
 \label{fig:BM2_L2}
 \end{figure}
 
-For $B_2$ the algorithms are run with the global optimal value of $\delta^*$, and with the local optimal value of $\delta^*$. Figure~\ref{fig:BM2_L2} (a) shows that the algorithms using the globally optimal $\delta^*$ convergence at the desired rate, whereas the algorithms optimised using the acceptance rate and effective sample size initially converge faster but at some point forget the location of one of the modes, causing the convergence to flatten out.
+For $B_2$ the algorithms are run with the global optimal value of $\beta^*$, and with the local optimal value of $\beta^*$. Figure~\ref{fig:BM2_L2} (a) shows that the algorithms using the globally optimal $\beta^*$ convergence at the desired rate, whereas the algorithms optimised using the acceptance rate and effective sample size initially converge faster but at some point forget the location of one of the modes, causing the convergence to flatten out.
 
-Using the PAIS algorithm we can minimise the impact of forgotten modes by constantly allowing the algorithm to search them out. Since we have parallel chains, we can run PAIS-RW with the majority of chains using the locally optimal value of $\delta$, and one or two chains with a larger scaling parameter. These chains with larger scaling parameters act both as `scouts' for new modes, and act to aid in the overdispersal of the proposal distribution. Figure~\ref{fig:BM2_L2} (b) shows the results of using 49 chains with the local optimal scaling parameter, and one chain with ten times the local optimal scaling parameter. We see that modes are not forgotten and the algorithm converges with the improvement we see from PAIS-RW in the other problems. Other methods of mode searches are described in \cite{lan2013wormhole}.
+Using the PAIS algorithm we can minimise the impact of forgotten modes by constantly allowing the algorithm to search them out. Since we have parallel chains, we can run PAIS-RW with the majority of chains using the locally optimal value of $\beta$, and one or two chains with a larger scaling parameter. These chains with larger scaling parameters act both as `scouts' for new modes, and act to aid in the overdispersal of the proposal distribution. Figure~\ref{fig:BM2_L2} (b) shows the results of using 49 chains with the local optimal scaling parameter, and one chain with ten times the local optimal scaling parameter. We see that modes are not forgotten and the algorithm converges with the improvement we see from PAIS-RW in the other problems. Other methods of mode searches are described in \cite{lan2013wormhole}.
 
 The adaptive algorithm can just as easily be applied to the PAIS algorithm with the `scout' chains described in the previous paragraph. Since we need two equally sized sub-ensembles, we will use two groups of 24 ensembles with the same proposal distributions, and each group will also have a `scout' chain with a scaling parameter ten times that of the rest of the group.
 
@@ -926,15 +926,15 @@ In the numerics which follow we have used the AMR algorithm to resample with an 
         \begin{tabular}{|l|r|r|r|}
 	\hline
 	Algorithm	& MH-Gam & PAIS-RW & PAIS-LA \\ \hline
-	$\delta^*$	& 7.2e-0     & 8.9e-1    & 1.0e-0 \\
+	$\beta^*$	& 7.2e-0     & 8.9e-1    & 1.0e-0 \\
 	\hline
 	\end{tabular}
 	\vspace{1mm}
 	\caption{Optimal values of the scaling parameter. The MH algorithm is optimised using the acceptance rate, and the PAIS algorithms are optimised using the effective sample size.}
-	\label{table:C1_opt_delta}
+	\label{table:C1_opt_beta}
 \end{table}
 
-In Figure~\ref{fig:C1_ESS} (a) we see that the two PAIS algorithms have similar optimal values of the scaling parameter, also shown in Table~\ref{table:C1_opt_delta}, however the MALA-type proposal achieves a higher effective sample size with the same ensemble size. Convergence after the first 50 million samples is shown in Figure~\ref{fig:C1_ESS} (b) and demonstrates that the PAIS algorithm converges faster than the MH algorithm. The slightly unstable convergence in the PAIS-RW algorithm is the effect of spikes appearing in the tails of the posterior distribution. This is also what has caused the slightly lower effective sample size.
+In Figure~\ref{fig:C1_ESS} (a) we see that the two PAIS algorithms have similar optimal values of the scaling parameter, also shown in Table~\ref{table:C1_opt_beta}, however the MALA-type proposal achieves a higher effective sample size with the same ensemble size. Convergence after the first 50 million samples is shown in Figure~\ref{fig:C1_ESS} (b) and demonstrates that the PAIS algorithm converges faster than the MH algorithm. The slightly unstable convergence in the PAIS-RW algorithm is the effect of spikes appearing in the tails of the posterior distribution. This is also what has caused the slightly lower effective sample size.
 
 \section{Discussion and Conclusions}\label{Sec:Conc} 
 
@@ -1003,25 +1003,25 @@ sampling for consistency.
 \begin{mdframed}
 \begin{algorithmic}
 \STATE $x_j^{(0)} \sim \mu_0$, for $j \in L\cup U$, where $L = \{j\}_{j=1}^{M/2},\ U = \{j\}_{j=M/2+1}^M$.
-\STATE Choose $\delta^{(1)} \in (0, 2]$. Set $\delta_{L,U}^{(1)} = (1\pm 0.01)\delta^{(1)}\wedge 2$.
+\STATE Choose $\beta^{(1)} \in (0, 2]$. Set $\beta_{L,U}^{(1)} = (1\pm 0.01)\beta^{(1)}\wedge 2$.
 \FOR{$i=1,2, \ldots, N$}
-\STATE $y_j^{(i)}~\sim~Q(x_j^{(i-1)},\delta_L^{(i)})$ for $j \in L$, and $y_j^{(i)}~\sim~Q(x_j^{(i-1)},\delta_U^{(i)})$ for $j \in U$.
+\STATE $y_j^{(i)}~\sim~Q(x_j^{(i-1)},\beta_L^{(i)})$ for $j \in L$, and $y_j^{(i)}~\sim~Q(x_j^{(i-1)},\beta_U^{(i)})$ for $j \in U$.
 \STATE Calculate 
 \[
 	w^{(i)}_j = \frac{\pi(y_j^{(i)})}{\nu(y_j^{(i)};X^{(i-1)})},
 \]
 where
 \[
-	\nu(y;X) = \frac{1}{M}\sum_{j\in L} q(y;x_j,\delta_L)+\frac{1}{M}\sum_{j\in U} q(y;x_j,\delta_U).
+	\nu(y;X) = \frac{1}{M}\sum_{j\in L} q(y;x_j,\beta_L)+\frac{1}{M}\sum_{j\in U} q(y;x_j,\beta_U).
 \]
 
 \IF{$i$ is in $\{n_k\}_{k=1}$}
 	\STATE For $w_{kj} = w_j^{(k)}$, $S = n_k - n_{k-1}$,
 	\STATE $T_L = SM(\sum_{k=i-S}^S\sum_{j\in L} w_{kj})^2/(\sum_{k=i-S}^S\sum_{j\in L} w_{kj}^2)$.
 	\STATE $T_U = SM(\sum_{k=i-S}^S\sum_{j\in U} w_{kj})^2/(\sum_{k=i-S}^S\sum_{j\in U} w_{kj}^2)$.
-	\STATE $\delta^{(i+1)} = \delta^{(i)} - \Delta t \displaystyle\frac{T_U - T_L}{\delta_U^{(i)}-\delta_L^{(i)}}$.
+	\STATE $\beta^{(i+1)} = \beta^{(i)} - \Delta t \displaystyle\frac{T_U - T_L}{\beta_U^{(i)}-\beta_L^{(i)}}$.
 \ELSE
-	\STATE $\delta^{(i+1)} = \delta^{(i)}$.
+	\STATE $\beta^{(i+1)} = \beta^{(i)}$.
 \ENDIF
 
 \IF{$i < N_\text{stop}$}
@@ -1033,10 +1033,10 @@ where
 	\ELSE
 		\STATE Resample $(w^{(i)},Y^{(i)}) \rightarrow (\frac{1}{M}\mathbf{1}, X^{(i)})$.
 	\ENDIF
-	\STATE $\delta_{L,U}^{(i)} = \delta^{(i)} \pm 2\sqrt{2}\delta^{(i)}/\sqrt{NM} \wedge 2$.
+	\STATE $\beta_{L,U}^{(i)} = \beta^{(i)} \pm 2\sqrt{2}\beta^{(i)}/\sqrt{NM} \wedge 2$.
 \ELSE
 		\STATE Resample $(w^{(i)},Y^{(i)}) \rightarrow (\frac{1}{M}\mathbf{1}, X^{(i)})$.
-		\STATE $\delta_L^{(i+1)} = \delta_U^{(i+1)} = \delta^{(i+1)}$.
+		\STATE $\beta_L^{(i+1)} = \beta_U^{(i+1)} = \beta^{(i+1)}$.
 \ENDIF
 \ENDFOR
 \end{algorithmic}
