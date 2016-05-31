@@ -574,7 +574,7 @@ PAIS variant, the PAIS-RW algorithm. We perform this comparison using the relati
 
 Since we are comparing against naively parallelised MH algorithms,
 we also need to decide which statistic $T(\beta)$ to optimise for
-these approaches. In the examples which follow, we have optimised the naively parallelised RWMH algorithm using the optimal acceptance rate $\hat{\alpha} = 0.5$. This value differs from the theoretical asymptotic value of 0.234 which applies in higher dimensions, this higher acceptance rate is commonly used for one dimensional Gaussian posteriors. To optimise the algorithm we minimise the statistic
+these approaches. In the examples which follow, we have optimised the naively parallelised RWMH algorithm using the optimal acceptance rate $\hat{\alpha} = 0.5$. This value differs from the theoretical asymptotic value of 0.234 which applies in higher dimensions, this higher acceptance rate is commonly used for one dimensional Gaussian posteriors~\cite{rosenthal2011optimal}. To optimise the algorithm we minimise the statistic
 \[
 	T_{\text{MH}}(\beta) = \left| \frac{N_{\text{acc}}(\beta)}{N_{\text{total}}} - \hat{\alpha} \right|,
 \]
@@ -654,7 +654,7 @@ efficiency. The adaptive algorithms are initialised with $\beta^{(1)}$ = 2.
 	\end{tabular}
     \end{minipage}
 	\vspace{1mm}
-	\caption{Optimal values of $\beta$ summarised from Figure~\ref{fig:P1 opt beta}. Statistics calculated as described in Section~\ref{sec:statistics}.}
+	\caption{Optimal values of $\beta$ summarised from Figure~\ref{fig:P1 opt beta}. Statistics calculated as described in Section~\ref{sec:statistics}. The values $\beta^*_{\text{L2}}$ and $\beta^*_{\%}$ are the optimal scaling parameters found by optimising the relative L2 errors and acceptance rate respectively. Similarly $\beta_{\text{eff}}^*$ and $\beta_{\text{var}(w(y))}^*$ optimise the effective sample size and variance of the weights statistics.}
 	\label{table:prob1 opt beta}
 \end{table}
 
