@@ -577,55 +577,55 @@ followed by fine tuning to the optimal scaling parameter. Finally we
 choose a time, $N_\text{stop}$, at which we stop updating our
 parameter.
 
-\section{Approximate Multinomial Resampling}
+\section{Approximate Multinomial Resampling}\label{sec:AMR}
 Although the ETPF is optimal in terms of preserving statistics of the
 sample, it can also become quite costly as the number of ensemble members
 is increased. It is arguable that in the context of PAIS, we do not
 require this degree of accuracy, and that a faster more approximate
 method for resampling could be employed. One approach would be to use
-the bootstrap resampler, which simply takes the $N$ ensemble members'
-weights and constructs a multinomial distribution, from which $N$
+the bootstrap resampler, which simply takes the $M$ ensemble members'
+weights and constructs a multinomial distribution, from which $M$
 samples are drawn. This is essentially the cheapest resampling
 algorithm that one could construct. However it too has some
 drawbacks. The algorithm is random, and as such it is possible for all
 of the ensemble members in a particular region not to be sampled. This
 could be particularly problematic when attempting to sample from a
 multimodal distribution, where it might take a long time to find one
-of the modes again. The bootstrap filter also does not guarantee to
-preserve the mean of the weighted sample as the ETPF.
+of the modes again. The bootstrap filter is also not guaranteed to
+preserve the mean of the weighted sample, unlike the ETPF.
 
 Ideally, we would like to use a resampling algorithm which is not
-prohibitively costly for moderately or large sized ensembles, but
-which also preserves the mean of the samples, and also makes it much
-harder for the new samples to have missed a significant region in the
+prohibitively costly for moderately or large sized ensembles,
+which preserves the mean of the samples, and which makes it much
+harder for the new samples to forget a significant region in the
 density. This motivates the following algorithm, which we refer to as
 approximate multinomial resampling (AMR).
 
-Instead of sampling $N$ times from an $N$-dimensional multinomial
+Instead of sampling $M$ times from an $M$-dimensional multinomial
 distribution as is the case with the bootstrap algorithm, we sample
-once each from $N$ different multinomials. Suppose that we have $N$
+once each from $M$ different multinomials. Suppose that we have $M$
 samples $y_n$ with weights $w_n$. The multinomial sampled from in the
 bootstrap filter has a vector of probabilities given by:
 \begin{equation*}
-\frac{1}{\sum w_n} [w_1,w_2,\ldots,w_N] = \bar{\bf w},
+\frac{1}{\sum w_n} [w_1,w_2,\ldots,w_M] = \bar{\bf w},
 \end{equation*}
 with associated states $y_n$.
-We wish to find $N$ vectors $\{{\bf p}_1,{\bf p}_2,\ldots,{\bf p}_N\}
-\subset \mathbb{R}^N_{\ge 0}$
-such that  $\frac{1}{N} \sum {\bf p}_i = \bar{\bf w}$. The AMR is then
+We wish to find $M$ vectors $\{{\bf p}_1,{\bf p}_2,\ldots,{\bf p}_M\}
+\subset \mathbb{R}^M_{\ge 0}$
+such that  $\frac{1}{M} \sum {\bf p}_i = \bar{\bf w}$. The AMR is then
 given by a sample from each of the multinomials defined by the vectors
-${\bf p}_i = [p_{i,1},p_{i,2},\ldots,p_{i,N}]$ with associated states ${\bf x}_i$. Alternatively, as with the ETPF, a deterministic sample
+${\bf p}_i = [p_{i,1},p_{i,2},\ldots,p_{i,M}]$ with associated states ${\bf x}_i$. Alternatively, as with the ETPF, a deterministic sample
 can be chosen by picking each sample to be equal to the mean value of
 each of these multinomial distributions, i.e. each new sample
 $\hat{x}_i$ is given by:
 \begin{equation}
-\hat{x}_i = \sum p_{i,j} x_j, \qquad i \in \{1,2,\ldots,N.
+\hat{x}_i = \sum p_{i,j} x_j, \qquad i \in \{1,2,\ldots,M\}.
 \end{equation}
 
 The resulting sample has several properties which are advantageous in
 the context of being used with the PAIS algorithm. Firstly, we have
 effectively chopped up the multinomial distribution into used in the
-bootstrap filter into $N$ pieces, and we can guarantee that exactly
+bootstrap filter into $M$ pieces, and we can guarantee that exactly
 one sample will be taken from each section. This leads to a much
 smaller chance of losing entire modes in the density. Secondly, if we do not make a random sample for
 each multinomial with probability vector $\bf p_i$ but instead take
@@ -635,7 +635,7 @@ algorithm is significantly less computationally intensive than the
 ETPF.
 
 There are of course infinitely many different ways that one could use
-to split the original multinomial up into $N$ parts, some of which
+to split the original multinomial up into $M$ parts, some of which
 will be far from optimal. The method that we have arrived at is based
 on the idea that we want to group together states which are
 geographically close to each other, preferentially doing this 
@@ -644,8 +644,8 @@ for the states with the biggest weights.
 \begin{table}
 \begin{mdframed}
 \begin{algorithmic}
-\STATE $\b{z} = N\bar{\b{w}}$
-\FOR{$i=1,2,\ldots,N$}
+\STATE $\b{z} = M\bar{\b{w}}$
+\FOR{$i=1,2,\ldots,M$}
 \STATE $J = \argmax_j z_j$
 \STATE $p_{i,J} = \min\{1,z_J\}$
 \STATE $z_J = z_J - p_{i,J}$
@@ -680,11 +680,11 @@ $\mathbb{E}(X^2)$]{\includegraphics[width=0.45\textwidth]{"figures/Resampler_EX2
 \end{figure}
 
 To test the accuracy and speed of the three resamplers (ETPF,
-bootstrap and AMR), we drew a sample of size $N$ from the proposal distribution
+bootstrap and AMR), we drew a sample of size $M$ from the proposal distribution
 $\mathcal{N}(1,2)$. Importance weights were assigned, based on a
 target distribution of $\mathcal{N}(2,3)$. The statistics of the
 resampled outputes were compared with the original weighted samples. Figure \ref{fig:AMR} (a)-(c) show how the relative errors in the first
-three moments of the samples changes with $N$ for the three different
+three moments of the samples changes with $M$ for the three different
 samplers. As expected, the AMR lies somewhere between the high
 accuracy of the ETPF and the less accurate bootstrap
 resampling. Note that only the error for the bootstrap multinomial
@@ -693,7 +693,7 @@ AMR preserve the mean up to machine precision. Figure \ref{fig:AMR} (d) shows ho
 measured in seconds, scales with the ensemble size for the three
 different methods. These results demonstrate that the AMR behaves how we wish, and
 importantly ensures that exactly one sample of the output will lie in
-each region with weights up to $\frac{1}{N}$ of the total.
+each region with weights up to $\frac{1}{M}$ of the total.
 
 We will use the AMR in the numerics in Section \ref{sec:chem_conv}
 where we have chosen to use a larger ensemble size. We do not claim
@@ -1036,16 +1036,17 @@ We assign Gamma priors to $\mathbf{k}$ with mean $\alpha_0/\beta_0 = 75$ and var
 	\pi(\mathbf{k}|\mathbf{D}) \propto \left[\prod\limits_{i=1}^{10} \text{Gamma}(D_i; \alpha_i, \beta_i)\right]\text{Gamma}(k_2; \alpha_0, \beta_0)\text{Gamma}(k_3; \alpha_0, \beta_0).
 \]
 
-
 \subsubsection{Implementation}\label{sec:chem_implementation}
 % explanation of l2 convergence measure
 For this problem there is no analytic form for the normalisation constant, and numerical methods implemented in MATLAB and Mathematica have proven to be unreliable. To demonstrate the convergence of the algorithm, we first run a MH algorithm for much longer than we normally would ($8\times 10^{10}$ samples), and consider the histogram produced to be the truth. We then perform our usual simulations with the PAIS and MH algorithms to compare the rate at which the histograms converge to the `true' histogram over the same grid.
+
 % modifications to algorithm + spikes
 In this problem we modify our PAIS algorithm to use a mixture of Gamma distributions in the proposal distribution instead of a Gaussian mixture. Similarly we use a Gamma proposal in the MH algorithm. This ensures that we only propose positive parameters. Having a heavier right tail in the proposal distribution also means that the posterior is absolutely continuous with respect to the proposal. When this is not the case, the weight function can tend to zero or infinity when $k_i \rightarrow \infty$. Sampling under these conditions can result in very spiky approximations of the tails of the posterior distribution resulting in slow convergence.
-%*** AMR and increase in sample size
 
+% AMR and increase in sample size
+We now significantly increase the ensemble size we are using from $M=50$ to $M=2500$. This allows us to build a better approximation of the posterior distribution for our proposals. Following the discussion in Section~\ref{sec:AMR}, it is clear that to keep the runtime of the resampler negligible compared with the calculation of the posterior we must switch from the ETPF resampler to the AMR algorithm.
 
-%***numerics.
+% numerics.
 \subsubsection{Convergence of PAIS-RW and PAIS-LA vs MH with Gamma proposals}\label{sec:chem_conv}
 
 In the numerics which follow we have used the AMR algorithm to resample with an ensemble size of $M=2500$. The method otherwise remains the same as in previous sections. We perform test runs to find the optimal scaling parameters for both RW proposals and MALA-type proposals. We then calculate the convergence rates of the algorithms by producing 50 million samples from the posterior with each algorithm, and repeat the simulation 32 times.
