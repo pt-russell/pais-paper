@@ -50,6 +50,9 @@
 \newcommand{\data}{D}
 \newcommand{\neff}{n_{\text{eff}}}
 \newcommand{\E}{{\mathbb E}}
+\renewcommand{\b}[1]{{\bf #1}}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator*{\argmax}{arg\,max}
 
 \newcommand{\picturesAB}[6]{
 \centerline{
@@ -395,7 +398,7 @@ our proposal distribution is a good one, then the variance of the
 weights will be small, and we will have many useful samples. Finally, we
 need to create a set of evenly weighted samples which best represent
 this set of weighted samples. This is achieved by implementing the
-ETMC algorithm. Once we once again have a set of evenly weighted
+ETPF algorithm. Once we once again have a set of evenly weighted
 samples that we believe represents the target distribution well, we
 can iterate the process once again. The algorithm is given in more detail in Table \ref{tab:PAIS}. 
 
@@ -417,7 +420,7 @@ the pCNL proposal presented in Section \ref{Sec:pCNL}.
 \sum_{j=1}^M \nu(y;x_j^{(i)})$.
 \STATE $\W^{(i)} = [w_1^{(i)},w_2^{(i)},\ldots,w_M^{(i)}]^T,$ \quad $w^{(i)}_j =
 \frac{\pi(y_j^{(i)})}{\chi(y_j^{(i)};\X^{(i)})}$.
-\STATE Resample using ETMC: $(\W^{(i)},\Y^{(i)}) \rightarrow (\frac{1}{M}\mathbf{1}, \X^{(i+1)})$
+\STATE Resample using ETPF: $(\W^{(i)},\Y^{(i)}) \rightarrow (\frac{1}{M}\mathbf{1}, \X^{(i+1)})$
 \ENDFOR 
 \end{algorithmic}
 \end{mdframed}
@@ -562,7 +565,141 @@ where $X_{i-1}$ is our current state and $Y$ is our proposed state. In the numer
 When implemented, there are a number of parameters which must be
 chosen to ensure efficient tuning of $\beta$. Firstly, the initial
 value of $\beta$ should be chosen so that the chains quickly explore the parameter space. However, if $\beta$ is chosen to be too
-large, then the method may become unstable. We also choose two iteration numbers at which we change our adaptive strategy. At iteration $N_\text{join}$ we resample using the full ensemble instead of using two subsets of the full ensemble. When using two subsets we are training the scaling parameter using the wrong ensemble size, this allows faster convergence but leads to a sub-optimal scaling parameter. Resampling with the full ensemble towards the end of the tuning allows fast convergence to the right order of magnitude, followed by fine tuning to the optimal scaling parameter. Finally we choose a time, $N_\text{stop}$, at which we stop updating our parameter.
+large, then the method may become unstable. We also choose two
+iteration numbers at which we change our adaptive strategy. At
+iteration $N_\text{join}$ we resample using the full ensemble instead
+of using two subsets of the full ensemble. When using two subsets we
+are training the scaling parameter using the wrong ensemble size, this
+allows faster convergence but leads to a sub-optimal scaling
+parameter. Resampling with the full ensemble towards the end of the
+tuning allows fast convergence to the right order of magnitude,
+followed by fine tuning to the optimal scaling parameter. Finally we
+choose a time, $N_\text{stop}$, at which we stop updating our
+parameter.
+
+\section{Approximate Multinomial Resampling}
+Although the ETPF is optimal in terms of preserving statistics of the
+sample, it can also become quite costly as the number of ensemble members
+is increased. It is arguable that in the context of PAIS, we do not
+require this degree of accuracy, and that a faster more approximate
+method for resampling could be employed. One approach would be to use
+the bootstrap resampler, which simply takes the $N$ ensemble members'
+weights and constructs a multinomial distribution, from which $N$
+samples are drawn. This is essentially the cheapest resampling
+algorithm that one could construct. However it too has some
+drawbacks. The algorithm is random, and as such it is possible for all
+of the ensemble members in a particular region not to be sampled. This
+could be particularly problematic when attempting to sample from a
+multimodal distribution, where it might take a long time to find one
+of the modes again. The bootstrap filter also does not guarantee to
+preserve the mean of the weighted sample as the ETPF.
+
+Ideally, we would like to use a resampling algorithm which is not
+prohibitively costly for moderately or large sized ensembles, but
+which also preserves the mean of the samples, and also makes it much
+harder for the new samples to have missed a significant region in the
+density. This motivates the following algorithm, which we refer to as
+approximate multinomial resampling (AMR).
+
+Instead of sampling $N$ times from an $N$-dimensional multinomial
+distribution as is the case with the bootstrap algorithm, we sample
+once each from $N$ different multinomials. Suppose that we have $N$
+samples $y_n$ with weights $w_n$. The multinomial sampled from in the
+bootstrap filter has a vector of probabilities given by:
+\begin{equation*}
+\frac{1}{\sum w_n} [w_1,w_2,\ldots,w_N] = \bar{\bf w},
+\end{equation*}
+with associated states $y_n$.
+We wish to find $N$ vectors $\{{\bf p}_1,{\bf p}_2,\ldots,{\bf p}_N\}
+\subset \mathbb{R}^N_{\ge 0}$
+such that  $\frac{1}{N} \sum {\bf p}_i = \bar{\bf w}$. The AMR is then
+given by a sample from each of the multinomials defined by the vectors
+${\bf p}_i = [p_{i,1},p_{i,2},\ldots,p_{i,N}]$ with associated states ${\bf x}_i$. Alternatively, as with the ETPF, a deterministic sample
+can be chosen by picking each sample to be equal to the mean value of
+each of these multinomial distributions, i.e. each new sample
+$\hat{x}_i$ is given by:
+\begin{equation}
+\hat{x}_i = \sum p_{i,j} x_j, \qquad i \in \{1,2,\ldots,N.
+\end{equation}
+
+The resulting sample has several properties which are advantageous in
+the context of being used with the PAIS algorithm. Firstly, we have
+effectively chopped up the multinomial distribution into used in the
+bootstrap filter into $N$ pieces, and we can guarantee that exactly
+one sample will be taken from each section. This leads to a much
+smaller chance of losing entire modes in the density. Secondly, if we do not make a random sample for
+each multinomial with probability vector $\bf p_i$ but instead take
+the mean of the multinomial to be the sample, this algorithm preserves
+the mean of the sample exactly. Lastly, as we will see shortly, this
+algorithm is significantly less computationally intensive than the
+ETPF.
+
+There are of course infinitely many different ways that one could use
+to split the original multinomial up into $N$ parts, some of which
+will be far from optimal. The method that we have arrived at is based
+on the idea that we want to group together states which are
+geographically close to each other, preferentially doing this 
+for the states with the biggest weights. 
+
+\begin{table}
+\begin{mdframed}
+\begin{algorithmic}
+\STATE $\b{z} = N\bar{\b{w}}$
+\FOR{$i=1,2,\ldots,N$}
+\STATE $J = \argmax_j z_j$
+\STATE $p_{i,J} = \min\{1,z_J\}$
+\STATE $z_J = z_J - p_{i,J}$
+\WHILE{$\sum_j p_{i,j} <1$}
+\STATE $K = \argmin_{k \in \{k|z_k>0\}} \|y_J - y_k\|$
+\STATE $p_{i,K} = \min\{1-\sum_j p_{i,j}, z_K\}$
+\STATE $z_K = z_K - p_{i,K}$
+\ENDWHILE
+\STATE $x_i = \sum_k p_{i,k}y_k$.
+\ENDFOR
+\end{algorithmic}
+\end{mdframed}
+\caption{The approximate multinomial resampler (AMR) algorithm.\label{tab:AMR}}
+\end{table}
+
+Table \ref{tab:AMR} describes the basis of the algorithm with
+deterministic resampling, using the means of each of the
+sub-multinomials. This resampler was designed with the aims of being
+more efficient than the ETPF, and more accurate than straight multinomial
+resampling. Therefore we now present numerical examples which
+demonstrate this.
+
+\begin{figure}[htb]
+\centering
+\subfigure[Relative error in $\mathbb{E}(X)$]{\includegraphics[width=0.45\textwidth]{"figures/Resampler_EX"}}
+\subfigure[Relative error in
+$\mathbb{E}(X^2)$]{\includegraphics[width=0.45\textwidth]{"figures/Resampler_EX2"}}\\
+\subfigure[Relative error in $\mathbb{E}(X^3)$]{\includegraphics[width=0.45\textwidth]{"figures/Resampler_EX3"}}
+\subfigure[Cost of resamplers per iteration]{\includegraphics[width=0.45\textwidth]{"figures/Resampler_speed"}}\\
+\caption{Finding optimal values of $\beta$ for the problem in Section~\ref{sec:problem 1}. The setup is as in Section~\ref{sec:Implementation P1}.}
+\label{fig:AMR}
+\end{figure}
+
+To test the accuracy and speed of the three resamplers (ETPF,
+bootstrap and AMR), we drew a sample of size $N$ from the proposal distribution
+$\mathcal{N}(1,2)$. Importance weights were assigned, based on a
+target distribution of $\mathcal{N}(2,3)$. The statistics of the
+resampled outputes were compared with the original weighted samples. Figure \ref{fig:AMR} (a)-(c) show how the relative errors in the first
+three moments of the samples changes with $N$ for the three different
+samplers. As expected, the AMR lies somewhere between the high
+accuracy of the ETPF and the less accurate bootstrap
+resampling. Note that only the error for the bootstrap multinomial
+sampler is presented for the first moment since both the ETPF and the
+AMR preserve the mean up to machine precision. Figure \ref{fig:AMR} (d) shows how the computational cost,
+measured in seconds, scales with the ensemble size for the three
+different methods. These results demonstrate that the AMR behaves how we wish, and
+importantly ensures that exactly one sample of the output will lie in
+each region with weights up to $\frac{1}{N}$ of the total.
+
+We will use the AMR in the numerics in Section \ref{sec:chem_conv}
+where we have chosen to use a larger ensemble size. We do not claim
+that the AMR is the optimal choice within PAIS, but it does have
+favourable features, and demonstrates how different choices of
+resampler can affect the speed and accuracy of the PAIS algorithm.
 
 \section{Numerical Examples}\label{Sec:Num}
 
