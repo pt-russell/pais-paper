@@ -379,31 +379,38 @@ ratio of the target density and the proposal density at that
 point. They are efficient when the proposal density is concentrated in
 similar areas to the target density, and incredibly inefficient when
 this is not the case. The aim of the PAIS is to use the states of a
-set of parallel MCMC chains to construct a proposal distribution which
-will be as close as possible to the target density. Given enough
-processors, the states of all of these chains at one point
+ensemble ofl MCMC chains to construct a proposal distribution which
+will be as close as possible to the target density. Given a big enough
+ensemble, the states of all of these chains at one point
 in time may be reasonably representative sample of the target density.
 
 The proposal distribution could be constructed in many different ways,
-but we choose to use a mixture distribution, made up of MCMC proposals
-(in this paper, specifically the pCNL proposal from Section \ref{Sec:pCNL}). Once the proposal is
+but we choose to use a mixture distribution, made up of a sum of MCMC
+proposal distributions for each of the members of the ensemble. Once the proposal is
 constructed, we can sample a new set of states from the proposal
 distribution, and each is assigned a weight given by the ratio of the target
 density and the proposal mixture distribution density. Assuming that
 our proposal distribution is a good one, then the variance of the
 weights will be small, and we will have many useful samples. Finally, we
 need to create a set of evenly weighted samples which best represent
-this set of weighted samples. This is achieved by implementing the
-ETPF algorithm. Once we once again have a set of evenly weighted
-samples that we believe represents the target distribution well, we
-can iterate the process once again. The algorithm is given in more detail in Table \ref{tab:PAIS}. 
+this set of weighted samples. This is achieved by implementing a
+resampling algorithm. Initially we will use the
+ETPF algorithm\cite{reich2013nonparametric}, although we will suggest an alternative strategy in
+Section \ref{sec:AMR}. The output of the resampling algorithm gives us
+a set of evenly weighted
+samples that we believe represents the target distribution well, and
+from this point we
+can iterate the process once again. The algorithm is summarised in Table \ref{tab:PAIS}. 
 
 We wish to sample states $x \in X$ from a posterior
-probability distribution $\mu_Y$. Since we have $M$ processes, we
+probability distribution $\mu_D$, where $D$ represents our data which
+we wish to use to infer $x$. Since we have $M$ processes, we
 represent the current state of all of the Markov chains as a vector
 $\X = [x_1,x_2,\ldots,x_M]^T$. We are also given a transition kernel
 $\nu(\cdot,\cdot)$, which might come from an MCMC method, for example
-the pCNL proposal presented in Section \ref{Sec:pCNL}.
+the random walk Metropolis-Hastings proposal density $\nu(\cdot,x) ~
+\mathcal{N}(x,\beta^2)$, where $\beta^2\in \mathbb{R}$ defines the
+variance of the proposal.
 
 \begin{table}
 \begin{mdframed}
@@ -416,7 +423,7 @@ the pCNL proposal presented in Section \ref{Sec:pCNL}.
 \sum_{j=1}^M \nu(y;x_j^{(i)})$.
 \STATE $\W^{(i)} = [w_1^{(i)},w_2^{(i)},\ldots,w_M^{(i)}]^T,$ \quad $w^{(i)}_j =
 \frac{\pi(y_j^{(i)})}{\chi(y_j^{(i)};\X^{(i)})}$.
-\STATE Resample using ETPF: $(\W^{(i)},\Y^{(i)}) \rightarrow (\frac{1}{M}\mathbf{1}, \X^{(i+1)})$
+\STATE Resample: $(\W^{(i)},\Y^{(i)}) \rightarrow (\frac{1}{M}\mathbf{1}, \X^{(i+1)})$
 \ENDFOR 
 \end{algorithmic}
 \end{mdframed}
@@ -430,51 +437,71 @@ Since the resampling does not give us a statistically identical sample
 to that which is inputted, we cannot assume that the samples $\X^{(i)}$
 are samples from the posterior. Therefore, as with serial
 importance samplers, the weighted samples
-$(\W^{(i)},\Y^{(i)})_{i=1}^N$, or their statistics, are stored.
+$(\W^{(i)},\Y^{(i)})_{i=1}^N$ are the samples from the posterior that
+we will analyse.
 
-The key here is to choose a suitable transition kernel $\nu$ such that
-if $X^{(i)}$ is a decent representative sample of the posterior,
-the mixture density $\chi(\cdot;\X^{(i)})$ is a reasonable
+The key is to choose a suitable transition kernel $\nu$ such that
+if $X^{(i)}$ is a good representative sample of the posterior,
+then the mixture density $\chi(\cdot;\X^{(i)})$ is a good
 approximation of the posterior distribution. If this is the case,
-the newly proposed states $\Y^{(i)}$ will also be a good (and relatively
-independent) sample of the posterior with low variance in the
+the newly proposed states $\Y^{(i)}$ will also be a good sample of the posterior with low variance in the
 weights $\W^{(i)}$.
 
 In Section \ref{Sec:Num}, we will demonstrate how the algorithm
-performs, using pCNL algorithm. We do not claim that this choice is optimal, but
+performs, primarily using RWMH proposals. We do not claim that this choice is optimal, but
 is simply chosen as an example to show that sharing information across
 processes can improve on the original MCMC algorithm and lead to
 convergence in fewer evaluations of $\G$. This is important since if
 the inverse problem being tackled involves computing
 the likelihood from a very large data set this could lead to a
-large saving of computational cost.
+large saving of computational cost. We have observed that
+using more complex (and hence more expensive) kernels $\nu$, does not
+significantly improve the speed of convergence of the algorithm.
+
+Care needs to be taken when choosing the proposal distribution to
+ensure that the proposals are absolutely continuous with respect to
+the posterior distribution. In Section \ref{sec:chem} we will consider
+an inverse problem with Gamma priors. Since the posterior distribution
+in this context is heavy-tailed, if we use a lighter tailed
+distribution for $\nu$, such as a Gaussian kernel, then importance
+weights in the tails will be unbounded, which will hamper convergence
+of the algorithm.
 
 \section{Automated tuning of Algorithm Parameters}\label{Sec:adapt}
 
-Efficient selection of scaling parameters in MCMC algorithms is critical to achieving optimal mixing rates and hence achieving fast convergence to the target density. One significant difficulty is finding an appropriate $\nu$ such that
-$\chi$ is a close approximation to the posterior density $\pi$. If the proposal distribution is widely over-dispersed, then the algorithm will propose states a long way from the current state resulting in a relatively low acceptance rate, impacting the quality of inferences on the posterior. Similarly, if the posterior is under-dispersed, the process will take a long time to fully explore the parameter space and so the mixing rate, and hence convergence rate, will be slow. It is therefore necessary to find a proposal distribution which is slightly over-dispersed to ensure the entire posterior is explored\cite{gelman1992inference}, but is as close to the posterior as possible.
+Efficient selection of scaling parameters in MCMC algorithms is
+critical to achieving optimal mixing rates and hence achieving fast
+convergence to the target density. One aspect worthy of  consideration
+with the PAIS, is finding an appropriate $\nu$ such that
+$\chi$ is a close approximation to the posterior density $\pi$. If the
+proposal distribution is over-dispersed, then the algorithm will often
+propose states in the tails of the distribution, resulting in larger
+variance of the weights, and therefore slower converegence to the
+posterior distribution. Similarly, if the proposal distribution is
+under-dispersed, the proposals will be highly correlated with the
+previous states, and the algorithm will take a long time to fully explore the parameter spac. It is therefore necessary to find a proposal distribution which is slightly over-dispersed to ensure the entire posterior is explored\cite{gelman1992inference}, but is as close to the posterior as possible.
 
-Proposal distributions which are slightly over-dispersed as described
-above, can be found by tuning the variance of the proposal
-distribution $\nu$ during the burn-in phase of the
+Most commonly used MCMC proposals have parametric dependence which
+allows the user to control their variance. For example, in the RWMH
+proposal $y = x + \beta \eta$, the parameter $\beta$ controls how
+correlated the proposal state $y$ is to the current state
+$x$. Therefore the proposal distributions can be tuned such that they are are slightly over-dispersed, as described
+above. This tuning can take place during the burn-in phase of the
 algorithm. Algorithms which use this method to find optimal proposal
-distributions are known as adaptive MCMC algorithms. Adaptive MH
-algorithms will converge to the stationary distribution $\pi(\cdot)$,
-irrespective of whether the adaptive parameter itself converges to an
-optimal value, under the following
-conditions\cite{roberts2007coupling,roberts2009examples}: 
-\begin{enumerate}
-\item The adaptive parameter exhibits diminishing adaptation, which says that the amount of movement in the adaptive parameter decreases with the length of the chain. 
-\item The smallest number of steps for which the kernel has sufficiently converged, from an initial state $x$, is finite, by bounded convergence.
-\end{enumerate}
+distributions are known as adaptive MCMC algorithms, and have been
+shown to be convergent provided that they satisfy certain conditions\cite{roberts2007coupling,roberts2009examples}.
 
-Algorithms which use mixture proposals, e.g. PAIS, must tune the variance of the individual kernels within the proposal mixture. Adaptively choosing the variance of the kernels starting with a
-large initial guess allows us to first explore the state space
-globally, searching for the locations of the modes. Reducing the proposal variances to an
+Algorithms which use mixture proposals, e.g. PAIS, must tune the
+variance of the individual kernels within the proposal mixture. This
+adaptivity during the burn-in has some added benefits over and above
+finding an optimal parameter regime for the algorithm. If the initial
+value of the proposal variances is chosen to be very large, then
+proposed moves will be made far and wide, expediting the early
+mode-finding stages of the algorithm. Adaptively reducing the proposal variances to an
 optimal value then allows us to explore each region efficiently. The
-fact that we have multiple chains allows us to assess quickly and
+fact that we have an ensemble of chains allows us to assess quickly and
 effectively what the optimal variance of the proposal distributions
-should be. This is discussed in Section~\ref{sec:adapt}.
+should be.
 
 In many MCMC algorithms such as the Random Walk Metropolis-Hastings (RWMH) algorithm, the optimal scaling parameter can be found by searching for the parameter value which gives an optimal acceptance rate, e.g. for near Gaussian targets we have 23.4\% for RWMH and 57.4\% for MALA\cite{roberts2001optimal}. Unlike Metropolis-Hastings algorithms, the PAIS algorithm does not accept or reject proposed values, so we need another method of measuring the optimality of $\beta$. Section~\ref{sec:statistics} gives some possible methods for tuning $\beta$.
 
@@ -482,32 +509,47 @@ In many MCMC algorithms such as the Random Walk Metropolis-Hastings (RWMH) algor
 
 \subsubsection{Determining optimal scaling parameter using error analysis}
 
-MCMC algorithms can be assessed by comparing their approximation of the posterior to the analytic distribution. To assess this, a distance metric must be chosen. Examples are the relative error between the sample moments and the true moments, or the relative L2 error between the true density, $\pi(x|D)$, and the constructed histogram. The relative error in the $m$-th moment is
+MCMC algorithms can be assessed by comparing their approximation of
+the posterior to the analytic distribution, in cases where the
+posterior distribution can be computed using alternative methods. To
+assess this, a distance metric on distributions must be chosen. Examples are the
+relative error between the sample moments and the posterior's moments, or the
+relative $L^2$ error between the true density, $\pi(x|D)$, and the
+constructed histogram. The relative error in the $m$-th moment is
+given by:
 \[
 	\left|\frac{N^{-1}\sum_{i=1}^N \! x_i^m - \mathbb{E}[X^m]}{\mathbb{E}[X^m]}\right|,
 \]
-where $\{x_i\}_{i=1}^N$ is a sample of size $N$. The relative L2 error between a continuous function to a piecewise constant function, $e$, is
+where $\{x_i\}_{i=1}^N$ is a sample of size $N$. The relative $L^2$
+error between a continuous function to a piecewise constant function,
+$e$, can be given by considering the difference in mass between the
+normalised histogram of the samples and the posterior distribution
+over a set of disjoint sets or ``bins'':
 \begin{equation}\label{eqn:L2_error}
 	e^2 = \sum\limits_{i=1}^{n_b}\left[\displaystyle\int_{R_i} \! \pi(a|D) \, \mbox{d}a - vB_i\right]^2 \Big/ \sum\limits_{i=1}^{n_b}\left[\displaystyle\int_{R_i} \! \pi(a|D) \, \mbox{d}a\right]^2,
 \end{equation}
 where the regions $\{R_i\}_{i=1}^{n_b}$ are the $d$-dimensional histogram bins, so that $\bigcup_i R_i \subseteq X$ and $R_i\cap R_j=\emptyset$, $n_b$ is the number of bins, $v$ is the volume of each bin, and $B_i$ is the value of the $i$th bin. 
 
-These statistics cannot be used in practise to find optimal values of
+These statistics cannot be used in general to find optimal values of
 $\beta$ since they require knowledge of the analytic solution, and
 the algorithm must be run for a long time to build up a
 sufficiently large sample. However they can be used to assess the
 ability of other indicators to find the optimal proposal
-variances in a controlled setting.
-
-The following statistics can be used specifically for importance sampling algorithms.
+variances in a controlled setting. The following statistics can be used specifically for importance sampling algorithms.
 
 \subsubsection{The variance of the weights}
 
-Importance samplers assign a weight to each sample they produce based on a ratio of the posterior to the proposal at that point. This method is most efficient when the target is proportional to the proposal distribution, in this case the weights are constant and so the variance of the weights, $var(w(y))$, is zero. Hence, we would like to choose the value of $\beta$ which minimises the variance of the weights,
+Importance samplers assign a weight to each sample they produce based
+on a ratio of the posterior to the proposal at that point. Importance
+samplers are most efficient when the target is proportional to the
+proposal distribution. In this case the weights are all equal, and so the variance of the weights, $var(w(y))$, is zero. Hence, we would like to choose the value of $\beta$ which minimises the variance of the weights,
 \[
-	\beta^*_{\text{var}} = \arg\min_{\beta} \text{var}(w(y)).
+	\beta^*_{\text{var}} = \argmin_{\beta} \text{var}(w(y)).
 \]
-The mean of the estimator $\text{var}(w(y))$ is smooth enough that it can be used to tune $\beta$ during the burn-in phase of MCMC algorithms. However the variance of the estimator can be large, especially far away from the optimal value, so it can take a large number of iterations to calculate descent directions.
+In our experience, the mean of the estimator
+$\text{var}(w(y))$ is a smooth enough function of $\beta$ that it can
+be used to tune the proposal variance during the burn-in phase of MCMC
+algorithms. However the variance of the estimator of the variance can be large, especially far away from the optimal value, so it can take a large number of iterations to calculate descent directions.
 
 \subsubsection{The effective sample size}\label{sec:ess}
 
@@ -521,11 +563,35 @@ The second two expressions are true when $M\rightarrow\infty$. From
 the last expression we see that when the variance of the weights is
 zero, $\neff = M$; this is our ideal scenario. Maximising the effective sample size is equivalent to minimising the variance of the weights.
 
-The statistic $\neff$ is better scaled than the variance of the weights, and is easier to interpret, so is preferable as a means of tuning the scaling parameter. In the following numerics, we use the effective sample size calculated at each iteration and averaged across the entire run to tune the scaling parameters. We do this because this is the method we use to tune the scaling parameters on the fly, comparison to the optimal scaling parameter found using the global optimum of the variance of the weights is also included for comparison.
+The statistic $\neff$ is easier to deal with than the variance of the
+weights, as it varies between $1$ and $M$ as opposed to the variance
+which can vary over many orders of magnitude.
+Therefore it is preferable as a means of tuning the scaling
+parameter. In the following numerics, we use the effective sample size
+calculated at each iteration and averaged across the entire run to
+tune the scaling parameters. We do this because when we tune this
+parameter on the fly, we use the single-iteration average to estimate
+optimality. The optimal scaling parameter found using the global
+optimum of the variance of the weights is also included for
+comparison. Note that for the majority of iterations the value of
+$\neff$ is an overestimate of this statistic over a larger number of
+samples. Rare events which result in a large importance weight bring
+this statistic down, and care must be made not to overfit the proposal
+variance to $\neff$ on an iteration by iteration basis. This can be
+accounted for by increasing the variance slightly once the adaptive
+algorithm has arrived on a value using single iteration values of $\neff$.
 
-The effective sample size also has another useful property; if we imagine the algorithm in the burn-in phase, for example, we have $M$ processes in the tail of a Gaussian curve searching for the area of high density. If the processes are evenly spaced, then the particle closest to the mean will have an exponentially higher weight assigned to it. The effective sample size in this scenario will be close to 1. As the algorithm burns in, the processes find the flatter area near the mean so the number of samples contributing information to the posterior will increase. By this argument we can see that rising $\neff$ signals the end of the burn-in period.
-
-\subsubsection{Behaviour of the effective sample size for varying ensemble size}
+The effective sample size also has another useful property; if we
+imagine the algorithm in the burn-in phase, for example, we have $M$
+processes in the tail of a Gaussian curve searching for the area of
+high density. If the processes are evenly spaced, then the particle
+closest to the mean will have an exponentially higher weight assigned
+to it. The effective sample size in this scenario will be close to
+1. As the algorithm burns in, the ensemble populates the regions where
+the majority of the probability density lies, and the proposal
+distributions better represent the posterior distribution. This leads
+to smaller variance in the weights, and a bigger effective sample size.
+By this argument we can see that rising $\neff$ signals the end of the burn-in period.
 
 \begin{figure}[htb]
 \centering
@@ -537,41 +603,67 @@ The effective sample size also has another useful property; if we imagine the al
 
 If we are to use the effective sample size ratio as an indicator of
 how to tune the proposal variance, we need to look at how it behaves
-in different situations. Here we look at how the statistic behaves as we vary the ensemble size, $M$. Figure~\ref{fig:neff-M} shows results for the Gaussian posterior discussed in Section~\ref{sec:problem 1} when using the PAIS-RW algorithm. Figure~\ref{fig:neff-M} (a) shows that as the ensemble size increases, the scaling parameter which gives the optimal effective sample size ratio decreases. This is to be expected since we are trying to fit more kernels into the posterior distribution, so the variance of each kernel needs to be decreased.
+in different situations. Here we look at how the statistic behaves as
+we vary the ensemble size, $M$. Figure~\ref{fig:neff-M} shows results
+for the Gaussian posterior discussed in Section~\ref{sec:problem 1}
+when using the PAIS algorithm with RWMH proposals, each with variance
+$\beta^2 \in \mathbb{R}_{>0}$. Figure~\ref{fig:neff-M} (a) shows that
+as the ensemble size increases, the scaling parameter which gives the
+optimal effective sample size ratio decreases. This is to be expected
+since if we are trying to approximate the posterior with a mixture
+distribution of a small number of Gaussians, the optimal variance will
+naturally be larger so that the whole of the significant regions are
+covered by the proposal distribution. As the number increases, the
+optimal variances decrease so that finer details in the posterior can
+be better represented in the proposal. Figure~\ref{fig:neff-M} (b) shows that as the ensemble size increases, the efficiency of the sampler also increases.
 
-Figure~\ref{fig:neff-M} (b) shows that as the ensemble size increases, the efficiency of the sampler also increases.
-
-\subsection{The Adaptive Algorithm}\label{sec:adapt}
+\subsection{Adaptive PAIS}\label{sec:adapt}
 
 A popular approach for adaptive MCMC algorithms is to view the scaling
 parameter as a random variable which we can sample during the course
 of the MCMC iterations. However, it can be slow to converge to the
 optimal value, and we may need an
-uninformative prior for the scaling parameter. Alternatively, the parameter may be randomly sampled from some interval at various points during the chain. This results in some iterations which explore the state space, and some which make local moves. Algorithms of this type do not converges to an optimal value of the scaling parameter.
-
-We choose to use a divide and conquer scheme which optimises the effective sample size (or any other diagnostic). Some more sophisticated examples are described in \cite{roberts2009examples} and \cite{Ji2013adaptive}. Algorithm~\ref{tab:adapt} in Appendix~\ref{Sec:App}, is not presented as an optimal strategy but as a demonstration that the PAIS algorithm can be adaptively tuned effectively.
+uninformative prior for the scaling parameter. Alternatively, the
+parameter may be randomly sampled at various points during the
+evolution of the chain. This results in some iterations which make
+larger global moves in the state space between modes in the target
+distribution, and some which make local moves. Algorithms of this type
+do not converge to an optimal value of the scaling parameter. We choose to use a divide and conquer scheme which optimises the
+effective sample size (or any other diagnostic). Some more
+sophisticated examples are described in \cite{roberts2009examples} and
+\cite{Ji2013adaptive}. 
+% Algorithm~\ref{tab:adapt} in Appendix~\ref{Sec:App}, is not presented as an optimal strategy but as a demonstration that the PAIS algorithm can be adaptively tuned effectively.
 
 From here on in, we will use the random walk proposal,
-\begin{equation}Y = X_{i-1}+\beta W_{i-1}, \qquad W_{i-1} \sim \mathcal{N}(0,1),
+\begin{equation}y = x_{i-1}+\beta \omega_{i-1}, \qquad \omega_{i-1}
+  \sim \mathcal{N}(0,1) \qquad {\rm i.i.d.}
 \end{equation}
-where $X_{i-1}$ is our current state and $Y$ is our proposed state. In the numerics section we will refer to $\beta$ as the scaling parameter.
+where $x_{i-1}$ is our current state and $y$ is our proposed state. In the numerics section we will refer to $\beta$ as the scaling parameter.
 
- In Algorithm~\ref{tab:adapt}, we calculate a sequence $\{\beta^{(k)}\}_{k=1}$ which converges roughly to the optimal scaling parameter $\beta^*$, resulting in the optimal transition density $\chi$ for our MCMC algorithm. We must choose some sequence of iterations, $\{n_k\}_{k=1}$, at which to update $\beta$. These $n_k$ can be constructed by a sequence in which the terms grow exponentially further apart. The algorithm is given for the PAIS method but a similar method is used to adaptively calculate the optimal scaling parameter, $\beta^*$, for the MH algorithm.
+ Using an adaptive strategy, we calculate a sequence
+ $\{\beta^{(k)}\}_{k=1}$ which converges roughly to the optimal
+ scaling parameter $\beta^*$, resulting in the optimal transition
+ density $\chi$ for our MCMC algorithm. We must choose some sequence
+ of iterations, $\{n_k\}_{k=1}$, at which to update $\beta$, and due
+ to the constraints on adaptive MCMC
+ algorithms\cite{roberts2007coupling,roberts2009example}, these $n_k$
+ must grow exponentially further apart. This same adaptive approach
+ can also be applied to the trivially parallelised MCMC algorithms to adaptively calculate their optimal scaling parameter $\beta^*$.
 
-When implemented, there are a number of parameters which must be
-chosen to ensure efficient tuning of $\beta$. Firstly, the initial
-value of $\beta$ should be chosen so that the chains quickly explore the parameter space. However, if $\beta$ is chosen to be too
-large, then the method may become unstable. We also choose two
-iteration numbers at which we change our adaptive strategy. At
-iteration $N_\text{join}$ we resample using the full ensemble instead
-of using two subsets of the full ensemble. When using two subsets we
-are training the scaling parameter using the wrong ensemble size, this
-allows faster convergence but leads to a sub-optimal scaling
-parameter. Resampling with the full ensemble towards the end of the
-tuning allows fast convergence to the right order of magnitude,
-followed by fine tuning to the optimal scaling parameter. Finally we
-choose a time, $N_\text{stop}$, at which we stop updating our
-parameter.
+% When implemented, there are a number of parameters which must be
+% chosen to ensure efficient tuning of $\beta$. Firstly, the initial
+% value of $\beta$ should be chosen so that the chains quickly explore the parameter space. However, if $\beta$ is chosen to be too
+% large, then the method may become unstable. We also choose two
+% iteration numbers at which we change our adaptive strategy. At
+% iteration $N_\text{join}$ we resample using the full ensemble instead
+% of using two subsets of the full ensemble. When using two subsets we
+% are training the scaling parameter using the wrong ensemble size, this
+% allows faster convergence but leads to a sub-optimal scaling
+% parameter. Resampling with the full ensemble towards the end of the
+% tuning allows fast convergence to the right order of magnitude,
+% followed by fine tuning to the optimal scaling parameter. Finally we
+% choose a time, $N_\text{stop}$, at which we stop updating our
+% parameter.
 
 \section{Approximate Multinomial Resampling}\label{sec:AMR}
 Although the ETPF is optimal in terms of preserving statistics of the
@@ -702,7 +794,7 @@ resampler can affect the speed and accuracy of the PAIS algorithm.
 \subsection{Sampling from a one dimensional Gaussian distribution}\label{sec:problem 1}
 
 In this example we compare the naively parallelised RWMH algorithm with its
-PAIS variant, the PAIS-RW algorithm. We perform this comparison using the relative L2 error defined in Equation~\ref{eqn:L2_error}, as well as the relative error in the first moment.
+PAIS variant, the PAIS-RW algorithm. We perform this comparison using the relative $L^2$ error defined in Equation~\ref{eqn:L2_error}, as well as the relative error in the first moment.
 
 
 Since we are comparing against naively parallelised MH algorithms,
@@ -721,7 +813,7 @@ discussed in Section~\ref{sec:ess}, so $T_{\text{PAIS}}(\beta) =
 
 Consider the simple case of a linear observation operator $\G(u) = u$, where the prior on $u$ and the observational noise follow Gaussian distributions. Then, following Equation~\ref{eqn:like}, the Gaussian posterior has the form
 \begin{equation}\label{eqn:Gaussian posterior}
-	\text{law}(\mu_Y) = \pi(u|D) \propto \exp\left(-\frac{1}{2}\big\|u - D\big\|^2_{\sigma^2} - \frac{1}{2}\big\|u\big\|^2_{\tau^2}\right),
+	\text{law}(\mu_D) = \pi(u|D) \propto \exp\left(-\frac{1}{2}\big\|u - D\big\|^2_{\sigma^2} - \frac{1}{2}\big\|u\big\|^2_{\tau^2}\right),
 \end{equation}
 where $\sigma^2$ and $\tau^2$ are the variances of the
 observational noise and prior distributions respectively. In the
@@ -734,7 +826,7 @@ These values result in a posterior density in which the vast majority
 of the density is out in the tails of the
 prior distribution. The Kullback-Leibler (KL)
 divergence, which gives us a measure of how different the prior and
-posterior are, is $D_{KL}(\mu_Y || \mu_0) = 4.67$ for this problem.
+posterior are, is $D_{KL}(\mu_D || \mu_0) = 4.67$ for this problem.
 
 \subsubsection{Numerical implementation}\label{sec:Implementation P1}
 
@@ -744,11 +836,11 @@ In each of the following simulations, we perform three tasks. First we calculate
 parameters we choose 32 values of $\beta$ evenly spaced on a log scale
 in the interval $[10^{-5}, 2]$. We run the PAIS-RW and RWMH algorithms for one million iterations, each with an ensemble size of $M=50$. We took 32 repeats of both algorithms and then used the geometric means of the sample statistics to find the optimal parameters.
 
-{\bf (2) Measuring convergence of nonadaptive algorithms}: We run the algorithms in Section~\ref{sec:problem 1} for one million iterations, again with $M=50$. The simulations are repeated 32 times using the optimal parameters found in (1). The performance of the algorithms is judged by the convergence of the relative L2 error statistic in Equation~\ref{eqn:L2_error}.
+{\bf (2) Measuring convergence of nonadaptive algorithms}: We run the algorithms in Section~\ref{sec:problem 1} for one million iterations, again with $M=50$. The simulations are repeated 32 times using the optimal parameters found in (1). The performance of the algorithms is judged by the convergence of the relative $L^2$ error statistic in Equation~\ref{eqn:L2_error}.
 
 {\bf (3) Measuring convergence of adaptive algorithms}: We run the
 adaptive algorithms under the same conditions as the nonadaptive
-algorithms, and again use the relative L2 error to compare
+algorithms, and again use the relative $L^2$ error to compare
 efficiency. The adaptive algorithms are initialised with $\beta^{(1)}$ = 2.
 
 
@@ -787,25 +879,25 @@ efficiency. The adaptive algorithms are initialised with $\beta^{(1)}$ = 2.
 	\end{tabular}
     \end{minipage}
 	\vspace{1mm}
-	\caption{Optimal values of $\beta$ summarised from Figure~\ref{fig:P1 opt beta}. Statistics calculated as described in Section~\ref{sec:statistics}. The values $\beta^*_{\text{L2}}$ and $\beta^*_{\%}$ are the optimal scaling parameters found by optimising the relative L2 errors and acceptance rate respectively. Similarly $\beta_{\text{eff}}^*$ and $\beta_{\text{var}(w(y))}^*$ optimise the effective sample size and variance of the weights statistics.}
+	\caption{Optimal values of $\beta$ summarised from Figure~\ref{fig:P1 opt beta}. Statistics calculated as described in Section~\ref{sec:statistics}. The values $\beta^*_{\text{L2}}$ and $\beta^*_{\%}$ are the optimal scaling parameters found by optimising the relative $L^2$ errors and acceptance rate respectively. Similarly $\beta_{\text{eff}}^*$ and $\beta_{\text{var}(w(y))}^*$ optimise the effective sample size and variance of the weights statistics.}
 	\label{table:prob1 opt beta}
 \end{table}
 
-Figure~\ref{fig:P1 opt beta} (a) shows the two values of $\beta$ which are optimal according to the acceptance rate and relative L2 error criteria for the RWMH algorithm. The smaller estimate comes from the relative L2 error, and the larger from the acceptance rate. The results in Figure~\ref{fig:P1 opt beta} are summarised in Table~\ref{table:prob1 opt beta}. Since in general we cannot calculate the relative L2 error, we must optimise the algorithm using the acceptance rate. From the relative L2 error curve we can see that the minimum is very wide and despite the optimal values being very different there is not a large difference in the convergence rate.
+Figure~\ref{fig:P1 opt beta} (a) shows the two values of $\beta$ which are optimal according to the acceptance rate and relative $L^2$ error criteria for the RWMH algorithm. The smaller estimate comes from the relative $L^2$ error, and the larger from the acceptance rate. The results in Figure~\ref{fig:P1 opt beta} are summarised in Table~\ref{table:prob1 opt beta}. Since in general we cannot calculate the relative $L^2$ error, we must optimise the algorithm using the acceptance rate. From the relative $L^2$ error curve we can see that the minimum is very wide and despite the optimal values being very different there is not a large difference in the convergence rate.
 
-Figure~\ref{fig:P1 opt beta} (b) shows the effective sample size ratio compared to the error analysis and the variance of the weights. The relative L2 error graph is noisy, but it is clear that the maximum in the effective sample size and the minimum in the variance of the weights are both close to the minimum in the relative L2 error. Due to this we say that the estimate of the effective sample size found by averaging the statistic over each iteration is a good indicator for the optimal scaling parameter. In general this indicator underestimates the estimate found by using the entire sample.
+Figure~\ref{fig:P1 opt beta} (b) shows the effective sample size ratio compared to the error analysis and the variance of the weights. The relative $L^2$ error graph is noisy, but it is clear that the maximum in the effective sample size and the minimum in the variance of the weights are both close to the minimum in the relative $L^2$ error. Due to this we say that the estimate of the effective sample size found by averaging the statistic over each iteration is a good indicator for the optimal scaling parameter. In general this indicator underestimates the estimate found by using the entire sample.
 
 \subsubsection{Convergence of RWMH vs PAIS-RW}
 
 \begin{figure}[htb]
 \centering
-\subfigure[Relative L2 error.]{\includegraphics[width=0.45\textwidth]{"figures/G2_l2"}}
+\subfigure[Relative $L^2$ error.]{\includegraphics[width=0.45\textwidth]{"figures/G2_l2"}}
 \subfigure[Relative error in first moment.]{\includegraphics[width=0.45\textwidth]{"figures/G2_moments"}}
 \caption{Error analysis for the (A)RWMH and (A)PAIS-RW algorithms. The setup is as in Section~\ref{sec:Implementation P1} (2, 3).}
 \label{fig:MH1 L2}
 \end{figure}
 
-Figure~\ref{fig:MH1 L2} shows that the PAIS-RW algorithm converges to the posterior distribution significantly faster than the RWMH algorithm, in both L2 error and relative error in the moments. A description of the speed up attained by this algorithm is given in Section~\ref{sec:calc_saving}.
+Figure~\ref{fig:MH1 L2} shows that the PAIS-RW algorithm converges to the posterior distribution significantly faster than the RWMH algorithm, in both $L^2$ error and relative error in the moments. A description of the speed up attained by this algorithm is given in Section~\ref{sec:calc_saving}.
 
 Both adaptive algorithms are run with initial values of $\beta_0=2.0$. Figure~\ref{fig:MH1 L2} shows that after an initial burn-in period the APAIS-RW algorithm catches up to the PAIS-RW algorithm, and by the end of the simulation window is matching its performance. The ARWMH algorithm does not perform quite as well, this is possibly due to the fact that the acceptance rate cost function is not smooth at the optimal value making it difficult to minimise.
 
@@ -900,7 +992,7 @@ means that $\beta$ must be large. However, this leads to a lower
 acceptance rate, and so we sacrifice convergence locally. For this reason, the RWMH algorithm is very slow to
 converge for problems of this type.
 
-We can achieve these two regimes in RWMH by tuning $\beta$ using the acceptance rate for local convergence, and by L2 error for global convergence. Similarly in PAIS-RW we can use the effective sample size for local convergence, and the L2 error for global convergence.
+We can achieve these two regimes in RWMH by tuning $\beta$ using the acceptance rate for local convergence, and by $L^2$ error for global convergence. Similarly in PAIS-RW we can use the effective sample size for local convergence, and the $L^2$ error for global convergence.
 
 From Table~\ref{table:BM_opt_beta} (right) we see that there is a large difference between the optimal value of $\beta$ for each regime in RWMH, and so will result in inefficient sampling. The PAIS-RW algorithm manages to sample the local detail and the large scale behaviour with similar values of $\beta^*$: a clear advantage to using this algorithm for this problem.
 
@@ -909,7 +1001,7 @@ From Table~\ref{table:BM_opt_beta} (right) we see that there is a large differen
 
 \begin{figure}[htb]
 \centering
-\subfigure[Relative L2 error.]{\includegraphics[width=0.45\textwidth]{"figures/BM1_L2"}}
+\subfigure[Relative $L^2$ error.]{\includegraphics[width=0.45\textwidth]{"figures/BM1_L2"}}
 \subfigure[Absolute error in first moment.]{\includegraphics[width=0.45\textwidth]{"figures/BM1_moments"}}
 \caption{Convergence of the PAIS-RW and RWMH algorithms for Problem $B_1$. Set up described in Section~\ref{sec:Implementation P1}.}
 \label{fig:BM1_L2}
@@ -920,8 +1012,8 @@ respective nonadaptive algorithms and the improvement PAIS offers remains signif
 
 \begin{figure}[htb]
 \centering
-\subfigure[Relative L2 error using the optimal scaling parameters.]{\includegraphics[width=0.45\textwidth]{"figures/BM2_L2"}}
-\subfigure[Comparing of the relative L2 error of the algorithms optimised by L2 minimisation with locally optimised PAIS-RW with a scout chain.]{\includegraphics[width=0.45\textwidth]{"figures/BM2_scout"}}
+\subfigure[Relative $L^2$ error using the optimal scaling parameters.]{\includegraphics[width=0.45\textwidth]{"figures/BM2_L2"}}
+\subfigure[Comparing of the relative $L^2$ error of the algorithms optimised by $L^2$ minimisation with locally optimised PAIS-RW with a scout chain.]{\includegraphics[width=0.45\textwidth]{"figures/BM2_scout"}}
 \caption{Convergence of the PAIS-RW and RWMH algorithms for Problem $B_2$. Set up described in Section~\ref{sec:Implementation P1}.}
 \label{fig:BM2_L2}
 \end{figure}
@@ -935,19 +1027,19 @@ The adaptive algorithm can just as easily be applied to the PAIS algorithm with 
 \begin{figure}[htb]
 \begin{center}
 \includegraphics[width=0.7\textwidth]{"figures/BM2_AL2"}
-\caption{Convergence of the relative L2 error for problem $B_2$, comparing the globally optimised nonadaptive algorithms with the locally optimised adaptive algorithms. The setup is as described in Section~\ref{sec:Implementation P1} (3).}
+\caption{Convergence of the relative $L^2$ error for problem $B_2$, comparing the globally optimised nonadaptive algorithms with the locally optimised adaptive algorithms. The setup is as described in Section~\ref{sec:Implementation P1} (3).}
 \label{fig:BM2_AL2}
 \end{center}
 \end{figure}
 
-Comparing the convergence of the adaptive algorithms against the nonadaptive algorithms in Figure~\ref{fig:BM2_AL2} shows that the algorithms behave as expected. The adaptive RWMH algorithm tuned using the acceptance rate converges at the same rate as the L2 optimised algorithm until the scaling parameter gets small where the algorithm forgets one of the modes. The adaptive PAIS-RW with scout chains tuned to the effective sample size converges at about the same rate as the locally optimised nonadaptive algorithm also with scouts.
+Comparing the convergence of the adaptive algorithms against the nonadaptive algorithms in Figure~\ref{fig:BM2_AL2} shows that the algorithms behave as expected. The adaptive RWMH algorithm tuned using the acceptance rate converges at the same rate as the $L^2$ optimised algorithm until the scaling parameter gets small where the algorithm forgets one of the modes. The adaptive PAIS-RW with scout chains tuned to the effective sample size converges at about the same rate as the locally optimised nonadaptive algorithm also with scouts.
 
 \subsubsection{Calculating the Speed Up in Convergence}\label{sec:calc_saving}
 
 \begin{figure}
 \begin{center}
 \includegraphics[width=\textwidth]{"figures/calc_saving"}
-\caption{Illustration of calculating the number of PAIS-pCNL iterations required to reach a tolerance of $10^{-2.5}$ as a percentage of MH iterations. The relative L2 error graphs are from the Gaussian problem in Section~\ref{sec:problem 1}.}
+\caption{Illustration of calculating the number of PAIS-pCNL iterations required to reach a tolerance of $10^{-2.5}$ as a percentage of MH iterations. The relative $L^2$ error graphs are from the Gaussian problem in Section~\ref{sec:problem 1}.}
 \label{fig:calc_saving}
 \end{center}
 \end{figure}
@@ -1050,7 +1142,7 @@ In the numerics which follow we have used the AMR algorithm to resample with an 
 \begin{figure}[htb]
 \centering
 \subfigure[Optimal values of the scaling parameter.]{\includegraphics[width=0.45\textwidth]{"figures/C1_ESS"}}
-\subfigure[Relative L2 error against number of iterations.]{\includegraphics[width=0.45\textwidth]{"figures/C1_L2"}}
+\subfigure[Relative $L^2$ error against number of iterations.]{\includegraphics[width=0.45\textwidth]{"figures/C1_L2"}}
 \caption{Convergence of the PAIS-Gamma and PAIS-LA algorithms for the chemical system problem described in Section~\ref{sec:chem}. Implementation described in Sections~\ref{sec:chem_implementation} and \ref{sec:chem_conv}.}
 \label{fig:C1_ESS}
 \end{figure}
@@ -1131,53 +1223,53 @@ sampling for consistency.
 \bibliographystyle{siam}
 \bibliography{refs}
 
-\begin{appendix}
-\section{The adaptive PAIS algorithm}\label{Sec:App}
-\begin{table}[!h]
-\begin{mdframed}
-\begin{algorithmic}
-\STATE $x_j^{(0)} \sim \mu_0$, for $j \in L\cup U$, where $L = \{j\}_{j=1}^{M/2},\ U = \{j\}_{j=M/2+1}^M$.
-\STATE Choose $\beta^{(1)} \in (0, 2]$. Set $\beta_{L,U}^{(1)} = (1\pm 0.01)\beta^{(1)}\wedge 2$.
-\FOR{$i=1,2, \ldots, N$}
-\STATE $y_j^{(i)}~\sim~Q(x_j^{(i-1)},\beta_L^{(i)})$ for $j \in L$, and $y_j^{(i)}~\sim~Q(x_j^{(i-1)},\beta_U^{(i)})$ for $j \in U$.
-\STATE Calculate 
-\[
-	w^{(i)}_j = \frac{\pi(y_j^{(i)})}{\nu(y_j^{(i)};X^{(i-1)})},
-\]
-where
-\[
-	\nu(y;X) = \frac{1}{M}\sum_{j\in L} q(y;x_j,\beta_L)+\frac{1}{M}\sum_{j\in U} q(y;x_j,\beta_U).
-\]
+% \begin{appendix}
+% \section{The adaptive PAIS algorithm}\label{Sec:App}
+% \begin{table}[!h]
+% \begin{mdframed}
+% \begin{algorithmic}
+% \STATE $x_j^{(0)} \sim \mu_0$, for $j \in L\cup U$, where $L = \{j\}_{j=1}^{M/2},\ U = \{j\}_{j=M/2+1}^M$.
+% \STATE Choose $\beta^{(1)} \in (0, 2]$. Set $\beta_{L,U}^{(1)} = (1\pm 0.01)\beta^{(1)}\wedge 2$.
+% \FOR{$i=1,2, \ldots, N$}
+% \STATE $y_j^{(i)}~\sim~Q(x_j^{(i-1)},\beta_L^{(i)})$ for $j \in L$, and $y_j^{(i)}~\sim~Q(x_j^{(i-1)},\beta_U^{(i)})$ for $j \in U$.
+% \STATE Calculate 
+% \[
+% 	w^{(i)}_j = \frac{\pi(y_j^{(i)})}{\nu(y_j^{(i)};X^{(i-1)})},
+% \]
+% where
+% \[
+% 	\nu(y;X) = \frac{1}{M}\sum_{j\in L} q(y;x_j,\beta_L)+\frac{1}{M}\sum_{j\in U} q(y;x_j,\beta_U).
+% \]
 
-\IF{$i$ is in $\{n_k\}_{k=1}$}
-	\STATE For $w_{kj} = w_j^{(k)}$, $S = n_k - n_{k-1}$,
-	\STATE $T_L = SM(\sum_{k=i-S}^S\sum_{j\in L} w_{kj})^2/(\sum_{k=i-S}^S\sum_{j\in L} w_{kj}^2)$.
-	\STATE $T_U = SM(\sum_{k=i-S}^S\sum_{j\in U} w_{kj})^2/(\sum_{k=i-S}^S\sum_{j\in U} w_{kj}^2)$.
-	\STATE $\beta^{(i+1)} = \beta^{(i)} - \Delta t \displaystyle\frac{T_U - T_L}{\beta_U^{(i)}-\beta_L^{(i)}}$.
-\ELSE
-	\STATE $\beta^{(i+1)} = \beta^{(i)}$.
-\ENDIF
+% \IF{$i$ is in $\{n_k\}_{k=1}$}
+% 	\STATE For $w_{kj} = w_j^{(k)}$, $S = n_k - n_{k-1}$,
+% 	\STATE $T_L = SM(\sum_{k=i-S}^S\sum_{j\in L} w_{kj})^2/(\sum_{k=i-S}^S\sum_{j\in L} w_{kj}^2)$.
+% 	\STATE $T_U = SM(\sum_{k=i-S}^S\sum_{j\in U} w_{kj})^2/(\sum_{k=i-S}^S\sum_{j\in U} w_{kj}^2)$.
+% 	\STATE $\beta^{(i+1)} = \beta^{(i)} - \Delta t \displaystyle\frac{T_U - T_L}{\beta_U^{(i)}-\beta_L^{(i)}}$.
+% \ELSE
+% 	\STATE $\beta^{(i+1)} = \beta^{(i)}$.
+% \ENDIF
 
-\IF{$i < N_\text{stop}$}
-	\IF{$i < N_\text{join}$}
-		\STATE Resample 
-	\[
-		(w_j^{(i)},y_j^{(i)})_{j\in L} \rightarrow (\frac{1}{M}, x_j^{(i)})_{j\in L}, \quad (w_j^{(i)},y_j^{(i)})_{j\in U} \rightarrow (\frac{1}{M}, x_j^{(i)})_{j\in U}.
-\]
-	\ELSE
-		\STATE Resample $(w^{(i)},Y^{(i)}) \rightarrow (\frac{1}{M}\mathbf{1}, X^{(i)})$.
-	\ENDIF
-	\STATE $\beta_{L,U}^{(i)} = \beta^{(i)} \pm 2\sqrt{2}\beta^{(i)}/\sqrt{NM} \wedge 2$.
-\ELSE
-		\STATE Resample $(w^{(i)},Y^{(i)}) \rightarrow (\frac{1}{M}\mathbf{1}, X^{(i)})$.
-		\STATE $\beta_L^{(i+1)} = \beta_U^{(i+1)} = \beta^{(i+1)}$.
-\ENDIF
-\ENDFOR
-\end{algorithmic}
-\end{mdframed}\caption{A pseudo-code representation of the adaptive
-  PAIS algorithm.}
-\label{tab:adapt}
-\end{table}
-\end{appendix}
+% \IF{$i < N_\text{stop}$}
+% 	\IF{$i < N_\text{join}$}
+% 		\STATE Resample 
+% 	\[
+% 		(w_j^{(i)},y_j^{(i)})_{j\in L} \rightarrow (\frac{1}{M}, x_j^{(i)})_{j\in L}, \quad (w_j^{(i)},y_j^{(i)})_{j\in U} \rightarrow (\frac{1}{M}, x_j^{(i)})_{j\in U}.
+% \]
+% 	\ELSE
+% 		\STATE Resample $(w^{(i)},Y^{(i)}) \rightarrow (\frac{1}{M}\mathbf{1}, X^{(i)})$.
+% 	\ENDIF
+% 	\STATE $\beta_{L,U}^{(i)} = \beta^{(i)} \pm 2\sqrt{2}\beta^{(i)}/\sqrt{NM} \wedge 2$.
+% \ELSE
+% 		\STATE Resample $(w^{(i)},Y^{(i)}) \rightarrow (\frac{1}{M}\mathbf{1}, X^{(i)})$.
+% 		\STATE $\beta_L^{(i+1)} = \beta_U^{(i+1)} = \beta^{(i+1)}$.
+% \ENDIF
+% \ENDFOR
+% \end{algorithmic}
+% \end{mdframed}\caption{A pseudo-code representation of the adaptive
+%   PAIS algorithm.}
+% \label{tab:adapt}
+% \end{table}
+% \end{appendix}
 
 \end{document}
