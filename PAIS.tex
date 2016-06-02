@@ -1245,14 +1245,13 @@ In Figure~\ref{fig:C1_ESS} (a) we see that the two PAIS algorithms have similar 
 
 \section{Discussion and Conclusions}\label{Sec:Conc} 
 
-***REWRITE***
-
 We have explored the application of parallelised MCMC algorithms in
 low dimensional inverse problems. We have demonstrated numerically
 that these algorithms converge faster than the analogous naively parallelised
 Metropolis-Hastings algorithms. Further experimentation with the
 Random Walk Metropolis-Hastings (RWMH), Metropolis Adjusted Langevin
-Algorithm (MALA) and preconditioned Crank-Nicolson (pCN) proposals has
+Algorithm (MALA), preconditioned Crank-Nicolson (pCN) and Hamiltonian
+Monte Carlo (HMC) proposals has
 yielded similar results\cite{Paul}.
 
 Importantly, we have compared the efficiency of our parallel scheme
@@ -1283,21 +1282,26 @@ algorithms, and this is another opportunity for future work.
 % to more efficient use of the computer architecture.
 
 One limitation of the PAIS approach as described above is that a
-direct solver (such as FastEMD \cite{FastEMD}) has computational cost
-$\mathcal{O}(n^3\log n)$, where $n$ is the number of particles in the
-ensemble.  The use of approximate solutions from iterative solvers
-might allow the PAIS to be used in higher dimensional problems, and is
-an avenue for future investigation. A second limitation is associated
-with the problem of accurately approximating measures with empirical
-measures in high dimensional phase space. This is a well-known issue
-in filtering, where one possible solution is to ``localise'' the
-impact of observations, as rigorously analysed in
-\cite{rebeschini2013can}. An established technique in Ensemble Kalman
-filters, localisation has also been incorporated into the Ensemble
-Transform Particle Filter \cite{ChRe2015}. This issue could be
-addressed in the PAIS by using localisation when computing the
-transform, but keeping the unlocalised weights in the importance
-sampling for consistency.
+direct solver of the ETPF problem (such as FastEMD \cite{FastEMD}) has computational cost
+$\mathcal{O}(M^3\log M)$, where $M$ is the number of particles in the
+ensemble. As such, we introduced a more approximate resampler the
+approximate multinomial resampler, which allows us to push the
+approach to the limit
+with much larger ensemble sizes. The PAIS framework is very flexible
+in terms of being able to use any combination of proposal
+distributions and resampling algorithms that one wishes.
+
+%  A second limitation is associated
+% with the problem of accurately approximating measures with empirical
+% measures in high dimensional phase space. This is a well-known issue
+% in filtering, where one possible solution is to ``localise'' the
+% impact of observations, as rigorously analysed in
+% \cite{rebeschini2013can}. An established technique in Ensemble Kalman
+% filters, localisation has also been incorporated into the Ensemble
+% Transform Particle Filter \cite{ChRe2015}. This issue could be
+% addressed in the PAIS by using localisation when computing the
+% transform, but keeping the unlocalised weights in the importance
+% sampling for consistency.
 
 \bibliographystyle{siam}
 \bibliography{refs}
