@@ -1176,9 +1176,9 @@ We now formalise the posterior of interest. We look for a distribution over the 
 \end{align*}
 with initial conditions $S_1(0)=S_2(0) = 0$, and parameter values $\mathbf{k} = (50, 100)^T$. We then add noise taken from a Gamma distribution with variance $\sigma^2 = 225$ and centred at each $\mathcal{S}(t_i)=S_1(t_i)+S_2(t_i)$.
 
-In our modelling we use the QSSA to simplify this system of differential equations into the one parameter system based on Equation~\ref{eqn:QSSA_system},
+In our modelling we use the QSSA to simplify this system of differential equations into the one dimensional system based on Equation~\ref{eqn:QSSA_system},
 \[
-	\frac{\text{d}S}{\text{d}t} = k_1 - \frac{k_2k_4}{k_2+k_3}S(t).
+	\frac{\text{d}\mathcal{S}}{\text{d}t} = k_1 - \frac{k_2k_4}{k_2+k_3}\mathcal{S}(t).
 \]
 The observation operator, $\mathcal{G}: (\mathbf{k},t) \mapsto S(t)$, maps from parameter space onto population space at a time $t$. This means that for the $i$th observation we assume,
 \[
@@ -1213,14 +1213,14 @@ distributions in the proposal distribution instead of a Gaussian
 mixture. The PAIS-Gamma and MH-Gamma algorithms use a Gamma
 proposal distribution with mean centred at the previous state,
 \[
-	Y \sim \text{Gamma}(\cdot;\alpha^*, \beta^*) \quad \text{where} \quad \frac{\alpha^*}{\beta^*} = X \ \text{and} \ \frac{\alpha^*}{(\beta^*)^2} = \beta^2.
+	y \sim \text{Gamma}(\cdot;\alpha^*, \beta^*) \quad \text{where} \quad \frac{\alpha^*}{\beta^*} = x \ \text{and} \ \frac{\alpha^*}{(\beta^*)^2} = \beta^2.
 \]
 
 Similarly the PAIS-LA algorithm uses the Langevin proposal distribution
 from the standard MALA algorithm with a pertubation taken from a Gamma
 distribution,
 \[
-	Y \sim \text{Gamma}(\cdot; \alpha^*, \beta^*), \quad \text{where} \quad \frac{\alpha^*}{\beta^*} = X+\frac{1}{2}\beta^2\nabla\log\pi(X) \ \text{and} \ \frac{\alpha^*}{(\beta^*)^2} = \beta^2.
+	y \sim \text{Gamma}(\cdot; \alpha^*, \beta^*), \quad \text{where} \quad \frac{\alpha^*}{\beta^*} = x+\frac{1}{2}\beta^2\nabla\log\pi(X) \ \text{and} \ \frac{\alpha^*}{(\beta^*)^2} = \beta^2.
 \]
 This ensures that we only propose positive
 parameters. Having a heavier right tail in the proposal distribution
