@@ -1061,7 +1061,7 @@ each mode at this point. The adaptive PAIS-RW with scout chains tuned to the eff
 \begin{figure}
 \begin{center}
 \includegraphics[width=\textwidth]{"figures/calc_saving"}
-\caption{Illustration of calculating the number of PAIS-pCNL iterations required to reach a tolerance of $~10^{-2.85}$ as a percentage of MH iterations. The relative $L^2$ error graphs are from the Gaussian problem in Section~\ref{sec:problem 1}.}
+\caption{Illustration of calculating the number of PAIS-pCNL iterations required to reach a tolerance of $~10^{-2.8}$ as a percentage of MH iterations. The relative $L^2$ error graphs are from the Gaussian problem in Section~\ref{sec:problem 1}.}
 \label{fig:calc_saving}
 \end{center}
 \end{figure}
@@ -1102,31 +1102,70 @@ the correct ratio of chains will occur in each of the modes, and since there is 
 %***some introduction to chemical systems and QSSA
 In this section we apply the PAIS algorithm to a more complicated posterior distribution. The field of biochemical kinetics gives rise to multiscale stochastic problems which remain a challenge both theoretically and computationally. Biochemical reactions occur in single cells between a number of chemical populations and the rates of these reactions can vary on vastly different timescales. It is these reaction rates which we are interested in finding descriptions for.
 
-It is often possible to isolate subsystems of fast and slow reactions. The quasi-steady-state assumption (QSSA) is that these fast subsystems converge in distribution much faster than the slow subsystem. Approximating the fast subsystem as a steady state results in a simple analysis for the fast reaction rates which we can use to simulate the full system and obtain distributions for each of the reaction rates.
+It is often possible to isolate which reactions are occurring more
+frequently (the fast reactions) and which are occurring less
+frequently (the slow reactions). The quasi-steady-state assumption
+(QSSA), which assumes that the fast reactions converge in distribution
+on a timescale which is negligible with respect to the rate of
+occurrence of the slow reactions. This assumption allows us to
+approximate the dynamics of the slowly changing quantities in the
+system by assuming that the fast quantities are in equillibrium with
+respect to the fast reactions in isolation. This kind of model
+reduction can be used to approximate the likelihood in an inverse
+problem where we wish to recover the reaction parameters in the
+system.
 
-We introduce the simple chemical system,
+Let us consider a simple example by introducing the following simple
+chemical system involving two chemical species $S_1$ and $S_2$:
 \begin{equation}\label{eqn:full_system}
-	\emptyset \xrightarrow{k_1} X \xleftrightarrows[k_3]{k_2} Y \xrightarrow{k_4} \emptyset,
+	\emptyset \xrightarrow{k_1} S_1 \xleftrightarrows[k_3]{k_2} S_2 \xrightarrow{k_4} \emptyset.
 \end{equation}
-where reactions $X\rightarrow Y$ and $Y\rightarrow X$ happen much faster than the creation and destruction of $X$ and $Y$. Using the QSSA we can combine the chemical species $X$ and $Y$ into a single species $S=X+Y$, and represent our system as,
+Each arrow represents a reaction from a reactant to a product, with
+some rate constant $k_i$, and where the rates of the reactions are
+assumed to follow mass action kinetics. We assume that we are in a
+parameter regime such that the reactions $S_1\rightarrow S_2$ and $S_2\rightarrow S_1$ occur
+much much more frequently than the other reactions. Notice that both
+chemical species are involved in fast reactions. However, the quantity
+$\mathcal{S} = S_1 + S_2$ is conserved by both of the fast reactions,
+and as such, this is the slowly changing quantity in this system.
+The effective dynamics of $\mathcal{S}$ can be represented as follows.
 \begin{equation}\label{eqn:QSSA_system}
 	\emptyset \xrightarrow{k_1} S \xrightarrow{\hat{k}_4} \emptyset.
 \end{equation}
-Here, the new reaction rate $\hat{k}_4$ is found to be
+Here, the new reaction rate $\hat{k}_4$ is approximated through
+application of the QSSA to be
 \[
-	\hat{k}_4(s) = \mathbb{E}\left[k_4Y|S=s\right] = \frac{k_2k_4S}{k_2+k_3}, \quad \text{since} \quad Y \sim \text{Bin}\left(S, \frac{k_2}{k_2+k_3}\right).
+	\hat{k}_4(s) = \mathbb{E}\left[k_4S_2|\mathcal{S}=s\right] = \frac{k_2k_4\mathcal{S}}{k_2+k_3}.
 \]
-By observing the system in Equation~\ref{eqn:QSSA_system}, we indirectly observe the rates $k_2$ and $k_3$ through $\hat{k}_4$, resulting in infinitely many possibilities for $k_2$ and $k_3$. Along with the intrinsic randomness and errors in observations, which we assume to follow a Gamma distribution with some variance $\sigma^2$, this results in a long and thin posterior distribution when put into the framework of a Bayesian inverse problem.
+The value of $\mathbb{E}\left[k_4S_2|\mathcal{S}=s\right]$ is
+approximated by finding the steady state of the ODE representing the fast subsystem of
+reactions:
+\[S_1 \xleftrightarrows[k_3]{k_2} S_2, \qquad S_1 + S_2 = s\]
+
+If we assume that we know the rate constants $k_1$ and $k_4$, and
+observe the system in Equation~\ref{eqn:QSSA_system}, we indirectly
+observe the rates $k_2$ and $k_3$ through the effective rate
+$\hat{k}_4$ of the degradation of $\mathcal{S}$. Our
+observations are uninformative about these reaction rates, as there
+are surfaces in parameter space along which the effective rate
+$\hat{k}_4$ is invariant, leading to a highly illposed inverse
+problem. Making the assumption that the errors in our observations of
+the value of $\mathcal{S}$ are Gamma distributed with some variance
+$\sigma^2$, this results in a long and thin posterior distribution on
+$k_2$ and $k_3$. This type of problem is notoriously difficult to
+sample from using standard MH algorithms, as the algorithms quickly
+find a point on this manifold on which $\hat{k}_4$ is invariant, but
+exploration along its length is slow.
 
 % solution to QSSA ode and Gamma noise assumption
 \subsubsection{Target Distribution}
 
 We now formalise the posterior of interest. We look for a distribution over the parameter $\mathbf{k} = (k_2, k_3)^T$, given that we know $k_1 = 100$ and $k_4=1$. We generate our data by making ten observations of the system at $t_i = 2, 4, \dots, 20$, here simulated by solving the full system, Equation~\ref{eqn:full_system}, governed by the differential equations
 \begin{align*}
-	\frac{\text{d}X}{\text{d}t} &= k_1 - k_2X(t)+k_3Y(t), \\
-	\frac{\text{d}Y}{\text{d}t} &= k_2X(t) - (k_3+k_4)Y(t),
+	\frac{\text{d}S_1}{\text{d}t} &= k_1 - k_2S_1(t)+k_3S_2(t), \\
+	\frac{\text{d}S_2}{\text{d}t} &= k_2S_1(t) - (k_3+k_4)S_2(t),
 \end{align*}
-with initial conditions $X(0)=Y(0) = 0$, and parameter values $\mathbf{k} = (50, 100)^T$. We then add noise taken from a Gamma distribution with variance $\sigma^2 = 225$ and centred at each $S(t_i)=X(t_i)+Y(t_i)$.
+with initial conditions $S_1(0)=S_2(0) = 0$, and parameter values $\mathbf{k} = (50, 100)^T$. We then add noise taken from a Gamma distribution with variance $\sigma^2 = 225$ and centred at each $\mathcal{S}(t_i)=S_1(t_i)+S_2(t_i)$.
 
 In our modelling we use the QSSA to simplify this system of differential equations into the one parameter system based on Equation~\ref{eqn:QSSA_system},
 \[
@@ -1141,17 +1180,37 @@ where
 	 \alpha_i = \frac{\mathcal{G}(\mathbf{k}, t_i)^2}{\sigma^2},\  \beta_i = \frac{\mathcal{G}(\mathbf{k}, t_i)}{\sigma^2}, \quad i = 1, \dots, 10.
 \]
 
-We assign Gamma priors to $\mathbf{k}$ with mean $\alpha_0/\beta_0 = 75$ and variance $\alpha_0/\beta_0^2 = 100$, resulting in the posterior
+We assign Gamma priors to $\mathbf{k}$ with mean $\alpha_0/\beta_0 =
+75$ and variance $\alpha_0/\beta_0^2 = 100$ in both coordinates, resulting in the posterior
 \[
 	\pi(\mathbf{k}|\mathbf{D}) \propto \left[\prod\limits_{i=1}^{10} \text{Gamma}(D_i; \alpha_i, \beta_i)\right]\text{Gamma}(k_2; \alpha_0, \beta_0)\text{Gamma}(k_3; \alpha_0, \beta_0).
 \]
 
 \subsubsection{Implementation}\label{sec:chem_implementation}
 % explanation of l2 convergence measure
-For this problem there is no analytic form for the normalisation constant, and numerical methods implemented in MATLAB and Mathematica have proven to be unreliable. To demonstrate the convergence of the algorithm, we first run a MH algorithm for much longer than we normally would ($8\times 10^{10}$ samples), and consider the histogram produced to be the truth. We then perform our usual simulations with the PAIS and MH algorithms to compare the rate at which the histograms converge to the `true' histogram over the same grid.
+For this problem there is no analytic form for the normalisation
+constant, and numerical methods implemented in MATLAB and Mathematica
+have proven to be unreliable. To demonstrate the convergence of the
+algorithm, we first run a MH algorithm for much longer than we
+normally would ($8\times 10^{10}$ samples), and consider the histogram
+produced to be a well-converged approximation of the true posterior
+distribution. We then perform our usual simulations with the PAIS and
+MH algorithms to compare the rate at which the histograms converge to
+the posterior over the same histogram bins.
 
 % modifications to algorithm + spikes
-In this problem we modify our PAIS algorithm to use a mixture of Gamma distributions in the proposal distribution instead of a Gaussian mixture. The PAIS-LA algorithm uses the Langevin proposal distribution from the standard MALA algorithm with a pertubation taken from a Gamma distribution with mean $X+\frac{1}{2}\beta^2\nabla \log\pi(\cdot)$, and  variance $\beta^2$. Similarly we use a Gamma proposal in the MH algorithm. This ensures that we only propose positive parameters. Having a heavier right tail in the proposal distribution also means that the posterior is absolutely continuous with respect to the proposal. When this is not the case, the weight function can tend to zero or infinity when $k_i \rightarrow \infty$. Sampling under these conditions can result in very spiky approximations of the tails of the posterior distribution resulting in slow convergence.
+In this problem we modify our PAIS algorithm to use a mixture of Gamma
+distributions in the proposal distribution instead of a Gaussian
+mixture. The PAIS-LA algorithm uses the Langevin proposal distribution
+from the standard MALA algorithm with a pertubation taken from a Gamma
+distribution with mean $X+\frac{1}{2}\beta^2\nabla \log\pi(\cdot)$,
+and  variance $\beta^2$. Similarly we use a Gamma proposal in the MH
+algorithm. This ensures that we only propose positive
+parameters. Having a heavier right tail in the proposal distribution
+also means that the posterior is absolutely continuous with respect to
+the proposal. When this is not the case, the weight function can tend
+to zero or infinity when $k_i \rightarrow \infty$, which results in
+poor, very spiky approximations of the tails of the posterior distribution leading to slow convergence.
 
 % AMR and increase in sample size
 We now significantly increase the ensemble size we are using from $M=50$ to $M=2500$. This allows us to build a better approximation of the posterior distribution for our proposals. Following the discussion in Section~\ref{sec:AMR}, it is clear that to keep the runtime of the resampler negligible compared with the calculation of the posterior we must switch from the ETPF resampler to the AMR algorithm.
@@ -1182,7 +1241,7 @@ In the numerics which follow we have used the AMR algorithm to resample with an 
 	\label{table:C1_opt_beta}
 \end{table}
 
-In Figure~\ref{fig:C1_ESS} (a) we see that the two PAIS algorithms have similar optimal values of the scaling parameter, also shown in Table~\ref{table:C1_opt_beta}, however the MALA-type proposal achieves a higher effective sample size with the same ensemble size. Convergence after the first 50 million samples is shown in Figure~\ref{fig:C1_ESS} (b) and demonstrates that the PAIS algorithm converges faster than the MH algorithm. The slightly unstable convergence in the PAIS-Gamma algorithm is the effect of spikes appearing in the tails of the posterior distribution. This is also what has caused the slightly lower effective sample size.
+In Figure~\ref{fig:C1_ESS} (a) we see that the two PAIS algorithms have similar optimal values of the scaling parameter, also shown in Table~\ref{table:C1_opt_beta}. However, the MALA-type proposal achieves a higher effective sample size with the same ensemble size. Convergence after the first 50 million samples is shown in Figure~\ref{fig:C1_ESS} (b) and demonstrates that the PAIS algorithm converges faster than the MH algorithm. The slightly unstable convergence in the PAIS-Gamma algorithm is the effect of spikes appearing in the tails of the posterior distribution. This is also what has caused the slightly lower effective sample size.
 
 \section{Discussion and Conclusions}\label{Sec:Conc} 
 
