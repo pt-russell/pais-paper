@@ -115,9 +115,9 @@
   weighted sample ready for the next iteration. We demonstrate that
   this parallel adaptive importance sampling (PAIS) method outperforms
   naive parallelisation of serial MCMC methods using the same number
-  of processors, for low dimensional problems, and in fact shows
+  of ensemble members, for low dimensional problems, and in fact shows
   better than linear improvements in convergence rates with respect to
-  the number of processors used. We also introduce a new resampling
+  the number of ensemble members. We also introduce a new resampling
   strategy, approximate multinomial resampling (AMR), which while not
   as accurate as other schemes is substantially costly for large
   ensemble sizes, which can then be used in conjunction with PAIS for
@@ -310,9 +310,10 @@ approach those of the posterior distribution.
 
 \subsection{Deficiencies of Metropolis-type MCMC schemes}
 All MCMC methods are trivially parallelisable. One can take a method
-and simply implement it simultaneously over a set of processors. All
-of the states of all of the processes can be recorded, and in the time
-that it takes one process to draw $N$ samples, $M$ processes can draw
+and simply implement it simultaneously over a set of processors in an ensemble. All
+of the states of all of the ensemble member can be recorded, and in the time
+that it takes one MCMC chain to draw $N$ samples, $M$ ensemble members
+can draw
 $NM$ samples. 
 
 However, we argue that this is not an optimal
@@ -322,7 +323,7 @@ tails of the distribution. The samples that are initially made as the
 algorithm finds its way to the mode(s) of the distribution cannot be
 considered to samples from the target distribution, and must be thrown
 away. This process is known as the burn-in. In a trivially
-parallelised scenario, each process must perform this process
+parallelised scenario, each ensemble member must perform this process
 independently, and therefore mass parallelisation makes no inroads to
 cutting this cost.
 
@@ -339,8 +340,9 @@ samplers is that no evaluations of $\mathcal{G}$ are ever wasted
 since all samples are saved along with their relative weighting.
 
 Moreover, a trivially parallelised MCMC scheme is exactly that -
-trivial. Intuition suggests that we can gain some speed up by sharing information across the processes and that is
-exactly what we wish to demonstrate in this paper.
+trivial. Intuition suggests that we can gain some speed up by sharing
+information across the ensemble members, and this is
+what we wish to demonstrate in this paper.
 
 These deficiencies of the trivial method of parallelising MCMC methods
 motivated the development of the Parallel Adaptive Importance Sampler
@@ -404,7 +406,7 @@ can iterate the process once again. The algorithm is summarised in Table \ref{ta
 
 We wish to sample states $x \in X$ from a posterior
 probability distribution $\mu_D$, where $D$ represents our data which
-we wish to use to infer $x$. Since we have $M$ processes, we
+we wish to use to infer $x$. Since we have $M$ ensemble members, we
 represent the current state of all of the Markov chains as a vector
 $\X = [x_1,x_2,\ldots,x_M]^T$. We are also given a transition kernel
 $\nu(\cdot,\cdot)$, which might come from an MCMC method, for example
@@ -450,7 +452,7 @@ weights $\W^{(i)}$.
 In Section \ref{Sec:Num}, we will demonstrate how the algorithm
 performs, primarily using RWMH proposals. We do not claim that this choice is optimal, but
 is simply chosen as an example to show that sharing information across
-processes can improve on the original MCMC algorithm and lead to
+ensemble members can improve on the original MCMC algorithm and lead to
 convergence in fewer evaluations of $\G$. This is important since if
 the inverse problem being tackled involves computing
 the likelihood from a very large data set this could lead to a
@@ -583,8 +585,8 @@ algorithm has arrived on a value using single iteration values of $\neff$.
 
 The effective sample size also has another useful property; if we
 imagine the algorithm in the burn-in phase, for example, we have $M$
-processes in the tail of a Gaussian curve searching for the area of
-high density. If the processes are evenly spaced, then the particle
+ensemble members in the tail of a Gaussian curve searching for the area of
+high density. If the ensemble members are evenly spaced, then the particle
 closest to the mean will have an exponentially higher weight assigned
 to it. The effective sample size in this scenario will be close to
 1. As the algorithm burns in, the ensemble populates the regions where
@@ -1164,6 +1166,8 @@ In Figure~\ref{fig:C1_ESS} (a) we see that the two PAIS algorithms have similar 
 
 \section{Discussion and Conclusions}\label{Sec:Conc} 
 
+***REWRITE***
+
 We have explored the application of parallelised MCMC algorithms in
 low dimensional inverse problems. We have demonstrated numerically
 that these algorithms converge faster than the analogous naively parallelised
@@ -1174,18 +1178,14 @@ yielded similar results\cite{Paul}.
 
 Importantly, we have compared the efficiency of our parallel scheme
 with a naive parallelisation of serial methods. Thus our increase in
-efficiency is over and above an $N$-fold increase, where $N$ is the
-number of cores or processors at our disposal. Our approach
-demonstrates a better-than-linear speed-up with the number
-processors/cores used. Thus, our approach is not only embarrassingly
-parallel (as coined by Cleve Moler in \cite{moler1986matrix}), but
-humiliatingly so, provided that an optimal transport algorithm can be
-efficiently implemented in parallel and so does not dominate the
-communication costs.
+efficiency is over and above an $M$-fold increase, where $M$ is the
+number of ensemble members used. Our approach
+demonstrates a better-than-linear speed-up with the number of ensemble
+members used. 
 
 The PAIS has a number of favourable features, for example the
 algorithm's ability to redistribute, through the resampling regime,
-the chains to regions which require more exploration. This allows the
+the ensemble members to regions which require more exploration. This allows the
 method to be used to sample from complex multimodal distribution.
 
 Another strength of the PAIS is that it can also be used with any MCMC
@@ -1194,14 +1194,14 @@ algorithms (HMC, Riemann manifold MCMC etc) which could be
 incorporated into this framework, leading to even more efficient
 algorithms, and this is another opportunity for future work. 
 
-One disadvantage of parallelised algorithms is that often different
-processors will complete their tasks in different amount of times, for
-a number of reasons, often due to communication between the
-processors. One approach which could be applied to the PAIS to avoid
-this is for each processor to immediately start a new iteration, only
-using the last values of the other processors that were communicated
-to it. This incomplete approach would still be valid, and could lead
-to more efficient use of the computer architecture.
+% One disadvantage of parallelised algorithms is that often different
+% processors will complete their tasks in different amount of times, for
+% a number of reasons, often due to communication between the
+% processors. One approach which could be applied to the PAIS to avoid
+% this is for each processor to immediately start a new iteration, only
+% using the last values of the other processors that were communicated
+% to it. This incomplete approach would still be valid, and could lead
+% to more efficient use of the computer architecture.
 
 One limitation of the PAIS approach as described above is that a
 direct solver (such as FastEMD \cite{FastEMD}) has computational cost
