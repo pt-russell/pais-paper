@@ -117,7 +117,11 @@
   naive parallelisation of serial MCMC methods using the same number
   of processors, for low dimensional problems, and in fact shows
   better than linear improvements in convergence rates with respect to
-  the number of processors used.
+  the number of processors used. We also introduce a new resampling
+  strategy, approximate multinomial resampling (AMR), which while not
+  as accurate as other schemes is substantially costly for large
+  ensemble sizes, which can then be used in conjunction with PAIS for
+  complex problems.
 \end{abstract}
 \begin{keywords}MCMC, parallel, importance sampling, Bayesian, inverse problems.
 \end{keywords}
@@ -128,7 +132,7 @@
 Markov chain Monte Carlo (MCMC) methods are a powerful family of tools
 that allow us to sample from complex probability distributions. MCMC
 methods were first developed in the 70s\cite{hastings1970monte}, and
-with the development of and with the development of faster more
+with the development of faster, more
 powerful computers, have become ever more important in a whole range
 of fields in statistics, science and engineering.  In particular, when
 considering Bayesian inverse problems, each MCMC step may involve the
@@ -178,7 +182,7 @@ parallelisation of MCMC methods was presented, which demonstrated
 speed ups of up to two orders of magnitude when compared with serial methods.
 
 In this paper, we present a framework for parallelisation of
-importance sampling, which can be built around any of the current
+importance sampling, which can be built around many of the current
 Metropolis-based methodologies in order to create an efficient target
 proposal from the current state of all of the chains in the
 ensemble. The idea is to consider the parallel chains as an ensemble,
@@ -186,28 +190,7 @@ and to resample using a transformation based on optimal transport.
 Samplers based on optimal transport have also been considered in
 \cite{el2012bayesian}.
 
-In Section \ref{Sec:Prelim} we outline some preliminaries,
-including the general set up for Bayesian inverse problems, the
-preconditioned Crank-Nicolson Langevin (pCNL) algorithm and a
-brief review of the optimal transport resampler,  both of which we will be
-employing within the algorithm. We describe the Parallel Adaptive
-Importance Sampler (PAIS) in Section \ref{Sec:PAIS}, and in Section
-\ref{Sec:adapt} we describe how algorithmic parameters can be
-automatically tuned to provide optimal convergence. In
-Section \ref{Sec:Num}, we present some numerical experiments that
-demonstrate the savings available by employing this approach as
-opposed to a naive/trivial parallelisation of existing MCMC
-methods. In Section \ref{Sec:Conc}, we summarise our results and
-suggest some areas for future investigation.
-
-
-
-
-
-
-
-
-
+***SECTIONS SUMMARY NEEDS REWRITING***
 
 \section{Preliminaries}\label{Sec:Prelim}
 In this Section we will introduce preliminary topics and algorithms
@@ -251,39 +234,39 @@ likelihood:
 	\frac{d\mu_Y}{d\mu_0} \propto \exp \left ( -\Phi(u^*) \right ).
 \end{equation}
 
-\subsection{The preconditioned Crank-Nicolson Langevin (pCNL) algorithm}\label{Sec:pCNL}
-In recent years, work has been carried out to frame MCMC proposal
-distributions on function space\cite{cotter2013mcmc}. These new
-discretisations perform comparably with the original versions in low
-dimensions. If gradient information regarding the observation operator is
-available, then a range of MCMC methods are available which exploit this information to improve mixing rates. One
-example of such an algorithm is MALA. In \cite{cotter2013mcmc}, a function space version of this
-method was presented, the pCNL algorithm, and is described in full in Table
-\ref{tab:pCNL}. The proposal used in this method comes about through
-a Crank-Nicolson approximation of the Langevin SDE, whose invariant
-measure is the posterior measure $\mu_Y$.
+% \subsection{The preconditioned Crank-Nicolson Langevin (pCNL) algorithm}\label{Sec:pCNL}
+% In recent years, work has been carried out to frame MCMC proposal
+% distributions on function space\cite{cotter2013mcmc}. These new
+% discretisations perform comparably with the original versions in low
+% dimensions. If gradient information regarding the observation operator is
+% available, then a range of MCMC methods are available which exploit this information to improve mixing rates. One
+% example of such an algorithm is MALA. In \cite{cotter2013mcmc}, a function space version of this
+% method was presented, the pCNL algorithm, and is described in full in Table
+% \ref{tab:pCNL}. The proposal used in this method comes about through
+% a Crank-Nicolson approximation of the Langevin SDE, whose invariant
+% measure is the posterior measure $\mu_Y$.
 
-\begin{table}
-\begin{mdframed}
-\begin{algorithmic}
-\STATE $X = x_0$
-\FOR{$i=1,2,3,\ldots$}
-\STATE $Y = (2+\delta)^{-1}\left[(2 - \delta)X_{i-1}-
-2\delta\mathcal{C}\nabla \Phi(u)+
-\sqrt{8\delta} W\right] $, $W \sim \mu_0$
-\STATE $a(X_{i-1},Y) = \min \left \{ 1,  \exp(\Phi(X_{i-1}) - \Phi(Y) ) \right \}$.
-\STATE $u \sim U([0,1])$
-\IF{$u<a(X_{i-1},Y)$}
-\STATE $X_i = Y$
-\ELSE 
-\STATE $X_i = X_{i-1}$
-\ENDIF
-\ENDFOR
-\end{algorithmic}
-\end{mdframed}\caption{A pseudo-code representation of the preconditioned Crank-Nicolson Langevin
-   (pCNL) algorithm. $\delta \in (0,2]$ is a step size parameter.}
-\label{tab:pCNL}
-\end{table}
+% \begin{table}
+% \begin{mdframed}
+% \begin{algorithmic}
+% \STATE $X = x_0$
+% \FOR{$i=1,2,3,\ldots$}
+% \STATE $Y = (2+\delta)^{-1}\left[(2 - \delta)X_{i-1}-
+% 2\delta\mathcal{C}\nabla \Phi(u)+
+% \sqrt{8\delta} W\right] $, $W \sim \mu_0$
+% \STATE $a(X_{i-1},Y) = \min \left \{ 1,  \exp(\Phi(X_{i-1}) - \Phi(Y) ) \right \}$.
+% \STATE $u \sim U([0,1])$
+% \IF{$u<a(X_{i-1},Y)$}
+% \STATE $X_i = Y$
+% \ELSE 
+% \STATE $X_i = X_{i-1}$
+% \ENDIF
+% \ENDFOR
+% \end{algorithmic}
+% \end{mdframed}\caption{A pseudo-code representation of the preconditioned Crank-Nicolson Langevin
+%    (pCNL) algorithm. $\delta \in (0,2]$ is a step size parameter.}
+% \label{tab:pCNL}
+% \end{table}
 
 
 
@@ -303,31 +286,49 @@ as the Kalman filter\cite{kalman1960new} and ensemble Kalman filter\cite{evensen
 assimilation community.
 
 One advantage of the particle filter is that there are convergence
-results for this method as the number of particles is increased. The
-downside is that, the effective sample size decreases at each iteration. One way to tackle
+results for this method as the number of particles is increased. One
+downside is that the effective sample size decreases at each
+iteration, resulting in degeneration of the approximation of the
+posterior. One way to tackle
 this is to employ a resampling scheme. The aim of a successful
 resample is to take your unevenly weighted ensemble and return a new
-ensemble of particles with even weights which is highly correlated to the original samples.
+ensemble of particles with even weights which is highly correlated to
+the original samples. Another downside is that the required ensemble
+size increases quickly with dimension, making it difficult to use in
+high-dimensional problems.
 
 The Ensemble Transform (ET) method proposed by Reich \cite{reich2013nonparametric} makes use of optimal transportation as described in \cite{villani2003topics,villani2008optimal}. The transform takes a sample of weighted particles $\{y_i\}_{i=1}^M$ from $\mu_Y$ and converts it into a sample of evenly weighted particles $\{x_i\}_{i=1}^M$ from $\mu_X$, by means of defining a coupling $T^*$ between $Y$ and $X$. Given that a trivial coupling $T^t$ always exists in the space of transference plans, $\Pi(\mu_{X}, \mu_{Y})$, we can find a coupling $T^*$ which maximises the correlation between $X$ and $Y$ \cite{cotter2012ensemble}. This coupling is the solution to a linear programming problem in $M^2$ variables with $2M-1$ constraints. Maximising the correlation ensures that the new sample is as much like the original sample as possible with the additional property that the sample is evenly weighted.
 
-A Monte Carlo algorithm can be implemented to resample from a weighted ensemble. We create a weighted sample, then solve the optimal transport problem which produces the coupling described above, we can draw a new sample from the evenly weighted distribution. Reich suggests using the mean of the evenly weighted distribution to produce a consistent estimator.
-
-Analysis of this method shows that as the ensemble size increases, the statistics of the evenly weighted sample approach those of the posterior distribution, at least well enough for a proposal distribution as described in Section~\ref{Sec:PAIS}. The histogram of the evenly weighted sample exhibits small oscillations in the tails of the posterior, and also struggles to deal with discontinuities.
+A Monte Carlo algorithm can be implemented to resample from a weighted
+ensemble. We create a weighted sample, then solve the optimal
+transport problem which produces the coupling described above, we can
+draw a new sample from the evenly weighted distribution. Reich
+suggests using the mean of the evenly weighted distribution to produce
+a consistent estimator. Analysis of this method shows that as the
+ensemble size increases, the statistics of the evenly weighted sample
+approach those of the posterior distribution.
 
 \subsection{Deficiencies of Metropolis-type MCMC schemes}
 All MCMC methods are trivially parallelisable. One can take a method
-and simply implement it simultaneously over a set of processes. All
+and simply implement it simultaneously over a set of processors. All
 of the states of all of the processes can be recorded, and in the time
 that it takes one process to draw $N$ samples, $M$ processes can draw
 $NM$ samples. 
 
-However, we argue that this is a far from optimal
-scenario. First of all, unless we have a lot of information about the posterior, we will begin the algorithm a long way from statistical equilibrium. Some initial iterations then are not samples from the posterior, and must be thrown away. This process is known as the burn-in. In a trivially parallelised scenario, each process must perform this process independently.
+However, we argue that this is not an optimal
+scenario. First of all, unless we have a lot of information about the
+posterior, we will intialise the algorithm's initial state in the
+tails of the distribution. The samples that are initially made as the
+algorithm finds its way to the mode(s) of the distribution cannot be
+considered to samples from the target distribution, and must be thrown
+away. This process is known as the burn-in. In a trivially
+parallelised scenario, each process must perform this process
+independently, and therefore mass parallelisation makes no inroads to
+cutting this cost.
 
 Moreover, many MCMC algorithms suffer from poor mixing, especially in
-multimodal systems. The time for an MCMC trajectory to switch between modes can be
-large and given that a large number of switches are required before we have a
+multimodal systems. The amount of samples that it takes for an MCMC trajectory to switch between modes can be
+large, and given that a large number of switches are required before we have a
 good idea of the relative probability densities of these different
 regions, it can be prohibitively expensive.
 
@@ -344,12 +345,7 @@ exactly what we wish to demonstrate in this paper.
 These deficiencies of the trivial method of parallelising MCMC methods
 motivated the development of the Parallel Adaptive Importance Sampler
 (PAIS). In the next section we will introduce the method in its most
-general form. We will then introduce the version that we have
-implemented, which utilises the resampler recently suggested by
-Reich\cite{reich2013nonparametric} described in Section
-\ref{sec:filters}, and the pCNL proposal distribution described in
-Section \ref{Sec:pCNL}.
-
+general form.
 
 \section{The Parallel Adaptive Importance Sampler \allowbreak (PAIS)}\label{Sec:PAIS}
 
