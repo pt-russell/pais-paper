@@ -704,7 +704,7 @@ We wish to find $M$ vectors $\{{\bf p}_1,{\bf p}_2,\ldots,{\bf p}_M\}
 \subset \mathbb{R}^M_{\ge 0}$
 such that  $\frac{1}{M} \sum {\bf p}_i = \bar{\bf w}$. The AMR is then
 given by a sample from each of the multinomials defined by the vectors
-${\bf p}_i = [p_{i,1},p_{i,2},\ldots,p_{i,M}]$ with associated states ${\bf x}_i$. Alternatively, as with the ETPF, a deterministic sample
+${\bf p}_i = [p_{i,1},p_{i,2},\ldots,p_{i,M}]$ with associated states ${\bf y}_i$. Alternatively, as with the ETPF, a deterministic sample
 can be chosen by picking each sample to be equal to the mean value of
 each of these multinomial distributions, i.e. each new sample
 $\hat{x}_i$ is given by:
@@ -714,10 +714,11 @@ $\hat{x}_i$ is given by:
 
 The resulting sample has several properties which are advantageous in
 the context of being used with the PAIS algorithm. Firstly, we have
-effectively chopped up the multinomial distribution into used in the
+effectively chopped up the multinomial distribution used in the
 bootstrap filter into $M$ pieces, and we can guarantee that exactly
 one sample will be taken from each section. This leads to a much
-smaller chance of losing entire modes in the density. Secondly, if we do not make a random sample for
+smaller chance of losing entire modes in the density, if each of the
+sub-multinomials is picked in an appropriate fashion. Secondly, if we do not make a random sample for
 each multinomial with probability vector $\bf p_i$ but instead take
 the mean of the multinomial to be the sample, this algorithm preserves
 the mean of the sample exactly. Lastly, as we will see shortly, this
@@ -753,7 +754,7 @@ for the states with the biggest weights.
 
 Table \ref{tab:AMR} describes the basis of the algorithm with
 deterministic resampling, using the means of each of the
-sub-multinomials. This resampler was designed with the aims of being
+sub-multinomials as the new samples. This resampler was designed with the aims of being
 more efficient than the ETPF, and more accurate than straight multinomial
 resampling. Therefore we now present numerical examples which
 demonstrate this.
@@ -773,13 +774,13 @@ To test the accuracy and speed of the three resamplers (ETPF,
 bootstrap and AMR), we drew a sample of size $M$ from the proposal distribution
 $\mathcal{N}(1,2)$. Importance weights were assigned, based on a
 target distribution of $\mathcal{N}(2,3)$. The statistics of the
-resampled outputes were compared with the original weighted samples. Figure \ref{fig:AMR} (a)-(c) show how the relative errors in the first
+resampled outputs were compared with the original weighted samples. Figure \ref{fig:AMR} (a)-(c) show how the relative errors in the first
 three moments of the samples changes with $M$ for the three different
 samplers. As expected, the AMR lies somewhere between the high
 accuracy of the ETPF and the less accurate bootstrap
 resampling. Note that only the error for the bootstrap multinomial
 sampler is presented for the first moment since both the ETPF and the
-AMR preserve the mean up to machine precision. Figure \ref{fig:AMR} (d) shows how the computational cost,
+AMR preserve the mean of the original weighted samples up to machine precision. Figure \ref{fig:AMR} (d) shows how the computational cost,
 measured in seconds, scales with the ensemble size for the three
 different methods. These results demonstrate that the AMR behaves how we wish, and
 importantly ensures that exactly one sample of the output will lie in
