@@ -1201,11 +1201,19 @@ the posterior over the same histogram bins.
 % modifications to algorithm + spikes
 In this problem we modify our PAIS algorithm to use a mixture of Gamma
 distributions in the proposal distribution instead of a Gaussian
-mixture. The PAIS-LA algorithm uses the Langevin proposal distribution
+mixture. The PAIS-Gamma and MH-Gamma algorithms use a Gamma
+proposal distribution with mean centred at the previous state,
+\[
+	Y \sim \text{Gamma}(\cdot;\alpha^*, \beta^*) \quad \text{where} \quad \frac{\alpha^*}{\beta^*} = X \ \text{and} \ \frac{\alpha^*}{(\beta^*)^2} = \beta^2.
+\]
+
+Similarly the PAIS-LA algorithm uses the Langevin proposal distribution
 from the standard MALA algorithm with a pertubation taken from a Gamma
-distribution with mean $X+\frac{1}{2}\beta^2\nabla \log\pi(\cdot)$,
-and  variance $\beta^2$. Similarly we use a Gamma proposal in the MH
-algorithm. This ensures that we only propose positive
+distribution,
+\[
+	Y \sim \text{Gamma}(\cdot; \alpha^*, \beta^*), \quad \text{where} \quad \frac{\alpha^*}{\beta^*} = X+\frac{1}{2}\beta^2\nabla\log\pi(X) \ \text{and} \ \frac{\alpha^*}{(\beta^*)^2} = \beta^2.
+\]
+This ensures that we only propose positive
 parameters. Having a heavier right tail in the proposal distribution
 also means that the posterior is absolutely continuous with respect to
 the proposal. When this is not the case, the weight function can tend
