@@ -597,12 +597,21 @@ imagine the algorithm in the burn-in phase, for example, we have $M$
 ensemble members in the tail of a Gaussian curve searching for the area of
 high density. If the ensemble members are evenly spaced, then the particle
 closest to the mean will have an exponentially higher weight assigned
-to it. The effective sample size in this scenario will be close to
+to it. The effective sample size ratio in this scenario will be close to
 1. As the algorithm burns in, the ensemble populates the regions where
 the majority of the probability density lies, and the proposal
 distributions better represent the posterior distribution. This leads
 to smaller variance in the weights, and a bigger effective sample size.
 By this argument we can see that rising $\neff$ signals the end of the burn-in period.
+
+\begin{figure}[htb]
+\centering
+\includegraphics[width=0.65\textwidth]{"figures/C1_burnin"}
+\caption{The effective sample size ratio and relative L2 error between the proposal and posterior distributions at each of the first 30 iterations. These numerics are taken from a simulation of the problem in Section~\ref{sec:chem} using the PAIS-Gamma algorithm.}
+\label{fig:neff-burnin}
+\end{figure}
+
+Figure~\ref{fig:neff-burnin} shows that the effective sample size reaches stationarity at the same time as the relative L2 error between the posterior distribution and the proposal distribution reaches its minimum. Detecting this stationarity allows us to automatically determine the end of the burn-in phase of the algorithm.
 
 \begin{figure}[htb]
 \centering
@@ -923,7 +932,7 @@ Throughout this example, we use an ensemble size $M=50$, but it is interesting t
 
 \begin{figure}[h]
 \begin{center}
-\includegraphics[width=0.7\textwidth]{"figures/PAIS_saving"}
+\includegraphics[width=0.6\textwidth]{"figures/PAIS_saving"}
 \caption{Ratio of PAIS-RW samples required to reach the same tolerance as the RWMH algorithm.}
 \label{fig:PAIS_saving}
 \end{center}
@@ -1050,7 +1059,7 @@ The adaptive algorithm can just as easily be applied to the PAIS algorithm with 
 
 \begin{figure}[htb]
 \begin{center}
-\includegraphics[width=0.7\textwidth]{"figures/BM2_AL2"}
+\includegraphics[width=0.6\textwidth]{"figures/BM2_AL2"}
 \caption{Convergence of the relative $L^2$ error for problem $B_2$, comparing the globally optimised nonadaptive algorithms with the locally optimised adaptive algorithms. The setup is as described in Section~\ref{sec:Implementation P1} (3).}
 \label{fig:BM2_AL2}
 \end{center}
@@ -1069,7 +1078,7 @@ each mode at this point. The adaptive PAIS-RW with scout chains tuned to the eff
 
 \begin{figure}
 \begin{center}
-\includegraphics[width=\textwidth]{"figures/calc_saving"}
+\includegraphics[width=0.8\textwidth]{"figures/calc_saving"}
 \caption{Illustration of calculating the number of PAIS-pCNL iterations required to reach a tolerance of $~10^{-2.8}$ as a percentage of MH iterations. The relative $L^2$ error graphs are from the Gaussian problem in Section~\ref{sec:problem 1}.}
 \label{fig:calc_saving}
 \end{center}
