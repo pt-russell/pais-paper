@@ -157,7 +157,7 @@ of the target density to produce more efficient MCMC
 proposals\cite{girolami2011riemann}. This methodology has been
 successfully applied to MALA-type proposals and methods which exploit
 even higher order gradient information\cite{bui2014solving}.  These
-methods allow us explore the posterior distribution more fully 
+methods allow us to explore the posterior distribution more fully 
 with fewer iterations.
 
 Simultaneously, great strides are continually being made in the
@@ -170,7 +170,7 @@ exploitation of these facilities is the key to solving many of the
 computational challenges that we currently face.
 
 As such, the development of efficient parallel MCMC algorithms is an
-important area for research. Since MCMC methods can be trivially
+important area for research. Since MCMC methods can be naively
 parallelised by simply running many independent chains in parallel,
 the focus needs to be on the development of methods which gain some
 added benefit through parallelism. One class of parallel MCMC method
@@ -185,10 +185,10 @@ In this paper, we present a framework for parallelisation of
 importance sampling, which can be built around many of the current
 Metropolis-based methodologies in order to create an efficient target
 proposal from the current state of all of the chains in the
-ensemble. The idea is to consider the parallel chains as an ensemble,
-and to resample using a transformation based on optimal transport.
-Samplers based on optimal transport have also been considered in
-\cite{el2012bayesian}.
+ensemble. The idea is to consider the current state on each of a set of
+parallel chains as an ensemble, and to resample using a transformation
+based on optimal transport. Samplers based on optimal transport
+have also been considered in \cite{el2012bayesian}.
 
 In Section \ref{Sec:Prelim} we introduce some mathematical
 preliminaries upon which we will later rely. In Section \ref{Sec:PAIS}
@@ -197,9 +197,10 @@ we present the general framework of the PAIS algorithm. In Section
 automatically tune algorithmic parameters concerned with the proposal
 distributions. In Section \ref{sec:AMR} we introduce the approximate
 multinomial resampling (AMR) algorithm which is a less accurate but
-faster alternative to the ETPF resampler. In Section \ref{Sec:Num} we
-present some numerical examples, before a brief conclusion and
-discussion in Section \ref{Sec:Conc}.
+faster alternative to resamplers which solve the optimal transport
+problem exactly. In Section \ref{Sec:Num} we present some numerical
+examples, before a brief conclusion and discussion in Section
+\ref{Sec:Conc}.
 
 \section{Preliminaries}\label{Sec:Prelim}
 In this Section we will introduce preliminary topics and algorithms
@@ -215,15 +216,19 @@ space $X$.
 The parameter $u$ is observed
 through the observation operator $\mathcal{G}:X \to\mathbb{R}^d$. 
 Since observations are never perfect, we
-assume that these measurements $\data$ are subject to Gaussian noise, so that
+assume that these measurements $\data$ are subject to Gaussian noise,
+so that
 \begin{equation}\label{eqn:obs}
 	\data = \mathcal{G}(u) + \varepsilon, \qquad \varepsilon \sim \mu_{\varepsilon} = \mathcal{N}(0,\Sigma).
 \end{equation}
-For example, if $u$ are the rates of reactions in a chemical system, $\G$ might return the times at which each reaction occurs, or some summary of this information.
+For example, if $u$ are the rates of reactions in a chemical system, $\G$ might
+return the quantities of each chemical species at a particular time, or some
+summary of this information.
 
 These modelling assumptions allow us to construct the 
 likelihood of observing the data $\data$ given the parameter $u =
-u^*$. Rearranging \eqref{eqn:obs} and using the distribution of $\varepsilon$, we get:
+u^*$. Rearranging \eqref{eqn:obs} and using the distribution of
+$\varepsilon$, we get:
 \begin{equation}\label{eqn:like}
 	\mathbb{P}(\data|u=u^*) \propto \exp \left ( -\frac{1}{2} \|\mathcal{G}(u^*)
 	  - \data\|_\Sigma^2 \right ) = \exp\left(-\Phi(u^*)\right),
@@ -306,7 +311,20 @@ the original samples. Another downside is that the required ensemble
 size increases quickly with dimension, making it difficult to use in
 high-dimensional problems.
 
-The Ensemble Transform (ET) method proposed by Reich \cite{reich2013nonparametric} makes use of optimal transportation as described in \cite{villani2003topics,villani2008optimal}. The transform takes a sample of weighted particles $\{y_i\}_{i=1}^M$ from $\mu_Y$ and converts it into a sample of evenly weighted particles $\{x_i\}_{i=1}^M$ from $\mu_X$, by means of defining a coupling $T^*$ between $Y$ and $X$. Given that a trivial coupling $T^t$ always exists in the space of transference plans, $\Pi(\mu_{X}, \mu_{Y})$, we can find a coupling $T^*$ which maximises the correlation between $X$ and $Y$ \cite{cotter2012ensemble}. This coupling is the solution to a linear programming problem in $M^2$ variables with $2M-1$ constraints. Maximising the correlation ensures that the new sample is as much like the original sample as possible with the additional property that the sample is evenly weighted.
+The ensemble transform particle filter (ETPF) proposed by Reich
+\cite{reich2013nonparametric} makes use of optimal transportation as
+described in \cite{villani2003topics,villani2008optimal}. The transform
+takes a sample of weighted particles $\{y_i\}_{i=1}^M$ from $\mu_Y$
+and converts it into a sample of evenly weighted particles $\{x_i\}_{i=1}^M$
+from $\mu_X$, by means of defining a coupling $T^*$ between $Y$ and
+$X$. Given that a trivial coupling $T^t$ always exists in the space of
+transference plans, $\Pi(\mu_{X}, \mu_{Y})$, we can find a coupling
+$T^*$ which maximises the correlation between $X$ and $Y$
+\cite{cotter2012ensemble}. This coupling is the solution to a linear
+programming problem in $M^2$ variables with $2M-1$ constraints.
+Maximising the correlation ensures that the new sample is as much like
+the original sample as possible with the additional property that the sample
+is evenly weighted.
 
 A Monte Carlo algorithm can be implemented to resample from a weighted
 ensemble. We create a weighted sample, then solve the optimal
@@ -318,29 +336,28 @@ ensemble size increases, the statistics of the evenly weighted sample
 approach those of the posterior distribution.
 
 \subsection{Deficiencies of Metropolis-type MCMC schemes}
-All MCMC methods are trivially parallelisable. One can take a method
+All MCMC methods are naively parallelisable. One can take a method
 and simply implement it simultaneously over a set of processors in an ensemble. All
 of the states of all of the ensemble member can be recorded, and in the time
 that it takes one MCMC chain to draw $N$ samples, $M$ ensemble members
-can draw
-$NM$ samples. 
+can draw $NM$ samples. 
 
 However, we argue that this is not an optimal
 scenario. First of all, unless we have a lot of information about the
-posterior, we will intialise the algorithm's initial state in the
+posterior, we will initialise the algorithm's initial state in the
 tails of the distribution. The samples that are initially made as the
 algorithm finds its way to the mode(s) of the distribution cannot be
-considered to samples from the target distribution, and must be thrown
-away. This process is known as the burn-in. In a trivially
-parallelised scenario, each ensemble member must perform this process
-independently, and therefore mass parallelisation makes no inroads to
-cutting this cost.
+considered to be samples from the target distribution, and must be thrown
+away. This process is known as the burn-in. In a trivially parallelised
+scenario, each ensemble member must perform this process independently,
+and therefore mass parallelisation makes no inroads to cutting this cost.
 
 Moreover, many MCMC algorithms suffer from poor mixing, especially in
-multimodal systems. The amount of samples that it takes for an MCMC trajectory to switch between modes can be
-large, and given that a large number of switches are required before we have a
-good idea of the relative probability densities of these different
-regions, it can be prohibitively expensive.
+multimodal systems. The amount of samples that it takes for an MCMC
+trajectory to switch between modes can be large, and given that a large
+number of switches are required before we have a good idea of the relative
+probability densities of these different regions, it can be prohibitively
+expensive.
 
 Another aspect of Metropolis-type samplers is that information
 computed about a proposed state is simply lost if we choose to reject
