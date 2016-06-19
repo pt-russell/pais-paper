@@ -210,30 +210,30 @@ In this paper, we focus on the use of MCMC methods for characterising
 posterior probability distributions in Bayesian inverse problems. We
 wish to learn about a particular unknown quantity $u$, of which we are
 able to make direct or indirect noisy observations. For now
-we say that $u$ is a member of a Hilbert
+we say that $x$ is a member of a Hilbert
 space $X$. 
 
-The parameter $u$ is observed
+The parameter $x$ is observed
 through the observation operator $\mathcal{G}:X \to\mathbb{R}^d$. 
 Since observations are never perfect, we
 assume that these measurements $\data$ are subject to Gaussian noise,
 so that
 \begin{equation}\label{eqn:obs}
-	\data = \mathcal{G}(u) + \varepsilon, \qquad \varepsilon \sim \mu_{\varepsilon} = \mathcal{N}(0,\Sigma).
+	\data = \mathcal{G}(x) + \varepsilon, \qquad \varepsilon \sim \mu_{\varepsilon} = \mathcal{N}(0,\Sigma).
 \end{equation}
-For example, if $u$ are the rates of reactions in a chemical system, $\G$ might
+For example, if $x$ are the rates of reactions in a chemical system, $\G$ might
 return the quantities of each chemical species at a particular time, or some
 summary of this information.
 
 These modelling assumptions allow us to construct the 
-likelihood of observing the data $\data$ given the parameter $u =
-u^*$. Rearranging \eqref{eqn:obs} and using the distribution of
+likelihood of observing the data $\data$ given the parameter $x =
+x^*$. Rearranging \eqref{eqn:obs} and using the distribution of
 $\varepsilon$, we get:
 \begin{equation}\label{eqn:like}
-	\mathbb{P}(\data|u=u^*) \propto \exp \left ( -\frac{1}{2} \|\mathcal{G}(u^*)
-	  - \data\|_\Sigma^2 \right ) = \exp\left(-\Phi(u^*)\right),
+	\mathbb{P}(\data|x=x^*) \propto \exp \left ( -\frac{1}{2} \|\mathcal{G}(x^*)
+	  - \data\|_\Sigma^2 \right ) = \exp\left(-\Phi(x^*)\right),
 \end{equation}
-where $\| x - y \|_\Sigma$ is the Mahalanobis distance between $x$ and $y$.
+where $\| y_1 - y_2 \|_\Sigma$ is the Mahalanobis distance between $y_1$ and $y_2 \in \mathbb{R}^d$.
 
 As discussed in \cite{stuart2010inverse,cotter2009bayesian},
 in order for this inverse problem to be well-posed in the Bayesian
@@ -245,7 +245,7 @@ the Radon-Nikodym derivative of the posterior measure, $\mu_Y$, with
 respect to the prior measure, $\mu_0$, is proportional to the
 likelihood:
 \begin{equation}\label{eqn:RND}
-	\frac{d\mu_Y}{d\mu_0} \propto \exp \left ( -\Phi(u^*) \right ).
+	\frac{d\mu_Y}{d\mu_0} \propto \exp \left ( -\Phi(x^*) \right ).
 \end{equation}
 
 % \subsection{The preconditioned Crank-Nicolson Langevin (pCNL) algorithm}\label{Sec:pCNL}
@@ -406,11 +406,11 @@ can draw samples. Each sample is assigned a weight given by the
 ratio of the target density and the proposal density at that
 point. They are efficient when the proposal density is concentrated in
 similar areas to the target density, and incredibly inefficient when
-this is not the case. The aim of the PAIS is to use the states of a
-ensemble ofl MCMC chains to construct a proposal distribution which
-will be as close as possible to the target density. Given a big enough
-ensemble, the states of all of these chains at one point
-in time may be reasonably representative sample of the target density.
+this is not the case. The aim of the PAIS is to use an ensemble of states,
+each coming from a particular time point in an MCMC chain, to construct a proposal
+distribution which will be as close as possible to the target density. If this
+ensemble is large enough, the distribution of states will be representative
+of the target density.
 
 The proposal distribution could be constructed in many different ways,
 but we choose to use a mixture distribution, made up of a sum of MCMC
@@ -436,7 +436,7 @@ we wish to use to infer $x$. Since we have $M$ ensemble members, we
 represent the current state of all of the Markov chains as a vector
 $\X = [x_1,x_2,\ldots,x_M]^T$. We are also given a transition kernel
 $\nu(\cdot,\cdot)$, which might come from an MCMC method, for example
-the random walk Metropolis-Hastings proposal density $\nu(\cdot,x) ~
+the random walk Metropolis-Hastings proposal density $\nu(\cdot,x) \sim
 \mathcal{N}(x,\beta^2)$, where $\beta^2\in \mathbb{R}$ defines the
 variance of the proposal.
 
@@ -502,12 +502,16 @@ critical to achieving optimal mixing rates and hence achieving fast
 convergence to the target density. One aspect worthy of  consideration
 with the PAIS, is finding an appropriate $\nu$ such that
 $\chi$ is a close approximation to the posterior density $\pi$. If the
-proposal distribution is over-dispersed, then the algorithm will often
+proposal distribution is too over-dispersed, then the algorithm will often
 propose states in the tails of the distribution, resulting in larger
-variance of the weights, and therefore slower converegence to the
+variance of the weights, and therefore slower convergence to the
 posterior distribution. Similarly, if the proposal distribution is
 under-dispersed, the proposals will be highly correlated with the
-previous states, and the algorithm will take a long time to fully explore the parameter spac. It is therefore necessary to find a proposal distribution which is slightly over-dispersed to ensure the entire posterior is explored\cite{gelman1992inference}, but is as close to the posterior as possible.
+previous states, and the algorithm will take a long time to fully explore
+the parameter space. It is therefore necessary to find a proposal
+distribution which is slightly over-dispersed to ensure the entire
+posterior is explored\cite{gelman1992inference}, but is as close to the
+posterior as possible.
 
 Most commonly used MCMC proposals have parametric dependence which
 allows the user to control their variance. For example, in the RWMH
@@ -530,6 +534,13 @@ optimal value then allows us to explore each region efficiently. The
 fact that we have an ensemble of chains allows us to assess quickly and
 effectively what the optimal variance of the proposal distributions
 should be.
+
+The alternative to using adaptive procedures to tune the scaling
+parameters is to perform exploratory simulations to find the optimal
+regimes by trial and error. This can be very costly and the optimal
+parameters cannot realistically be found to more than a couple of
+significant figures. It is therefore important that MCMC algorithms
+provide a feasible adaptive strategy to bypass this exploratory stage.
 
 In many MCMC algorithms such as the Random Walk Metropolis-Hastings (RWMH) algorithm, the optimal scaling parameter can be found by searching for the parameter value which gives an optimal acceptance rate, e.g. for near Gaussian targets we have 23.4\% for RWMH and 57.4\% for MALA\cite{roberts2001optimal}. Unlike Metropolis-Hastings algorithms, the PAIS algorithm does not accept or reject proposed values, so we need another method of measuring the optimality of $\beta$. Section~\ref{sec:statistics} gives some possible methods for tuning $\beta$.
 
@@ -556,7 +567,12 @@ over a set of disjoint sets or ``bins'':
 \begin{equation}\label{eqn:L2_error}
 	e^2 = \sum\limits_{i=1}^{n_b}\left[\displaystyle\int_{R_i} \! \pi(a|D) \, \mbox{d}a - vB_i\right]^2 \Big/ \sum\limits_{i=1}^{n_b}\left[\displaystyle\int_{R_i} \! \pi(a|D) \, \mbox{d}a\right]^2,
 \end{equation}
-where the regions $\{R_i\}_{i=1}^{n_b}$ are the $d$-dimensional histogram bins, so that $\bigcup_i R_i \subseteq X$ and $R_i\cap R_j=\emptyset$, $n_b$ is the number of bins, $v$ is the volume of each bin, and $B_i$ is the value of the $i$th bin. 
+where the regions $\{R_i\}_{i=1}^{n_b}$ are the $d$-dimensional
+histogram bins, so that $\bigcup_i R_i \subseteq X$ and
+$R_i\cap R_j=\emptyset$, $n_b$ is the number of bins, $v$ is the
+volume of each bin, and $B_i$ is the value of the $i$th bin. This
+metric converges to the standard definition of the relative $L^2$
+error as $v\rightarrow 0$.
 
 These statistics cannot be used in general to find optimal values of
 $\beta$ since they require knowledge of the analytic solution, and
@@ -624,11 +640,11 @@ By this argument we can see that rising $\neff$ signals the end of the burn-in p
 \begin{figure}[htb]
 \centering
 \includegraphics[width=0.65\textwidth]{"figures/C1_burnin"}
-\caption{The effective sample size ratio and relative L2 error between the proposal and posterior distributions at each of the first 30 iterations. These numerics are taken from a simulation of the problem in Section~\ref{sec:chem} using the PAIS-Gamma algorithm.}
+\caption{The effective sample size ratio and relative $L^2$ error between the proposal and posterior distributions at each of the first 30 iterations. These numerics are taken from a simulation of the problem in Section~\ref{sec:chem} using the PAIS-Gamma algorithm.}
 \label{fig:neff-burnin}
 \end{figure}
 
-Figure~\ref{fig:neff-burnin} shows that the effective sample size reaches stationarity at the same time as the relative L2 error between the posterior distribution and the proposal distribution reaches its minimum. Detecting this stationarity allows us to automatically determine the end of the burn-in phase of the algorithm.
+Figure~\ref{fig:neff-burnin} shows that the effective sample size reaches stationarity at the same time as the relative $L^2$ error between the posterior distribution and the proposal distribution reaches its minimum. Detecting this stationarity allows us to automatically determine the end of the burn-in phase of the algorithm.
 
 \begin{figure}[htb]
 \centering
@@ -643,7 +659,7 @@ how to tune the proposal variance, we need to look at how it behaves
 in different situations. Here we look at how the statistic behaves as
 we vary the ensemble size, $M$. Figure~\ref{fig:neff-M} shows results
 for the Gaussian posterior discussed in Section~\ref{sec:problem 1}
-when using the PAIS algorithm with RWMH proposals, each with variance
+when using the PAIS algorithm with RW proposals, each with variance
 $\beta^2 \in \mathbb{R}_{>0}$. Figure~\ref{fig:neff-M} (a) shows that
 as the ensemble size increases, the scaling parameter which gives the
 optimal effective sample size ratio decreases. This is to be expected
@@ -680,7 +696,8 @@ where $x_{i-1}$ is our current state and $y$ is our proposed state. In the numer
  Using an adaptive strategy, we calculate a sequence
  $\{\beta^{(k)}\}_{k=1}$ which converges roughly to the optimal
  scaling parameter $\beta^*$, resulting in the optimal transition
- density $\chi$ for our MCMC algorithm. We must choose some sequence
+ density $\chi$ for our MCMC algorithm. This optimal value will differ
+ depending on the criterion we are optimising. We must choose some sequence
  of iterations, $\{n_k\}_{k=1}$, at which to update $\beta$, and due
  to the constraints on adaptive MCMC
  algorithms\cite{roberts2007coupling,roberts2009examples}, these $n_k$
@@ -1063,7 +1080,7 @@ respective nonadaptive algorithms and the improvement PAIS offers remains signif
 \begin{figure}[htb]
 \centering
 \subfigure[Relative $L^2$ error using the optimal scaling parameters.]{\includegraphics[width=0.45\textwidth]{"figures/BM2_L2"}}
-\subfigure[Comparing of the relative $L^2$ error of the algorithms optimised by $L^2$ minimisation with locally optimised PAIS-RW with a scout chain.]{\includegraphics[width=0.45\textwidth]{"figures/BM2_scout"}}
+\subfigure[Comparison of the relative $L^2$ error of the algorithms optimised by $L^2$ minimisation with locally optimised PAIS-RW with a scout chain.]{\includegraphics[width=0.45\textwidth]{"figures/BM2_scout"}}
 \caption{Convergence of the PAIS-RW and RWMH algorithms for Problem $B_2$. Set up described in Section~\ref{sec:Implementation P1}.}
 \label{fig:BM2_L2}
 \end{figure}
