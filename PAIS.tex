@@ -348,7 +348,7 @@ posterior, we will initialise the algorithm's initial state in the
 tails of the distribution. The samples that are initially made as the
 algorithm finds its way to the mode(s) of the distribution cannot be
 considered to be samples from the target distribution, and must be thrown
-away. This process is known as the burn-in. In a trivially parallelised
+away. This process is known as the burn-in. In a naively parallelised
 scenario, each ensemble member must perform this process independently,
 and therefore mass parallelisation makes no inroads to cutting this cost.
 
@@ -365,12 +365,12 @@ that proposal in the Metropolis step. An advantage of importance
 samplers is that no evaluations of $\mathcal{G}$ are ever wasted
 since all samples are saved along with their relative weighting.
 
-Moreover, a trivially parallelised MCMC scheme is exactly that -
-trivial. Intuition suggests that we can gain some speed up by sharing
+Moreover, a naively parallelised MCMC scheme is exactly that -
+naive. Intuition suggests that we can gain some speed up by sharing
 information across the ensemble members, and this is
 what we wish to demonstrate in this paper.
 
-These deficiencies of the trivial method of parallelising MCMC methods
+These deficiencies of the naive method of parallelising MCMC methods
 motivated the development of the Parallel Adaptive Importance Sampler
 (PAIS). In the next section we will introduce the method in its most
 general form.
@@ -640,11 +640,18 @@ By this argument we can see that rising $\neff$ signals the end of the burn-in p
 \begin{figure}[htb]
 \centering
 \includegraphics[width=0.65\textwidth]{"figures/C1_burnin"}
-\caption{The effective sample size ratio and relative $L^2$ error between the proposal and posterior distributions at each of the first 30 iterations. These numerics are taken from a simulation of the problem in Section~\ref{sec:chem} using the PAIS-Gamma algorithm.}
+\caption{The effective sample size ratio and relative $L^2$ difference
+between the proposal and posterior distributions at each of the first 30
+iterations. These numerics are taken from a simulation of the problem in
+Section~\ref{sec:chem} using the PAIS-Gamma algorithm.}
 \label{fig:neff-burnin}
 \end{figure}
 
-Figure~\ref{fig:neff-burnin} shows that the effective sample size reaches stationarity at the same time as the relative $L^2$ error between the posterior distribution and the proposal distribution reaches its minimum. Detecting this stationarity allows us to automatically determine the end of the burn-in phase of the algorithm.
+Figure~\ref{fig:neff-burnin} shows that the effective sample size flattens
+out at the same time as the relative $L^2$ difference between
+the posterior distribution and the proposal distribution stabilises close to
+its minimum. Detecting this stationarity allows us to automatically
+determine the end of the burn-in phase of the algorithm.
 
 \begin{figure}[htb]
 \centering
@@ -779,12 +786,14 @@ ETPF.
 
 There are of course infinitely many different ways that one could use
 to split the original multinomial up into $M$ parts, some of which
-will be far from optimal. The method that we have arrived at is based
-on the idea that we want to group together states which are
-geographically close to each other, preferentially doing this 
-for the states with the biggest weights. 
+will be far from optimal. The method that we have chosen is loosely
+based on the idea of optimal transport. We search out states with the
+largest weights, and choose a cluster around these points based on
+the closest states geographically. This method is not optimal since
+once most of the clusters have been selected the remaining states
+may be spread across the parameter space.
 
-\begin{table}
+\begin{table}[htb]
 \begin{mdframed}
 \begin{algorithmic}
 \STATE $\b{z} = M\bar{\b{w}}$
@@ -807,7 +816,7 @@ for the states with the biggest weights.
 Table \ref{tab:AMR} describes the basis of the algorithm with
 deterministic resampling, using the means of each of the
 sub-multinomials as the new samples. This resampler was designed with the aims of being
-more efficient than the ETPF, and more accurate than straight multinomial
+numerically cheaper than the ETPF, and more accurate than straight multinomial
 resampling. Therefore we now present numerical examples which
 demonstrate this.
 
@@ -1325,11 +1334,10 @@ In Figure~\ref{fig:C1_ESS} (a) we see that the two PAIS algorithms have similar 
 We have explored the application of parallelised MCMC algorithms in
 low dimensional inverse problems. We have demonstrated numerically
 that these algorithms converge faster than the analogous naively parallelised
-Metropolis-Hastings algorithms. Further experimentation with the
-Random Walk Metropolis-Hastings (RWMH), Metropolis Adjusted Langevin
-Algorithm (MALA), preconditioned Crank-Nicolson (pCN) and Hamiltonian
-Monte Carlo (HMC) proposals has
-yielded similar results\cite{Paul}.
+Metropolis-Hastings algorithms. Further experimentation with the Metropolis
+Adjusted Langevin Algorithm (MALA), preconditioned Crank-Nicolson (pCN),
+preconditioned Crank-Nicolson Langevin (pCNL) and Hamiltonian
+Monte Carlo (HMC) proposals has yielded similar results\cite{Paul}.
 
 Importantly, we have compared the efficiency of our parallel scheme
 with a naive parallelisation of serial methods. Thus our increase in
