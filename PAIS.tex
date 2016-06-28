@@ -998,7 +998,7 @@ smooth at the optimal value making it difficult to minimise.
 
 \subsubsection{Scaling of the PAIS algorithm with ensemble size}
 
-Throughout this example, we use an ensemble size $M=50$, but it is interesting to see how the PAIS algorithm scales when we increase the ensemble size, and if there is some limit below which the algorithm fails. We implement the problem in Section~\ref{sec:problem 1}, using the RWMH and PAIS-RW algorithms with ensemble sizes in the inteveral $M \in [1, 160]$.
+Throughout this example, we use an ensemble size $M=50$, but it is interesting to see how the PAIS algorithm scales when we increase the ensemble size, and if there is some limit below which the algorithm fails. We implement the problem in Section~\ref{sec:problem 1}, using the RWMH and PAIS-RW algorithms with ensemble sizes in the interval $M \in [1, 160]$.
 
 \begin{figure}[h]
 \begin{center}
@@ -1137,7 +1137,7 @@ respective nonadaptive algorithms and the improvement PAIS offers remains signif
 
 For $B_2$ the algorithms are run with the global optimal value of $\beta^*$, and with the local optimal value of $\beta^*$. Figure~\ref{fig:BM2_L2} (a) shows that the algorithms using the globally optimal $\beta^*$ convergence at the desired rate, whereas the algorithms optimised using the acceptance rate and effective sample size initially converge faster but at some point forget the location of one of the modes, causing the convergence to flatten out.
 
-Using the PAIS algorithm we can minimise the impact of forgotten modes by constantly allowing the algorithm to search them out. Since we have parallel chains, we can run PAIS-RW with the majority of chains using the locally optimal value of $\beta$, and one or two chains with a larger scaling parameter. These chains with larger scaling parameters act both as `scouts' for new modes, and act to aid in the overdispersal of the proposal distribution. Figure~\ref{fig:BM2_L2} (b) shows the results of using 49 chains with the local optimal scaling parameter, and one chain with ten times the local optimal scaling parameter. We see that modes are not forgotten and the algorithm converges with the improvement we see from PAIS-RW in the other problems. Other methods of mode searches are described in \cite{lan2013wormhole}.
+Using the PAIS algorithm we can minimise the impact of forgotten modes by constantly allowing the algorithm to search them out. Since we have parallel chains, we can run PAIS-RW with the majority of chains using the locally optimal value of $\beta$, and one or two chains with a larger scaling parameter. These chains with larger scaling parameters act both as `scouts' for new modes, and act to aid in the over-dispersal of the proposal distribution. Figure~\ref{fig:BM2_L2} (b) shows the results of using 49 chains with the local optimal scaling parameter, and one chain with ten times the local optimal scaling parameter. We see that modes are not forgotten and the algorithm converges with the improvement we see from PAIS-RW in the other problems. Other methods of mode searches are described in \cite{lan2013wormhole}.
 
 The adaptive algorithm can just as easily be applied to the PAIS algorithm with the `scout' chains described in the previous paragraph. Since we need two equally sized sub-ensembles, we will use two groups of 24 ensembles with the same proposal distributions, and each group will also have a `scout' chain with a scaling parameter ten times that of the rest of the group.
 
@@ -1211,7 +1211,7 @@ frequently (the slow reactions). The quasi-steady-state assumption
 on a timescale which is negligible with respect to the rate of
 occurrence of the slow reactions. This assumption allows us to
 approximate the dynamics of the slowly changing quantities in the
-system by assuming that the fast quantities are in equillibrium with
+system by assuming that the fast quantities are in equilibrium with
 respect to the fast reactions in isolation. This kind of model
 reduction can be used to approximate the likelihood in an inverse
 problem where we wish to recover the reaction parameters in the
@@ -1323,7 +1323,7 @@ proposal distribution with mean centred at the previous state,
 \]
 
 Similarly the PAIS-LA algorithm uses the Langevin proposal distribution
-from the standard MALA algorithm with a pertubation taken from a Gamma
+from the standard MALA algorithm with a perturbationperturbation taken from a Gamma
 distribution,
 \[
 	y \sim \text{Gamma}(\cdot; \alpha^*, \beta^*), \quad \text{where} \quad \frac{\alpha^*}{\beta^*} = x+\frac{1}{2}\beta^2\nabla\log\pi(X) \ \text{and} \ \frac{\alpha^*}{(\beta^*)^2} = \beta^2.
