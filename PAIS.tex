@@ -96,7 +96,9 @@
 
 \author{Colin Cotter\thanks{Department of Mathematics, Imperial
     College, London, UK} \and Simon Cotter\thanks{School of
-    Mathematics, University of Manchester, Manchester, UK. e: simon.cotter@manchester.ac.uk} \and Paul Russell\thanks{School of
+    Mathematics, University of Manchester, Manchester, UK. e:
+    simon.cotter@manchester.ac.uk. SLC is grateful for EPSRC First
+    grant award EP/L023393/1} \and Paul Russell\thanks{School of
     Mathematics, University of Manchester, Manchester, UK}}
 \title{Parallel Adaptive Importance Sampling}
 \begin{document}
@@ -104,18 +106,19 @@
 \begin{abstract}
   Markov chain Monte Carlo methods are a powerful and commonly used
   family of numerical methods for sampling from complex probability
-  distributions. As applications of these methods increase in size and complexity, the need for efficient
-  methods which can exploit the parallel architectures which are
-  prevalent in high performance computing increases. In this paper, we
-  aim to develop a framework for scalable parallel MCMC algorithms. At
-  each iteration, an importance sampling proposal distribution is
-  formed using the current states of all of the chains within an
-  ensemble. Once weighted samples have been produced from this, a
-  state-of-the-art resampling method is then used to create an evenly
-  weighted sample ready for the next iteration. We demonstrate that
-  this parallel adaptive importance sampling (PAIS) method outperforms
-  naive parallelisation of serial MCMC methods using the same number
-  of ensemble members, for low dimensional problems, and in fact shows
+  distributions. As applications of these methods increase in size and
+  complexity, the need for efficient methods which can exploit the
+  parallel architectures which are prevalent in high performance
+  computing increases. In this paper, we aim to develop a framework
+  for scalable parallel MCMC algorithms. At each iteration, an
+  importance sampling proposal distribution is formed using the
+  current states of all of the chains within an ensemble. Once
+  weighted samples have been produced from this, a state-of-the-art
+  resampling method is then used to create an evenly weighted sample
+  ready for the next iteration. We demonstrate that this parallel
+  adaptive importance sampling (PAIS) method outperforms naive
+  parallelisation of serial MCMC methods using the same number of
+  ensemble members, for low dimensional problems, and in fact shows
   better than linear improvements in convergence rates with respect to
   the number of ensemble members. We also introduce a new resampling
   strategy, approximate multinomial resampling (AMR), which while not
