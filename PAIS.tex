@@ -119,7 +119,7 @@
   better than linear improvements in convergence rates with respect to
   the number of ensemble members. We also introduce a new resampling
   strategy, approximate multinomial resampling (AMR), which while not
-  as accurate as other schemes is substantially costly for large
+  as accurate as other schemes is substantially less costly for large
   ensemble sizes, which can then be used in conjunction with PAIS for
   complex problems.
 \end{abstract}
@@ -138,11 +138,11 @@ of fields in statistics, science and engineering.  In particular, when
 considering Bayesian inverse problems, each MCMC step may involve the
 numerical solution of one or more PDE. As many samples are usually
 required before Monte Carlo error is reduced to acceptable levels,
-these types of problem remain frustratingly out of our grasp.
+the application of MCMC methods to these types of problem remain frustratingly out of our grasp.
 
 Many advances have been made in the field of MCMC to design ever more
 complex methods that propose moves more intelligently, leading to
-rapidly converging methods. Function space versions of standard methods
+rapidly converging approximations. Function space versions of standard methods
 such as the random walk Metropolis-Hastings (RWMH) algorithm or the
 Metropolis adjusted Langevin algorithm (MALA), whose convergence rates
 are independent of dimension have been
@@ -162,11 +162,11 @@ with fewer iterations.
 
 Simultaneously, great strides are continually being made in the
 development of computing hardware. Moore's law, which predicted that
-the number of transistors that can to fit on a single microchip will
+the number of transistors that can fit onto a single microchip will
 double every two years, has been largely followed since the early
 70s\cite{moore1998cramming}. In recent times, it has become necessary
-to use parallel architectures to exploit Moore's law. The efficient
-exploitation of these facilities is the key to solving many of the
+to use parallel architectures in order for this trend to continue. The efficient
+exploitation of these architectures is the key to solving many of the
 computational challenges that we currently face.
 
 As such, the development of efficient parallel MCMC algorithms is an
@@ -207,7 +207,7 @@ In this Section we will introduce preliminary topics and algorithms
 that will be referred to throughout the paper.
 \subsection{Bayesian inverse problems}
 In this paper, we focus on the use of MCMC methods for characterising
-posterior probability distributions in Bayesian inverse problems. We
+posterior probability distributions arising from Bayesian inverse problems. We
 wish to learn about a particular unknown quantity $u$, of which we are
 able to make direct or indirect noisy observations. For now
 we say that $x$ is a member of a Hilbert
@@ -300,16 +300,16 @@ as the Kalman filter\cite{kalman1960new} and ensemble Kalman filter\cite{evensen
 assimilation community.
 
 One advantage of the particle filter is that there are convergence
-results for this method as the number of particles is increased. One
+results for this method as the number of particles is increased.  One downside is that the required ensemble
+size increases quickly with dimension, making it difficult to use in
+high-dimensional problems. Another
 downside is that the effective sample size decreases at each
 iteration, resulting in degeneration of the approximation of the
 posterior. One way to tackle
 this is to employ a resampling scheme. The aim of a successful
-resample is to take your unevenly weighted ensemble and return a new
+resample is to take the unevenly weighted ensemble and return a new
 ensemble of particles with even weights which is highly correlated to
-the original samples. Another downside is that the required ensemble
-size increases quickly with dimension, making it difficult to use in
-high-dimensional problems.
+the original samples.
 
 The ensemble transform particle filter (ETPF) proposed by Reich
 \cite{reich2013nonparametric} makes use of optimal transportation as
@@ -407,7 +407,7 @@ ratio of the target density and the proposal density at that
 point. They are efficient when the proposal density is concentrated in
 similar areas to the target density, and incredibly inefficient when
 this is not the case. The aim of the PAIS is to use an ensemble of states,
-each coming from a particular time point in an MCMC chain, to construct a proposal
+each coming from a MCMC chain, to construct a proposal
 distribution which will be as close as possible to the target density. If this
 ensemble is large enough, the distribution of states will be representative
 of the target density.
@@ -484,7 +484,8 @@ the inverse problem being tackled involves computing
 the likelihood from a very large data set this could lead to a
 large saving of computational cost. We have observed that
 using more complex (and hence more expensive) kernels $\nu$, does not
-significantly improve the speed of convergence of the algorithm.
+significantly improve the speed of convergence of the algorithm for
+simple examples\cite{Paul}.
 
 Care needs to be taken when choosing the proposal distribution to
 ensure that the proposals are absolutely continuous with respect to
@@ -500,7 +501,8 @@ of the algorithm.
 Efficient selection of scaling parameters in MCMC algorithms is
 critical to achieving optimal mixing rates and hence achieving fast
 convergence to the target density. One aspect worthy of  consideration
-with the PAIS, is finding an appropriate $\nu$ such that
+with the PAIS, is finding an appropriate proposal kernel $\nu$ such
+that the mixture distribution
 $\chi$ is a close approximation to the posterior density $\pi$. If the
 proposal distribution is too over-dispersed, then the algorithm will often
 propose states in the tails of the distribution, resulting in larger
@@ -508,7 +510,8 @@ variance of the weights, and therefore slower convergence to the
 posterior distribution. Similarly, if the proposal distribution is
 under-dispersed, the proposals will be highly correlated with the
 previous states, and the algorithm will take a long time to fully explore
-the parameter space. It is therefore necessary to find a proposal
+the parameter space, and worse, will lead regularly to states proposed
+in the tails of the proposal distribution with very large weights. It is therefore necessary to find a proposal
 distribution which is slightly over-dispersed to ensure the entire
 posterior is explored\cite{gelman1992inference}, but is as close to the
 posterior as possible.
@@ -540,7 +543,7 @@ parameters is to perform exploratory simulations to find the optimal
 regimes by trial and error. This can be very costly and the optimal
 parameters cannot realistically be found to more than a couple of
 significant figures. It is therefore important that MCMC algorithms
-provide a feasible adaptive strategy to bypass this exploratory stage.
+provide a feasible adaptive strategy.
 
 In many MCMC algorithms such as the Random Walk Metropolis-Hastings (RWMH) algorithm, the optimal scaling parameter can be found by searching for the parameter value which gives an optimal acceptance rate, e.g. for near Gaussian targets the optimal rates are 23.4\% for RWMH and 57.4\% for MALA\cite{roberts2001optimal}. Unlike Metropolis-Hastings algorithms, the PAIS algorithm does not accept or reject proposed values, so we need another method of measuring the optimality of $\beta$. Section~\ref{sec:statistics} gives some possible methods for tuning $\beta$.
 
@@ -556,9 +559,9 @@ relative error between the sample moments and the posterior's moments, or the
 relative $L^2$ error between the true density, $\pi(x|D)$, and the
 constructed histogram. The relative error in the $m$-th moment is
 given by:
-\[
+\begin{equation}\label{eq:34567}
 	\left|\frac{N^{-1}\sum_{i=1}^N \! x_i^m - \mathbb{E}[X^m]}{\mathbb{E}[X^m]}\right|,
-\]
+\end{equation}
 where $\{x_i\}_{i=1}^N$ is a sample of size $N$. The relative $L^2$
 error between a continuous function to a piecewise constant function,
 $e$, can be given by considering the difference in mass between the
@@ -611,7 +614,7 @@ The statistic $\neff$ is easier to deal with than the variance of the
 weights, as it varies between $1$ and $M$ as opposed to the variance
 which can vary over many orders of magnitude.
 Therefore it is preferable as a means of tuning the scaling
-parameter. In the following numerics, we use the effective sample size
+parameter. In all of the numerics which follow, we use the effective sample size
 calculated at each iteration and averaged across the entire run to
 tune the scaling parameters. We do this because when we tune this
 parameter on the fly, we use the single-iteration average to estimate
@@ -696,9 +699,10 @@ sophisticated examples are described in \cite{roberts2009examples} and
 
 From here on in, we will use the random walk proposal,
 \begin{equation}y = x_{i-1}+\beta \omega_{i-1}, \qquad \omega_{i-1}
-  \sim \mathcal{N}(0,1) \qquad {\rm i.i.d.}
+  \sim \mathcal{N}(0,\Sigma) \qquad {\rm i.i.d.}
 \end{equation}
-where $x_{i-1}$ is our current state and $y$ is our proposed state. In the numerics section we will refer to $\beta$ as the scaling parameter.
+where $x_{i-1}$ is our current state, $y$ is our proposed state and
+$\Sigma$ is a covariance operator, which could come from the prior distribution. In the numerics section we will refer to $\beta$ as the scaling parameter.
 
  Using an adaptive strategy, we calculate a sequence
  $\{\beta^{(k)}\}_{k=1}$ which converges roughly to the optimal
@@ -836,7 +840,7 @@ bootstrap and AMR), we drew a sample of size $M$ from the proposal distribution
 $\mathcal{N}(1,2)$. Importance weights were assigned, based on a
 target distribution of $\mathcal{N}(2,3)$. The statistics of the
 resampled outputs were compared with the original weighted samples. Figure \ref{fig:AMR} (a)-(c) show how the relative errors in the first
-three moments of the samples changes with $M$ for the three different
+three moments of the samples changes with ensemble size $M$ for the three different
 samplers. As expected, the AMR lies somewhere between the high
 accuracy of the ETPF and the less accurate bootstrap
 resampling. Note that only the error for the bootstrap multinomial
@@ -859,9 +863,9 @@ resampler can affect the speed and accuracy of the PAIS algorithm.
 
 In this example we compare the naively parallelised RWMH algorithm with its
 PAIS variant, the PAIS-RW algorithm. The PAIS algorithm is implemented using the
-ETPF to perform the resampling step. We asses the performance of the PAIS algorithm
-using the relative $L^2$ error defined in Equation~\ref{eqn:L2_error}, as well as the
-relative error in the first moment.
+ETPF to perform the resampling step. We assess the performance of the PAIS algorithm
+using the relative $L^2$ error defined in \eqref{eqn:L2_error}, as well as the
+relative error in the first moment \eqref{eq:34567}.
 
 Since we are comparing against naively parallelised MH algorithms,
 we also need to decide which statistics $T(\beta)$ provide the best criterions
@@ -880,7 +884,7 @@ discussed in Section~\ref{sec:ess}.
 
 \subsubsection{Target distribution}
 
-Consider the simple case of a linear observation operator $\G(x) = x$, where the prior on $x$ and the observational noise follow Gaussian distributions. Then, following Equation~\ref{eqn:like}, the Gaussian posterior has the form
+Consider the simple case of a linear observation operator $\G(x) = x$, where the prior on $x$ and the observational noise follow Gaussian distributions. Then, following \eqref{eqn:like}, the Gaussian posterior has the form
 \begin{equation}\label{eqn:Gaussian posterior}
 	\text{law}(\mu_D) = \pi(x|D) \propto \exp\left(-\frac{1}{2}\big\|x - D\big\|^2_{\sigma^2} - \frac{1}{2}\big\|x\big\|^2_{\tau^2}\right),
 \end{equation}
@@ -910,7 +914,7 @@ for one million iterations, each with an ensemble size of $M=50$. We took
 32 repeats of both algorithms and then used the geometric means of the
 sample statistics to find the optimal parameters.
 
-{\bf (2) Measuring convergence of nonadaptive algorithms}: We run the algorithms in Section~\ref{sec:problem 1} for one million iterations, again with $M=50$. The simulations are repeated 32 times using the optimal parameters found in (1). The performance of the algorithms is judged by the convergence of the relative $L^2$ error statistic in Equation~\ref{eqn:L2_error}.
+{\bf (2) Measuring convergence of nonadaptive algorithms}: We run the algorithms in Section~\ref{sec:problem 1} for one million iterations, again with $M=50$. The simulations are repeated 32 times using the optimal parameters found in (1). The performance of the algorithms is judged by the convergence of the relative $L^2$ error statistic in \eqref{eqn:L2_error}.
 
 {\bf (3) Measuring convergence of adaptive algorithms}: We run the
 adaptive algorithms under the same conditions as the nonadaptive
@@ -959,7 +963,15 @@ efficiency. The adaptive algorithms are initialised with $\beta^{(1)}$ = 1.
 
 Figure~\ref{fig:P1 opt beta} (a) shows the two values of $\beta$ which are optimal according to the acceptance rate and relative $L^2$ error criteria for the RWMH algorithm. The smaller estimate comes from the relative $L^2$ error, and the larger from the acceptance rate. The results in Figure~\ref{fig:P1 opt beta} are summarised in Table~\ref{table:prob1 opt beta}. Since in general we cannot calculate the relative $L^2$ error, we must optimise the algorithm using the acceptance rate. From the relative $L^2$ error curve we can see that the minimum is very wide and despite the optimal values being very different there is not a large difference in the convergence rate.
 
-Figure~\ref{fig:P1 opt beta} (b) shows the effective sample size ratio compared to the error analysis and the variance of the weights. The relative $L^2$ error graph is noisy, but it is clear that the maximum in the effective sample size and the minimum in the variance of the weights are both close to the minimum in the relative $L^2$ error. Due to this we say that the estimate of the effective sample size found by averaging the statistic over each iteration is a good indicator for the optimal scaling parameter. In general this indicator underestimates the value found by using the entire sample.
+Figure~\ref{fig:P1 opt beta} (b) shows the effective sample size ratio
+compared to the error analysis and the variance of the weights. The
+relative $L^2$ error graph is noisy, but it is clear that the maximum
+in the effective sample size and the minimum in the variance of the
+weights are both close to the minimum in the relative $L^2$ error. Due
+to this we say that the estimate of the effective sample size found by
+averaging the statistic over each iteration is a good indicator for
+the optimal scaling parameter. In general this indicator overestimates
+the value of $\neff$ found by using the entire sample.
 
 \subsubsection{Convergence of RWMH vs PAIS-RW}
 
@@ -973,7 +985,13 @@ Figure~\ref{fig:P1 opt beta} (b) shows the effective sample size ratio compared 
 
 Figure~\ref{fig:MH1 L2} shows that the PAIS-RW algorithm converges to the posterior distribution significantly faster than the RWMH algorithm, in both $L^2$ error and relative error in the moments. A description of the speed up attained by this algorithm is given in Section~\ref{sec:calc_saving}.
 
-Both adaptive algorithms are run with initial values of $\beta=1$. Figure~\ref{fig:MH1 L2} shows that after an initial burn-in period the APAIS-RW algorithm catches up to the PAIS-RW algorithm, and by the end of the simulation window is matching its performance. The ARWMH algorithm does not perform quite as well, this is possibly due to the fact that the acceptance rate cost function is not smooth at the optimal value making it difficult to minimise.
+Both adaptive algorithms are run with initial values of
+$\beta=1$. Figure~\ref{fig:MH1 L2} shows that after an initial burn-in
+period the APAIS-RW algorithm catches up to the PAIS-RW algorithm, and
+by the end of the simulation window is matching its performance. The
+ARWMH algorithm does not perform quite as well, this is possibly due
+to the fact that the acceptance rate cost function is not particularly
+smooth at the optimal value making it difficult to minimise.
 
 \subsubsection{Scaling of the PAIS algorithm with ensemble size}
 
@@ -1008,14 +1026,13 @@ histograms. This example demonstrates that the PAIS algorithm redistributes
 chains to new modes as they are found. This means that we expect the number of chains in a mode to be
 approximately proportional to the probability density in that mode. As a result, reconstructed posteriors with disproportional modes, as is familiar with the MH algorithms, are not produced.
 
+\subsubsection{Target Distribution} \label{sec:tar}
 We look at an `easy' problem, $B_1$, which has a KL divergence of
 0.880, and a `harder' problem, $B_2$, which has a KL divergence of
 3.647. Problem $B_1$ has two modes which are not too far apart. In
 $B_2$ we increase the distance between the two modes which has the
 effect of increasing the expected number of iterations that it takes
 for a MCMC chain to jump between modes. These posteriors are shown in Figure~\ref{fig:problem 3 posteriors}.
-
-\subsubsection{Target Distribution} \label{sec:tar}
 
 The following setup is the same for both problems. We consider a
 non-linear observation operator $\G(x) = x^2$, and assign the prior
@@ -1178,7 +1195,7 @@ A summary of the percentage of iterations required using the PAIS algorithm comp
 
 The biggest issue for the Metropolis-Hastings algorithms when sampling
 from a posterior such as the one in $B_2$ is that it is unlikely that
-the correct ratio of chains will occur in each of the modes, and since there is no interaction between the chains, there is no way to remedy this problem. The PAIS algorithm tackles this problem with its resampling step. The algorithm uses its dynamic kernel to build up an approximation of the posterior at each iteration, and then compares this to the posterior distribution via the weights function. Any large discrepancy in the approximation will result in a large or small weight being assigned to the relevant chain, meaning the chain will either pull other chains towards it or be sucked towards a chain with a larger weight. In this way, the algorithm allows chains to `teleport' to regions of the posterior which are in need of more exploration. Figure~\ref{fig:BM2_suction} shows Problem $B_2$ with initially 1 chain in the positive mode, and 49 chains in the negative mode. It takes only a handful of iterations for the algorithm to balance out the chains into 25 chains in each mode. The chains switch modes without having to climb the energy gradient in the middle.
+the correct ratio of chains will be maintained in each of the modes, and since there is no interaction between the chains, there is no way to remedy this problem. The PAIS algorithm tackles this problem with its resampling step. The algorithm uses its dynamic kernel to build up an approximation of the posterior at each iteration, and then compares this to the posterior distribution via the weights function. Any large discrepancy in the approximation will result in a large or small weight being assigned to the relevant chain, meaning the chain will either pull other chains towards it or be sucked towards a chain with a larger weight. In this way, the algorithm allows chains to `teleport' to regions of the posterior which are in need of more exploration. Figure~\ref{fig:BM2_suction} shows Problem $B_2$ with initially 1 chain in the positive mode, and 49 chains in the negative mode. It takes only a handful of iterations for the algorithm to balance out the chains into 25 chains in each mode. The chains switch modes without having to climb the energy gradient in the middle.
 
 \subsection{Sampling from non-Gaussian bivariate distributions}\label{sec:chem}
 %***some introduction to chemical systems and QSSA
@@ -1187,7 +1204,7 @@ In this section we apply the PAIS algorithm to a more complicated posterior dist
 It is often possible to isolate which reactions are occurring more
 frequently (the fast reactions) and which are occurring less
 frequently (the slow reactions). The quasi-steady-state assumption
-(QSSA), which assumes that the fast reactions converge in distribution
+(QSSA) is the assumption that the fast reactions converge in distribution
 on a timescale which is negligible with respect to the rate of
 occurrence of the slow reactions. This assumption allows us to
 approximate the dynamics of the slowly changing quantities in the
@@ -1204,11 +1221,12 @@ chemical system involving two chemical species $S_1$ and $S_2$:
 \end{equation}
 Each arrow represents a reaction from a reactant to a product, with
 some rate constant $k_i$, and where the rates of the reactions are
-assumed to follow mass action kinetics. We assume that we are in a
+assumed to follow mass action kinetics. We denote the concentration of
+species $S_i$ by $X_i$. We assume that we are in a
 parameter regime such that the reactions $S_1\rightarrow S_2$ and $S_2\rightarrow S_1$ occur
 much much more frequently than the other reactions. Notice that both
 chemical species are involved in fast reactions. However, the quantity
-$\mathcal{S} = S_1 + S_2$ is conserved by both of the fast reactions,
+$\mathcal{S} = X_1 + X_2$ is conserved by both of the fast reactions,
 and as such, this is the slowly changing quantity in this system.
 The effective dynamics of $\mathcal{S}$ can be represented as follows.
 \begin{equation}\label{eqn:QSSA_system}
@@ -1217,15 +1235,15 @@ The effective dynamics of $\mathcal{S}$ can be represented as follows.
 Here, the new reaction rate $\hat{k}_4$ is approximated through
 application of the QSSA to be
 \[
-	\hat{k}_4(s) = \mathbb{E}\left[k_4S_2|\mathcal{S}=s\right] = \frac{k_2k_4\mathcal{S}}{k_2+k_3}.
+	\hat{k}_4(s) = \mathbb{E}\left[k_4X_2|\mathcal{S}=s\right] = \frac{k_2k_4\mathcal{S}}{k_2+k_3}.
 \]
-The value of $\mathbb{E}\left[k_4S_2|\mathcal{S}=s\right]$ is
+The value of $\mathbb{E}\left[k_4X_2|\mathcal{S}=s\right]$ is
 approximated by finding the steady state of the ODE representing the fast subsystem of
 reactions:
-\[S_1 \xleftrightarrows[k_3]{k_2} S_2, \qquad S_1 + S_2 = s\]
+\[S_1 \xleftrightarrows[k_3]{k_2} S_2, \qquad X_1 + X_2 = s\]
 
 If we assume that we know the rate constants $k_1$ and $k_4$, and
-observe the system in Equation~\ref{eqn:QSSA_system}, we indirectly
+observe the system in \eqref{eqn:QSSA_system}, we indirectly
 observe the rates $k_2$ and $k_3$ through the effective rate
 $\hat{k}_4$ of the degradation of $\mathcal{S}$. Our
 observations are uninformative about these reaction rates, as there
@@ -1242,14 +1260,14 @@ exploration along its length is slow.
 % solution to QSSA ode and Gamma noise assumption
 \subsubsection{Target Distribution}
 
-We now formalise the posterior of interest. We look for a distribution over the parameter $\mathbf{k} = (k_2, k_3)^T$, given that we know $k_1 = 100$ and $k_4=1$. We generate our data by making ten observations of the system at $t_i = 2, 4, \dots, 20$, here simulated by solving the full system, Equation~\ref{eqn:full_system}, governed by the differential equations
+We now formalise the posterior of interest. We look for a distribution over the parameter $\mathbf{k} = (k_2, k_3)^T$, given that we know $k_1 = 100$ and $k_4=1$. We generate our data by making ten observations of the system at $t_i = 2, 4, \dots, 20$, here simulated by solving the full system, \eqref{eqn:full_system}, governed by the differential equations
 \begin{align*}
 	\frac{\text{d}S_1}{\text{d}t} &= k_1 - k_2S_1(t)+k_3S_2(t), \\
 	\frac{\text{d}S_2}{\text{d}t} &= k_2S_1(t) - (k_3+k_4)S_2(t),
 \end{align*}
 with initial conditions $S_1(0)=S_2(0) = 0$, and parameter values $\mathbf{k} = (50, 100)^T$. We then add noise taken from a Gamma distribution with variance $\sigma^2 = 225$ and centred at each $\mathcal{S}(t_i)=S_1(t_i)+S_2(t_i)$.
 
-In our modelling we use the QSSA to simplify this system of differential equations into the one dimensional system based on Equation~\ref{eqn:QSSA_system},
+In our modelling we use the QSSA to simplify this system of differential equations into the one dimensional system based on \eqref{eqn:QSSA_system},
 \[
 	\frac{\text{d}\mathcal{S}}{\text{d}t} = k_1 - \frac{k_2k_4}{k_2+k_3}\mathcal{S}(t).
 \]
@@ -1261,7 +1279,8 @@ where
 \[
 	 \alpha_i = \frac{\mathcal{G}(\mathbf{k}, t_i)^2}{\sigma^2},\  \beta_i = \frac{\mathcal{G}(\mathbf{k}, t_i)}{\sigma^2}, \quad i = 1, \dots, 10.
 \]
-
+These are parameters required to give us a distribution with mean
+$\mathcal{G}(\mathbf{k}$ and variance $\sigma^2$.
 We assign Gamma priors to $\mathbf{k}$ with mean $\alpha_0/\beta_0 =
 75$ and variance $\alpha_0/\beta_0^2 = 100$ in both coordinates, resulting in the posterior
 \[
