@@ -1258,14 +1258,14 @@ find a point on this manifold on which $\hat{k}_4$ is invariant, but
 exploration along its length is slow.
 
 % solution to QSSA ode and Gamma noise assumption
-\subsubsection{Target Distribution}
+\subsubsection{Target Distribution}\label{sec:345}
 
 We now formalise the posterior of interest. We look for a distribution over the parameter $\mathbf{k} = (k_2, k_3)^T$, given that we know $k_1 = 100$ and $k_4=1$. We generate our data by making ten observations of the system at $t_i = 2, 4, \dots, 20$, here simulated by solving the full system, \eqref{eqn:full_system}, governed by the differential equations
 \begin{align*}
-	\frac{\text{d}S_1}{\text{d}t} &= k_1 - k_2S_1(t)+k_3S_2(t), \\
-	\frac{\text{d}S_2}{\text{d}t} &= k_2S_1(t) - (k_3+k_4)S_2(t),
+	\frac{\text{d}S_1}{\text{d}t} &= k_1 - k_2X_1(t)+k_3X_2(t), \\
+	\frac{\text{d}S_2}{\text{d}t} &= k_2X_1(t) - (k_3+k_4)X_2(t),
 \end{align*}
-with initial conditions $S_1(0)=S_2(0) = 0$, and parameter values $\mathbf{k} = (50, 100)^T$. We then add noise taken from a Gamma distribution with variance $\sigma^2 = 225$ and centred at each $\mathcal{S}(t_i)=S_1(t_i)+S_2(t_i)$.
+with initial conditions $X_1(0)=X_2(0) = 0$, and parameter values $\mathbf{k} = (50, 100)^T$. We then add noise taken from a Gamma distribution with variance $\sigma^2 = 225$ and centred at each $\mathcal{S}(t_i)=X_1(t_i)+X_2(t_i)$.
 
 In our modelling we use the QSSA to simplify this system of differential equations into the one dimensional system based on \eqref{eqn:QSSA_system},
 \[
@@ -1286,6 +1286,17 @@ We assign Gamma priors to $\mathbf{k}$ with mean $\alpha_0/\beta_0 =
 \[
 	\pi(\mathbf{k}|\mathbf{D}) \propto \left[\prod\limits_{i=1}^{10} \text{Gamma}(D_i; \alpha_i, \beta_i)\right]\text{Gamma}(k_2; \alpha_0, \beta_0)\text{Gamma}(k_3; \alpha_0, \beta_0).
 \]
+
+\begin{figure}[htb]
+\centering
+\includegraphics[width=0.65\textwidth]{"figures/C1_posterior"}
+\caption{The posterior distribution on the parameters $k_2$ and $k_3$
+  given the data and priors described in Section \ref{sec:345}.}
+\label{fig:345}
+\end{figure}
+
+Figure \ref{fig:345} presents a visualisation of the posterior
+distribution for this problem, found by exhaustive MH simulation.
 
 \subsubsection{Implementation}\label{sec:chem_implementation}
 % explanation of l2 convergence measure
