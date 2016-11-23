@@ -1375,11 +1375,11 @@ A well known problem in the Bayesian treatment of mixture modelling is that of i
 
 \subsubsection{Target Distribution}\label{sec:mixture_target}
 
-In particular we look at a Gaussian mixture where we assume that there are two subpopulations within the overall population. Since both subpopulations are assumed to follow a Gaussian distribution we have five parameters which we need to be estimated, two means $\mu_{1,2}$, two variances $\sigma^2_{1,2}$, and the probability, $p$, that an individual observation comes from one of the subpopulations. We have 100 data points, $D_i$, which we assume to be distributed according to
+In particular we look at a Gaussian mixture where we assume that there are two subpopulations within the overall population. Since both subpopulations will be approximated by Gaussian distributions we have five parameters which we need to be estimated, two means $\mu_{1,2}$, two variances $\sigma^2_{1,2}$, and the probability, $p$, that an individual observation belongs to the first subpopulation. We have 100 data points, $D_i$, which we assume to be distributed according to
 \[
 	D_i \sim p\mathcal{N}(\mu_1, \sigma^2_1) + (1-p)\mathcal{N}(\mu_2, \sigma^2_2), \quad i = 1,\dots,100,
 \]
-where $p \in [0, 1]$, $\mu_{1,2} \in \mathbb{R}$ and $\sigma^2_{1,2} \in \mathbb{R}^+$. Due to the domains of these parameters, we assign the priors
+where $p \in [0, 1]$, $\mu_{1,2} \in \mathbb{R}$ and $\sigma^2_{1,2} \in \mathbb{R}^+$. Due to the domains of these parameters and also some prior knowledge, we assign the priors
 \[
 	p \sim \text{Beta}(1,1), \quad \mu_{1,2} \sim \mathcal{N}(0, 4) \quad \text{and} \quad \sigma^2_{1,2} \sim \text{Gamma}(\alpha=2, \beta=1).
 \]
@@ -1392,7 +1392,7 @@ where $\pi_0^i(\cdot)$ is the prior density function corresponding to $\theta_i$
 \begin{figure}[htb]
 \centering
 \includegraphics[width=\textwidth]{"figures/PAIS_best_posterior"}
-\caption{The posterior distribution of $\theta$ as given in Equation~\eqref{eq:mixture_posterior}. The main diagonal contains the marginal distributions of each $\theta_i$, and the lower triangular contours represents the correlation between pairs of parameters.}
+\caption{The posterior distribution of $\theta$ as given in Equation~\eqref{eq:mixture_posterior} as found from 10 million samples from the PAIS algorithm. The main diagonal contains the marginal distributions of each $\theta_i$, and the lower triangular contours represents the correlation between pairs of parameters.}
 \label{fig:mixture_posterior}
 \end{figure}
 
@@ -1415,7 +1415,7 @@ Since the probability $p$ is constrained to lie in the interval $[0,1]$, and the
 \]
 where $\alpha^* = \sigma^2_{1,2}\beta^*$, $\beta^* = \sigma^2_{1,2}/2\delta^2$ and $\delta$ is a scaling parameter to be tuned. This means that our proposal distributions will not be a mixture of multivariate Gaussians, but independent mixtures of univariate Beta, Gamma and Gaussian distributions.
 
-In the numerics which follow we have increased the ensemble size from $M=50$ to $M=500$ to compensate for the increase in dimension. We also use the AMR algorithm for the resampling step because of the reduced computational cost. The method otherwise remains the same as in previous examples. We perform test runs to find the optimal scaling parameters considering convergence to modes with equal density. We then calculate the convergence rates of the algorithms by producing 50 million samples from the posterior with each algorithm, and repeat the simulation 32 times.
+In the numerics which follow we have increased the ensemble size from $M=50$ to $M=500$ to compensate for the increase in dimension. We also use the AMR algorithm for the resampling step because of the reduced computational cost. The method otherwise remains the same as in previous examples. We perform test runs to find the optimal scaling parameters considering convergence to modes with equal density. We then calculate the convergence rates of the algorithms by producing 10 million samples from the posterior with each algorithm, and repeat the simulation 32 times.
 
 % numerics.
 \subsubsection{Convergence of MH vs PAIS}\label{sec:mixture_conv}
