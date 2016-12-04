@@ -203,9 +203,10 @@ automatically tune algorithmic parameters concerned with the proposal
 distributions. In Section \ref{sec:AMR} we introduce the approximate
 multinomial resampling (AMR) algorithm which is a less accurate but
 faster alternative to resamplers which solve the optimal transport
-problem exactly. In Section \ref{Sec:Num} we present some numerical
-examples, before a brief conclusion and discussion in Section
-\ref{Sec:Conc}.
+problem exactly. In Section~\ref{sec:consistency} we consider
+consistency of the PAIS algorithm. In Section \ref{Sec:Num} we present
+some numerical examples, before a brief conclusion and discussion in
+Section \ref{Sec:Conc}.
 
 \section{Preliminaries}\label{Sec:Prelim}
 In this Section we will introduce preliminary topics and algorithms
@@ -1034,7 +1035,7 @@ that the AMR is the optimal choice within PAIS, but it does have
 favourable features, and demonstrates how different choices of
 resampler can affect the speed and accuracy of the PAIS algorithm.
 
-\section{Consistency of PAIS}
+\section{Consistency of PAIS}\label{sec:consistency}
 
 As outlined in~\cite{martino2015adaptive} consistency of population AIS algorithms can be considered in two different cases. In the first case we fix the number of iterations $N < \infty$, but allow the population size to grow to inifinity $M\rightarrow\infty$. In the second case we hold the population size fixed $M<\infty$, and allow infinitely many iterations $N\rightarrow\infty$.
 
