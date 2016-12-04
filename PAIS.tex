@@ -4,7 +4,7 @@
 \usepackage{graphicx,bbm,pstricks}
 \usepackage{pifont}
 \usepackage{bbm,algorithmic,mdframed,placeins,multirow,booktabs,subfigure}
-\usepackage[ruled,vlined,linesnumbered,algosection]{algorithm2e}
+\usepackage[ruled,vlined,linesnumbered]{algorithm2e}
 
 \setlength{\parindent}{0in}
 \usepackage{amsmath,amsfonts,amsbsy,amssymb}
@@ -433,7 +433,7 @@ Section \ref{sec:AMR}. The output of the resampling algorithm gives us
 a set of evenly weighted
 samples that we believe represents the target distribution well, and
 from this point we
-can iterate the process once again. The algorithm is summarised in Table \ref{tab:PAIS}. 
+can iterate the process once again. The algorithm is summarised in Algorithm \ref{alg:PAIS}. 
 
 We wish to sample states $x \in X$ from a posterior
 probability distribution $\mu_D$, where $D$ represents our data which
@@ -445,25 +445,46 @@ the random walk Metropolis-Hastings proposal density $\nu(\cdot,x) \sim
 \mathcal{N}(x,\beta^2)$, where $\beta^2\in \mathbb{R}$ defines the
 variance of the proposal.
 
-\begin{table}
-\begin{mdframed}
-\begin{algorithmic}
-\STATE $\X^{(0)} = \X_0 = [x_1^{(0)},x_2^{(0)},\ldots,x_M^{(0)}]^T$
-\FOR{$i=0,1,2, ..., N-1$}
-\STATE $\Y^{(i)} = [y_1^{(i)},y_2^{(i)},\ldots,y_M^{(i)}]^T, \quad y_j^{(i)} \sim
-\nu(\cdot;x_j^{(i)})$
-\STATE $\chi(y;\X^{(i)}) = \frac{1}{M}
-\sum_{j=1}^M \nu(y;x_j^{(i)})$.
-\STATE $\W^{(i)} = [w_1^{(i)},w_2^{(i)},\ldots,w_M^{(i)}]^T,$ \quad $w^{(i)}_j =
-\frac{\pi(y_j^{(i)})}{\chi(y_j^{(i)};\X^{(i)})}$.
-\STATE Resample: $(\W^{(i)},\Y^{(i)}) \rightarrow (\frac{1}{M}\mathbf{1}, \X^{(i+1)})$
-\ENDFOR 
-\end{algorithmic}
-\end{mdframed}
+%\begin{table}
+%\begin{mdframed}
+%\begin{algorithmic}
+%\STATE $\X^{(0)} = \X_0 = [x_1^{(0)},x_2^{(0)},\ldots,x_M^{(0)}]^T$
+%\FOR{$i=0,1,2, ..., N-1$}
+%\STATE $\Y^{(i)} = [y_1^{(i)},y_2^{(i)},\ldots,y_M^{(i)}]^T, \quad y_j^{(i)} \sim
+%\nu(\cdot;x_j^{(i)})$
+%\STATE $\chi(y;\X^{(i)}) = \frac{1}{M}
+%\sum_{j=1}^M \nu(y;x_j^{(i)})$.
+%\STATE $\W^{(i)} = [w_1^{(i)},w_2^{(i)},\ldots,w_M^{(i)}]^T,$ \quad $w^{(i)}_j =
+%\frac{\pi(y_j^{(i)})}{\chi(y_j^{(i)};\X^{(i)})}$.
+%\STATE Resample: $(\W^{(i)},\Y^{(i)}) \rightarrow (\frac{1}{M}\mathbf{1}, \X^{(i+1)})$
+%\ENDFOR 
+%\end{algorithmic}
+%\end{mdframed}
+%\caption{A pseudo-code representation of the Parallel Adaptive
+%  Importance Sampler (PAIS).}
+%\label{tab:PAIS}
+%\end{table}
 
-\caption{A pseudo-code representation of the Parallel Adaptive
-  Importance Sampler (PAIS).}
-\label{tab:PAIS}
+\begin{table}[!h]
+\centering
+\begin{algorithm}[H]
+\DontPrintSemicolon
+\BlankLine
+	Set $\X^{(0)} = \X_0 = [x_1^{(0)},x_2^{(0)},\ldots,x_M^{(0)}]^\top$.\;
+	\For {$i = 1, \dots, N$}
+	{
+		Sample $\Y^{(i)} = [y_1^{(i)},y_2^{(i)},\ldots,y_M^{(i)}]^\top, \quad y_j^{(i)} \sim
+\nu(\cdot;x_j^{(i-1)})$.\;
+		Calculate $\W^{(i)} = [w_1^{(i)},w_2^{(i)},\ldots,w_M^{(i)}]^\top,$ \quad $w^{(i)}_j =
+\frac{\pi(y_j^{(i)})}{\chi(y_j^{(i)};\X^{(i-1)})}$, where
+		\[
+			\chi(y;\X^{(i-1)}) = \frac{1}{M}\sum_{j=1}^M \nu(y;x_j^{(i-1)}).
+		\]
+
+		Resample: $(\W^{(i)},\Y^{(i)}) \rightarrow (\frac{1}{M}\mathbf{1}, \X^{(i)})$.
+	}
+\caption{The parallel adaptive importance sampler (PAIS).\label{alg:PAIS}}
+\end{algorithm}
 \end{table}
 
 Since the resampling does not give us a statistically identical sample
@@ -873,27 +894,30 @@ the closest states geographically. This method is not optimal since
 once most of the clusters have been selected the remaining states
 may be spread across the parameter space.
 
-\begin{table}[htb]
-\begin{mdframed}
-\begin{algorithmic}
-\STATE $\b{z} = M\bar{\b{w}}$
-\FOR{$i=1,2,\ldots,M$}
-\STATE $J = \argmax_j z_j$
-\STATE $p_{i,J} = \min\{1,z_J\}$
-\STATE $z_J = z_J - p_{i,J}$
-\WHILE{$\sum_j p_{i,j} <1$}
-\STATE $K = \argmin_{k \in \{k|z_k>0\}} \|y_J - y_k\|$
-\STATE $p_{i,K} = \min\{1-\sum_j p_{i,j}, z_K\}$
-\STATE $z_K = z_K - p_{i,K}$
-\ENDWHILE
-\STATE $x_i = \sum_k p_{i,k}y_k$.
-\ENDFOR
-\end{algorithmic}
-\end{mdframed}
-\caption{The approximate multinomial resampler (AMR) algorithm.\label{tab:AMR}}
+\begin{table}[!h]
+\centering
+\begin{algorithm}[H]
+\DontPrintSemicolon
+\BlankLine
+	$\b{z} = M\bar{\b{w}}$.\;
+	\For {$i = 1,\dots, M$}
+	{
+		$J = \argmax_j z_j$.\;
+		$p_{i,J} = \min\{1,z_J\}$.\;
+		$z_J = z_J - p_{i,J}$.\;
+		\While {$\sum_j p_{i,j} <1$}
+		{
+			$K = \argmin_{k \in \{k|z_k>0\}} \|y_J - y_k\|$.\;
+			$p_{i,K} = \min\{1-\sum_j p_{i,j}, z_K\}$.\;
+			$z_K = z_K - p_{i,K}$.\;
+		}
+		$x_i = \sum_k p_{i,k}y_k$.\;
+	}
+\caption{The approximate multinomial resampler (AMR).\label{alg:AMR}}
+\end{algorithm}
 \end{table}
 
-Table \ref{tab:AMR} describes the basis of the algorithm with
+Algorithm~\ref{alg:AMR} describes the basis of the algorithm with
 deterministic resampling, using the means of each of the
 sub-multinomials as the new samples. This resampler was designed with the aims of being
 numerically cheaper than the ETPF, and more accurate than straight multinomial
