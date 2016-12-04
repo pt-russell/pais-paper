@@ -860,6 +860,18 @@ that the AMR is the optimal choice within PAIS, but it does have
 favourable features, and demonstrates how different choices of
 resampler can affect the speed and accuracy of the PAIS algorithm.
 
+\section{Consistency of PAIS}
+
+As outlined in~\cite{martino2015adaptive} consistency of population AIS algorithms can be considered in two different cases. In the first case we fix the number of iterations $N < \infty$, but allow the population size to grow to inifinity $M\rightarrow\infty$. In the second case we hold the population size fixed $M<\infty$, and allow infinitely many iterations $N\rightarrow\infty$.
+
+In case one, from standard importance sampling results we know that for an iteration $n$, as $M\rightarrow\infty$, we obtain a consistent estimator for any statistic of interest,
+\[
+	\hat{\phi}(\Theta) \approx \frac{1}{\hat{Z}}\sum\limits_{i=1}^M \! \frac{1}{M}w_i\phi(\theta_i) \rightarrow \phi(\Theta),
+\]
+where the normalisation constant, $\hat{Z} = \frac{1}{M}\sum_{i=1}^M \! w_i$, also converges to the true normalisation constant $Z$~\cite{robert2013monte}.
+
+Case two is slightly more involved. Estimation of the normalisation constant $Z$ is biased, and so estimates of statistics are sums of independent but biased estimators. Since the estimators are independent, the proof of consistency of PAIS in this second limit can be approached in the same way as the PMC algorithm, where it has been shown that $\hat{Z}\rightarrow Z$~\cite{robert2013monte}. Since the normalisation constant is consistent, sums of the independent estimators are also consistent.
+
 \section{Numerical Examples}\label{Sec:Num}
 
 \subsection{Sampling from a one dimensional Gaussian distribution}\label{sec:problem 1}
