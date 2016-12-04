@@ -505,13 +505,12 @@ our proposal distribution is a good one, then the variance of the
 weights will be small, and we will have many useful samples. Finally, we
 need to create a set of evenly weighted samples which best represent
 this set of weighted samples. This is achieved by implementing a
-resampling algorithm. Initially we will use the
-ETPF algorithm\cite{reich2013nonparametric}, although we will suggest an alternative strategy in
-Section \ref{sec:AMR}. The output of the resampling algorithm gives us
-a set of evenly weighted
-samples that we believe represents the target distribution well, and
-from this point we
-can iterate the process once again. The algorithm is summarised in Algorithm \ref{alg:PAIS}. 
+resampling algorithm. Initially we will use the ETPF
+algorithm\cite{reich2013nonparametric}, although we will suggest an
+alternative strategy in Section \ref{sec:AMR}. The resampling
+algorithm gives us a set of evenly weighted samples which represents
+the target distribution well, which we can use to iterate the process
+again. The algorithm is summarised in Algorithm \ref{alg:PAIS}. 
 
 We wish to sample states $x \in X$ from a posterior
 probability distribution $\mu_D$, where $D$ represents our data which
@@ -561,6 +560,7 @@ variance of the proposal.
 
 		Resample: $(\W^{(i)},\Y^{(i)}) \rightarrow (\frac{1}{M}\mathbf{1}, \X^{(i)})$.
 	}
+	Output $(\W, \Y)$.\;
 \caption{The parallel adaptive importance sampler (PAIS).\label{alg:PAIS}}
 \end{algorithm}
 \end{table}
@@ -573,7 +573,7 @@ $(\W^{(i)},\Y^{(i)})_{i=1}^N$ are the samples from the posterior that
 we will analyse.
 
 The key is to choose a suitable transition kernel $\nu$ such that
-if $X^{(i)}$ is a good representative sample of the posterior,
+if $X^{(i)}$ is a representative sample of the posterior,
 then the mixture density $\chi(\cdot;\X^{(i)})$ is a good
 approximation of the posterior distribution. If this is the case,
 the newly proposed states $\Y^{(i)}$ will also be a good sample of the posterior with low variance in the
