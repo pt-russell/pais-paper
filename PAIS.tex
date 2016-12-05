@@ -1049,21 +1049,20 @@ Case two is slightly more involved. Estimation of the normalisation constant $Z$
 
 \section{Numerical Examples}\label{Sec:Num}
 
-\subsection{Sampling from a one dimensional Gaussian distribution}\label{sec:problem 1}
+In this section we demonstrate convergence of the PAIS algorithm. We
+also investigate the convergence properties of PAIS compared with
+naively parallelised Metropolis-Hastings samplers. We assess the
+performance of the PAIS algorithm using the relative $L^2$ error
+defined in \eqref{eqn:L2_error}, as well as the relative error in the
+first moment \eqref{eq:34567}.
 
-In this example we compare the naively parallelised RWMH algorithm with its
-PAIS variant, the PAIS-RW algorithm. The PAIS algorithm is implemented using the
-ETPF to perform the resampling step. We assess the performance of the PAIS algorithm
-using the relative $L^2$ error defined in \eqref{eqn:L2_error}, as well as the
-relative error in the first moment \eqref{eq:34567}.
-
-Since we are comparing against naively parallelised MH algorithms,
-we also need to decide which statistics $T(\beta)$ provide the best criterions
-for obtaining the optimal scaling parameters. In the examples which follow, we have
-optimised the naively parallelised RWMH algorithm using the optimal
-acceptance rate $\hat{\alpha} = 0.5$. This value differs from the theoretical
-asymptotic value of 0.234 which applies in higher dimensions, but this higher acceptance rate is commonly used for one dimensional Gaussian posteriors~\cite{rosenthal2011optimal}. To find the optimal
-scaling parameter we minimise the statistic
+In the one-dimensional examples which follow, we have optimised the
+naively parallelised RWMH algorithm using the optimal acceptance rate
+$\hat{\alpha} = 0.5$. This value differs from the theoretical
+asymptotic value of 0.234 which applies in higher dimensions, but this
+higher acceptance rate is commonly used for one dimensional Gaussian
+posteriors~\cite{rosenthal2011optimal}. To find the optimal scaling
+parameter we minimise the statistic
 \[
 	T_{\text{MH}}(\beta) = \left| \frac{N_{\text{acc}}(\beta)}{N_{\text{total}}} - \hat{\alpha} \right|,
 \]
@@ -1072,16 +1071,25 @@ $N_{\text{total}}$ is the total number of samples produced. For the
 PAIS algorithm, we maximise the effective sample size as
 discussed in Section~\ref{sec:ess}.
 
+\subsection{Sampling from a one dimensional Gaussian distribution}\label{sec:problem 1}
+
+This first example shows how PAIS handles searching for the mode of a
+Gaussian distribution when the initial state is a long way out in the
+tails.
+
 \subsubsection{Target distribution}
 
-Consider the simple case of a linear observation operator $\G(x) = x$, where the prior on $x$ and the observational noise follow Gaussian distributions. Then, following \eqref{eqn:like}, the Gaussian posterior has the form
+Consider the simple case of a linear observation operator $\G(x) = x$,
+where the prior on $x$ and the observational noise follow centred
+Gaussian distributions. Then, following \eqref{eqn:like}, the Gaussian
+posterior has the form
 \begin{equation}\label{eqn:Gaussian posterior}
 	\text{law}(\mu_D) = \pi(x|D) \propto \exp\left(-\frac{1}{2}\big\|x - D\big\|^2_{\sigma^2} - \frac{1}{2}\big\|x\big\|^2_{\tau^2}\right),
 \end{equation}
 where $\sigma^2$ and $\tau^2$ are the variances of the
 observational noise and prior distributions respectively. In the
-numerics which follow, we choose $\tau^2 =0.01$ and $\sigma^2 = 0.01$, and
-we observe $x_\text{ref}=4$ noisily such that
+numerics which follow, we choose $\tau^2 =0.01$ and $\sigma^2 = 0.01$,
+and we observe $x_\text{ref}=4$ noisily such that
 \[
 D = \mathcal{G}(x) + \eta \sim \mathcal{N}(\mathcal{G}(x_\text{ref}),\sigma^2) = \mathcal{N}(4,0.01).
 \]
@@ -1095,7 +1103,13 @@ identical almost everywhere.
 
 \subsubsection{Numerical implementation}\label{sec:Implementation P1}
 
-In each of the following simulations, we perform three tasks. First we calculate the optimal value of $\beta$ by optimising the statistics described in Section~\ref{sec:statistics}. We then run the algorithms with optimal parameters to calculate and compare the convergence rates. Finally, we implement the adaptive algorithms described in Section~\ref{sec:adapt} and compare the convergence rates of these algorithms with the nonadaptive algorithms.
+In each of the following simulations, we perform three tasks. First we
+calculate the optimal value of $\beta$ by optimising the statistics
+described in Section~\ref{sec:statistics}. We then run the algorithms
+with optimal parameters to calculate and compare the convergence
+rates. Finally, we implement the adaptive algorithms described in
+Section~\ref{sec:adapt} and compare the convergence rates of these
+algorithms with the nonadaptive algorithms.
 
 {\bf (1) Finding the optimal parameters}: To find the optimal
 parameters we choose 32 values of $\beta$ evenly spaced on a log scale
@@ -1104,7 +1118,12 @@ for one million iterations, each with an ensemble size of $M=50$. We took
 32 repeats of both algorithms and then used the geometric means of the
 sample statistics to find the optimal parameters.
 
-{\bf (2) Measuring convergence of nonadaptive algorithms}: We run the algorithms in Section~\ref{sec:problem 1} for one million iterations, again with $M=50$. The simulations are repeated 32 times using the optimal parameters found in (1). The performance of the algorithms is judged by the convergence of the relative $L^2$ error statistic in \eqref{eqn:L2_error}.
+{\bf (2) Measuring convergence of nonadaptive algorithms}: We run the
+algorithms in Section~\ref{sec:problem 1} for one million iterations,
+again with $M=50$. The simulations are repeated 32 times using the
+optimal parameters found in (1). The performance of the algorithms is
+judged by the convergence of the relative $L^2$ error statistic in
+\eqref{eqn:L2_error}.
 
 {\bf (3) Measuring convergence of adaptive algorithms}: We run the
 adaptive algorithms under the same conditions as the nonadaptive
@@ -1118,7 +1137,7 @@ efficiency. The adaptive algorithms are initialised with $\beta^{(1)}$ = 1.
 \centering
 \subfigure[RWMH algorithm.]{\includegraphics[width=0.45\textwidth]{"figures/G2_rwmho"}}
 \subfigure[PAIS-RW algorithm.]{\includegraphics[width=0.45\textwidth]{"figures/G2_paiso"}}
-\caption{Finding optimal values of $\beta$ for the problem in Section~\ref{sec:problem 1}. The setup is as in Section~\ref{sec:Implementation P1}. Resampling is performed using the ETPF.}
+\caption{Finding optimal values of $\beta$ for the example in Section~\ref{sec:problem 1}. The setup is as in Section~\ref{sec:Implementation P1}. Resampling is performed using the ETPF.}
 \label{fig:P1 opt beta}
 \end{figure}
 
@@ -1151,7 +1170,16 @@ efficiency. The adaptive algorithms are initialised with $\beta^{(1)}$ = 1.
 	\label{table:prob1 opt beta}
 \end{table}
 
-Figure~\ref{fig:P1 opt beta} (a) shows the two values of $\beta$ which are optimal according to the acceptance rate and relative $L^2$ error criteria for the RWMH algorithm. The smaller estimate comes from the relative $L^2$ error, and the larger from the acceptance rate. The results in Figure~\ref{fig:P1 opt beta} are summarised in Table~\ref{table:prob1 opt beta}. Since in general we cannot calculate the relative $L^2$ error, we must optimise the algorithm using the acceptance rate. From the relative $L^2$ error curve we can see that the minimum is very wide and despite the optimal values being very different there is not a large difference in the convergence rate.
+Figure~\ref{fig:P1 opt beta} (a) shows the two values of $\beta$ which
+are optimal according to the acceptance rate and relative $L^2$ error
+criteria for the RWMH algorithm. The smaller estimate comes from the
+relative $L^2$ error, and the larger from the acceptance rate. The
+results in Figure~\ref{fig:P1 opt beta} are summarised in
+Table~\ref{table:prob1 opt beta}. Since in general we cannot calculate
+the relative $L^2$ error, we must optimise the algorithm using the
+acceptance rate. From the relative $L^2$ error curve we can see that
+the minimum is very wide and despite the optimal values being very
+different there is not a large difference in the convergence rate.
 
 Figure~\ref{fig:P1 opt beta} (b) shows the effective sample size ratio
 compared to the error analysis and the variance of the weights. The
@@ -1160,8 +1188,7 @@ in the effective sample size and the minimum in the variance of the
 weights are both close to the minimum in the relative $L^2$ error. Due
 to this we say that the estimate of the effective sample size found by
 averaging the statistic over each iteration is a good indicator for
-the optimal scaling parameter. In general this indicator overestimates
-the value of $\neff$ found by using the entire sample.
+the optimal scaling parameter.
 
 \subsubsection{Convergence of RWMH vs PAIS-RW}
 
@@ -1173,19 +1200,28 @@ the value of $\neff$ found by using the entire sample.
 \label{fig:MH1 L2}
 \end{figure}
 
-Figure~\ref{fig:MH1 L2} shows that the PAIS-RW algorithm converges to the posterior distribution significantly faster than the RWMH algorithm, in both $L^2$ error and relative error in the moments. A description of the speed up attained by this algorithm is given in Section~\ref{sec:calc_saving}.
+Figure~\ref{fig:MH1 L2} shows that the PAIS-RW algorithm converges to
+the posterior distribution significantly faster than the RWMH
+algorithm, in both $L^2$ error and relative error in the moments. A
+description of the speed up attained by this algorithm is given in
+Section~\ref{sec:calc_saving}.
 
 Both adaptive algorithms are run with initial values of
 $\beta=1$. Figure~\ref{fig:MH1 L2} shows that after an initial burn-in
 period the APAIS-RW algorithm catches up to the PAIS-RW algorithm, and
 by the end of the simulation window is matching its performance. The
 ARWMH algorithm does not perform quite as well, this is possibly due
-to the fact that the acceptance rate cost function is not particularly
-smooth at the optimal value making it difficult to minimise.
+to the fact that $T_{\text{MH}}(\beta)$ is not smooth at the optimal
+value making it difficult to minimise.
 
 \subsubsection{Scaling of the PAIS algorithm with ensemble size}
 
-Throughout this example, we use an ensemble size $M=50$, but it is interesting to see how the PAIS algorithm scales when we increase the ensemble size, and if there is some limit below which the algorithm fails. We implement the problem in Section~\ref{sec:problem 1}, using the RWMH and PAIS-RW algorithms with ensemble sizes in the interval $M \in [1, 160]$.
+Throughout this example, we use an ensemble size $M=50$, but it is
+interesting to see how the PAIS algorithm scales when we increase the
+ensemble size, and if there is some limit below which the algorithm
+fails. We implement the problem in Section~\ref{sec:problem 1}, using
+the RWMH and PAIS-RW algorithms with ensemble sizes in the interval $M
+\in [1, 160]$.
 
 \begin{figure}[h]
 \begin{center}
@@ -1201,10 +1237,12 @@ then running 32 repeats at each ensemble size. The convergence rates
 are then found by regressing through the data. The graph is still very
 noisy but demonstrates that increasing the ensemble size continues to
 reduce the number of iterations required in comparison with naively
-parallelised MH. The decreasing trend indicates superlinear improvement of PAIS with
-respect to ensemble size, in terms of the number of iterations
-required, which is a demonstration of our belief that parallelism of
-MCMC should give us added value over and above that provided by naive parallelism. This decrease is linked to the increasing effective sample size shown in Figure~\ref{fig:neff-M} (b).
+parallelised MH. The decreasing trend shows superlinear improvement of
+PAIS with respect to ensemble size, in terms of the number of
+iterations required, which is a demonstration of our belief that
+parallelism of MCMC should give us added value over and above that
+provided by naive parallelism. This decrease is due to the increasing
+effective sample size shown in Figure~\ref{fig:neff-M} (b).
 
 \subsection{Sampling from Bimodal Distributions}\label{sec:bimodal}
 
