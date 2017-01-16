@@ -126,104 +126,74 @@
   strategy, approximate multinomial resampling (AMR), which while not
   as accurate as other schemes is substantially less costly for large
   ensemble sizes, which can then be used in conjunction with PAIS for
-  complex problems. In particular, we demonstrate this methodology's
-  superior sampling for multimodal problems, such as those arising
-  from inference for mixture models.
+  complex problems.
 \end{abstract}
 \begin{keywords}MCMC, parallel, importance sampling, Bayesian, inverse problems.
 \end{keywords}
 \section{Introduction}
-Having first been developed in the early 1970s\cite{hastings1970monte}, Markov chain Monte Carlo (MCMC) methods have been of increasing
-importance and interest in the last 20 years or so. They allow us to
-sample from complex probability distributions which we would not be
-able to sample from directly. In particular, these methods have
-revolutionised the way in which inverse problems can be tackled,
-allowing full posterior sampling when using a Bayesian framework. 
+%\subsection{Lit. review}
+%\subsection{Optimal transport resampler}
+%\subsection{Function Space MCMC}
+Markov chain Monte Carlo (MCMC) methods are a powerful family of tools
+that allow us to sample from complex probability distributions. MCMC
+methods were first developed in the 70s\cite{hastings1970monte}, and
+with the development of faster, more
+powerful computers, have become ever more important in a whole range
+of fields in statistics, science and engineering.  In particular, when
+considering Bayesian inverse problems, each MCMC step may involve the
+numerical solution of one or more PDE. As many samples are usually
+required before Monte Carlo error is reduced to acceptable levels,
+the application of MCMC methods to these types of problem remain frustratingly out of our grasp.
 
-However, this often comes at a very high cost, with a very large
-number of iterations required in order for the empirical approximation
-of the posterior to be considered good enough. As the cost of
-computing likelihoods can be extremely large, this means that many
-problems of interest are simply computationally intractable.
-
-This problem has been tackled in a variety of different ways. One
-approach is to constuct increasingly complex MCMC methods which are
-able to use the structure of the posterior to make more intelligent
-proposals, leading to more thorough exploration of the posterior with
-fewer iterations. For example, the Hamiltonian or Hybrid Monte Carlo
-(HMC) algorithm uses gradient information and simplectic integrators
-in order to make very large moves in state with relatively high
-acceptance probability\cite{sexton1992hamiltonian}. Non-reversible
-methods are also becoming quite popular as they can improve
-mixing\cite{bierkens2015non}. Riemann
+Many advances have been made in the field of MCMC to design ever more
+complex methods that propose moves more intelligently, leading to
+rapidly converging approximations. Function space versions of standard methods
+such as the random walk Metropolis-Hastings (RWMH) algorithm or the
+Metropolis adjusted Langevin algorithm (MALA), whose convergence rates
+are independent of dimension have been
+developed\cite{cotter2013mcmc}. The hybrid (or Hamiltonian) Monte
+Carlo (HMC) method uses Hamiltonian dynamics in order to propose and
+accept moves to states which are a long way away from the current
+position\cite{sexton1992hamiltonian}, and function space analogues of
+this have also been proposed\cite{beskos2011hybrid}. Riemann
 manifold Monte Carlo methods exploit the Riemann geometry of the
 parameter space, and are able to take advantage of the local structure
 of the target density to produce more efficient MCMC
 proposals\cite{girolami2011riemann}. This methodology has been
 successfully applied to MALA-type proposals and methods which exploit
-even higher order gradient information\cite{bui2014solving}.
+even higher order gradient information\cite{bui2014solving}.  These
+methods allow us to explore the posterior distribution more fully 
+with fewer iterations.
 
-Since the clock speed of an individual processor is no longer
-following Moore's law\cite{moore1998cramming}, improvements in
-computational power are largely coming from the parallelisation of
-multiple cores. As such, the area of parallel MCMC methods is becoming
-increasingly of interest. One class of parallel MCMC method uses
-multiple proposals, with only one of these proposals being
+Simultaneously, great strides are continually being made in the
+development of computing hardware. Moore's law, which predicted that
+the number of transistors that can fit onto a single microchip will
+double every two years, has been largely followed since the early
+70s\cite{moore1998cramming}. In recent times, it has become necessary
+to use parallel architectures in order for this trend to continue. The efficient
+exploitation of these architectures is the key to solving many of the
+computational challenges that we currently face.
+
+As such, the development of efficient parallel MCMC algorithms is an
+important area for research. Since MCMC methods can be naively
+parallelised by simply running many independent chains in parallel,
+the focus needs to be on the development of methods which gain some
+added benefit through parallelism. One class of parallel MCMC method
+uses multiple proposals, with only one of these proposals being
 accepted. Examples of this approach include multiple try
 MCMC\cite{liu2000multiple} and ensemble MCMC\cite{neal2011mcmc}. In
 \cite{calderhead2014general}, a general construction for the
 parallelisation of MCMC methods was presented, which demonstrated
-speed ups of up to two orders of magnitude when compared with serial
-methods.
-
-Other methods are also designed for particular scenarios. For
-instance, the challenge of sampling from high/infinite-dimensional
-posterior distributions is a big one. The majority of
-Metropolis-Hastings algorithms suffer from the curse of
-dimensionality, requiring more samples for a given degree of accuracy
-as the dimension of problem is increased. However some
-dimension-independent methods have been developed, based on
-Crank-Nicolson discretisations of certain stochastic differential
-equations\cite{cotter2013mcmc}. Other ideas such as chain
-adaptation\cite{haario2005componentwise} and early rejection of
-samples can also aid reduction of the computational
-workload\cite{solonen2012efficient}.
-
-However, high dimensionality is not the only challenge that we may
-face. Complex structure in low
-dimensions can cause significant issues. These issues may arise due to
-large correlations between parameters in the posterior, leading to
-long thin curved structures which many standard methods can struggle
-with***CITE***. Multimodality of the posterior can also lead to
-incredibly slow convergence in many methods. Many methods allow for
-good exploration of the current mode, but the waiting time to the next
-switch of the chain to another mode may be large. Since many switches
-are required in order for the correct weighting to be given to each
-mode, and for all of the modes to be explored fully, this presents a
-significant challenge.
-
-One application where this is an ever-present problem is that of
-mixture models. Given a dataset, where we know that the data is from
-two or more different distributions, we wish to be able to identify
-the parameters, e.g. the mean and variance and relative weight, of
-each part of the mixture\cite{marin2005bayesian}. The resulting posterior
-distribution is invariably a multimodal distribution, since it is
-usually invariant to permutations. Metropolis-Hastings algorithms, for
-example, will often fail to converge in a reasonable time frame for
-problems such as this. Since the posterior may be multimodal,
-independent of this label switching, it is still important to be able
-to efficiently sample from the whole posterior.
+speed ups of up to two orders of magnitude when compared with serial methods.
 
 In this paper, we present a framework for parallelisation of
 importance sampling, which can be built around many of the current
 Metropolis-based methodologies in order to create an efficient target
 proposal from the current state of all of the chains in the
-ensemble. The method makes use of a resampler based on optimal
-transport which has been used in the context of particle
-filters\cite{reich2013nonparametric}. In particular we demonstrate the
-advantages of this method when attempting to sample from multimodal
-posterior distributions, such as those arising from inference for
-mixture models.
+ensemble. The idea is to consider the current state on each of a set of
+parallel chains as an ensemble, and to resample using a transformation
+based on optimal transport. Samplers based on optimal transport
+have also been considered in \cite{el2012bayesian}.
 
 In Section \ref{Sec:Prelim} we introduce some mathematical
 preliminaries upon which we will later rely. In Section \ref{Sec:PAIS}
