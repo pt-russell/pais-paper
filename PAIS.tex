@@ -216,6 +216,32 @@ problems such as this. Since the posterior may be multimodal,
 independent of this label switching, it is still important to be able
 to efficiently sample from the whole posterior.
 
+Importance sampling methods are another class of methods which allow
+us to sample from complex probability distribution. A related class of algorithms, adaptive importance sampling (AIS)
+\cite{liu2008monte} reviewed in\cite{bugallo2015adaptive}, had
+received less attention until their practical applicability was
+demonstrated in the
+mid-2000s\cite{celeux2006iterated,cappepopulation,isard1998condensation,bink2008bayesian}.
+AIS methods produce a sequence of approximating distributions,
+constructed from standard distributions, from which samples can be
+easily drawn. At each iteration the samples are weighted, often using
+standard importance sampling methods. The weighted samples are used to
+train the adapting sequence of distributions so that samples are drawn
+more efficiently as the iterations progress. The weighted samples form
+a sample from the posterior distribution under some mild
+conditions~\cite{robert2013monte,martino2015adaptive}.
+
+Ensemble importance sampling schemes also exist, such as population Monte Carlo (PMC)~\cite{cappe2012population}. This algorithm uses a population of
+samples to build a mixture or kernel density estimate (KDE) of the
+posterior distribution. The efficiency of
+this optimisation is restricted by the component kernel(s) chosen, and
+the quality of the current sample from the posterior. Extensions, such
+as adaptive multiple importance sampling algorithm
+(AMIS)~\cite{cornuet2012adaptive}, and adaptive population importance sampling
+(APIS)~\cite{martino2015adaptive} have allowed these methods to
+applied to various applications, including population
+genetics~\cite{siren2011reconstructing}.
+
 In this paper, we present a framework for parallelisation of
 importance sampling, which can be built around many of the current
 Metropolis-based methodologies in order to create an efficient target
@@ -413,82 +439,6 @@ motivated the development of the Parallel Adaptive Importance Sampler
 (PAIS). In the next section we will introduce the method in its most
 general form.
 
-\subsection{Adaptive Importance Sampling}
-
-Bayesian philosophy has become wide\-spread in statistical inference
-largely due to the development of efficient methods, such as MCMC and
-particle filtering, for calculating previously intractable integrals.
-A related class of algorithms, adaptive importance sampling (AIS)
-\cite{liu2008monte} reviewed in\cite{bugallo2015adaptive}, had
-received less attention until their practical applicability was
-demonstrated in the
-mid-2000s\cite{celeux2006iterated,cappepopulation,isard1998condensation,bink2008bayesian}.
-AIS methods produce a sequence of approximating distributions,
-constructed from standard distributions, from which samples can be
-easily drawn. At each iteration the samples are weighted, often using
-standard importance sampling methods. The weighted samples are used to
-train the adapting sequence of distributions so that samples are drawn
-more efficiently as the iterations progress. The weighted samples form
-a sample from the posterior distribution under some mild
-conditions~\cite{robert2013monte,martino2015adaptive}.
-
-The AIS algorithm is Markovian, conditioned on the method of adaption,
-but differs from MCMC methods in that the sequence does not have the
-posterior as its limiting distribution. Convergence is ensured by the
-weighting of samples, which does not rely on algorithm asymptotics.
-This means that after any iteration the algorithm can be stopped and
-the sample obtained is a sample from the posterior distribution, with
-no consideration for burn-in times~\cite{douc2007convergence}.
-
-A popular AIS algorithm is the population monte carlo (PMC) sampling
-method~\cite{cappe2012population}. This algorithm uses a population of
-samples to build a mixture or kernel density estimate (KDE) of the
-posterior distribution. This KDE is optimal in the sense that it
-minimises the Kullback-Leibler divergence between the mixture and the
-posterior distribution~\cite{douc2007convergence}. The efficiency of
-this optimisation is restricted by the component kernel(s) chosen, and
-the quality of the current sample from the posterior.
-
-The PMC algorithm is often implemented as a $D$-kernel
-method~\cite{douc2007convergence}. In this method one choses $D$
-different measures, and a number of samples $N$ such that the total
-population size $N = MD$. At each iteration and for each mixture
-component, one of these $D$ kernels is selected via some optimisation
-criterion and $M$ samples are produced from this kernel. The $M$
-samples from each kernel attempt to stabilise the resampling scheme so
-that information about a particular region is not lost.
-
-In practice, the PMC algorithm can suffer from spiky posteriors due to
-poor approximation properties in some parts of the posterior. The
-adaptive multiple importance sampling algorithm
-(AMIS)~\cite{cornuet2012adaptive} aims to reduce the impact of these
-poor approximations. AMIS considers the entire sample at time $n$ to
-be a draw from all approximations up to time $n$. This means that the
-importance weights for the whole sample must be recalculated at each
-iteration. These weights are known as deterministic mixture
-weights~\cite{owen2000safe,veach1995optimally}, where the denominator
-is the sum of all kernels, $q_t(\cdot), 0\leq t\leq n$,
-\[
-	w_n = \pi(Y_n) \Big/ \sum\limits_{t=0}^n \! q_t(Y_n).
-\]
-The advantage of this system is that at a time $n_1$ a region might be
-badly approximated, it might be better approximated at a later time
-$n_2$, so the weight for the sample $Y_{n_1}$ will be more
-representative of the density in that region, if it is considered as a
-draw from a mixture of samples up to time $n_2$. These weights are
-however biased, consistency was proved in~\cite{marin2012consistency}.
-AMIS has been successfully implemented for problems in population
-genetics~\cite{siren2011reconstructing}.
-
-A combination of AMIS and PMC results in a stable PMC algorithm known
-as adaptive population importance sampling
-(APIS)~\cite{martino2015adaptive}. This algorithm utilises the
-deterministic mixture weights to stabilise the algorithm within a
-single population, then `restarts' the kernel approximation in the
-next iteration. This memoryless property makes the algorithm much more
-flexible to adaptation. A combination with the $D$-kernel PMC method
-allows for adaptive learning of kernel, kernel mean and kernel
-covariances.
 
 \section{The Parallel Adaptive Importance Sampler \allowbreak (PAIS)}\label{Sec:PAIS}
 

@@ -1,0 +1,41 @@
+\documentclass{letter}
+\usepackage{txfonts}
+
+\setlength{\textheight}{10.2in} 
+\setlength{\topmargin}{-0.9in}
+
+\signature{Dr Simon Cotter (corresponding author), Dr Colin Cotter and Paul Russell}
+\address{School of Mathematics \\ Alan Turing Building \\ Oxford
+  Road\\Manchester\\ M13 9PL \\ UK \\\textit{email:} simon.cotter@manchester.ac.uk}
+
+\begin{document}
+
+\date{}
+\begin{letter}{ }
+
+\opening{Dear Prof. Higdon,}
+
+I am writing with regards to our previous submission to the SIAM/ASA Journal of Uncertainty Quantification, entitled ``Parallel Adaptive Importance Sampling''. Please forgive us for the length of this cover letter, but we felt strongly that we needed to address a few issues from our previous submission.
+
+This manuscript had previously been submitted to the SIAM Journal for Scientific Computing, back in August 2015. We received 2 pretty positive reviews, although one review criticised our lack of a high dimensional example. The introduction at the time was possibly slightly misleading as application areas were mentioned (meteorology, oceanography, oil well diagnostic problems) where the unknowns in the inverse problem are high dimensional. We used these examples as these are the areas which are commonly used to motivate particle filters. Since our method uses a state-of-the-art resampler from a particle filter method, this felt like an appropriate setting for our method also. The particle filter methodology has a large literature, all of which uses these motivations, when in fact particle filters, like all importance sampling-based algorithms, suffer badly from the curse of dimensionality. These papers often demonstrate their algorithm's efficacy by applying them to synthetic data sets arising from chaotic and low-dimensional dynamical systems, such as various iterations of the Lorenz equations. The criticisms that were levelled at our paper could just as well be applied to this entire thriving area of mathematical enquiry.
+
+Despite this, the editor stated that our paper could only be accepted if we could demonstrate that the method works for a inverse problem with around $10^9$ unknowns. This request was insurmountable, unreasonable, and not one that anybody who is aware of the dimensionality restrictions of importance sampling/kernel estimation problems would ask. Besides this, even if we did have such an algorithm, the request would require us to have access to the sort of size of computing infrastructure that is available to the MET office. As such, we didn't feel that it would be worth our time in resubmitting to this particular journal.
+
+As a result of this, we undertook a thorough rewrite of the paper, addressing as many of the other concerns of the referees as we could. We then considered which other journals would be a good fit for this work, and felt that SIAM UQ would be perfect. At this stage, we did make an error, in that when submitting, we failed to disclose the previous submission to SISC. In particular, we should have submitted a detailed description of the changes we had made to the manuscipt in response to the referee's comments. This is entirely our own error. However, SIAM's own policy dictates that any resubmissions to a different SIAM journal will be treated as a new submission. Unfortunately, our experience with this second submission has not reflected this.
+
+In the response letter, the associate editor stated that: \emph{"You will see that both referees reports are quite short -- that is my doing. I was aware (through the SIAM grapevine) that you had previously submitted this paper to SISC and that lengthy reviews had been obtained. So, in the interest of not using too much of people's time, I asked for indicative reviews."} This clearly indicates that this submission was not treated as a new submission, and the referees were instructed not to give a full review. Moreover, their reviews have in our view been unfairly coloured by the previous reviews from the SISC submission which were provided to them. In particular, they criticise us due to \emph{"the computed example provides no information about whether or not the proposed method will work in the (sizable) applications mentioned in your introduction."} However, all mentions of such sizable applications have been completely removed from the introduction. The suggested references from referee 2 are also all regarding MCMC algorithms for high dimensional problems, when this method is more aimed at complex posteriors in lower dimensions. Referee 2 also suggest that ``The adaptation only aims at learning the scale of the proposal, whereas the shape can be as (or more) important''. We have no idea where this criticism comes from since the entire point of the paper is that the proposal distribution learns the shape of the posterior distribution from the ensemble of particles.
+
+The changes to the paper since the initial submission have been comprehensive - almost all of the numerical experiments have been rerun, a new 2D example was added from the application of parameter determination for chemical networks. In particular we would highlight also that a new resampler has been developed in this second version, a greedy approximation of the full state-of-the-art resampler that was used in the original paper. The introduction was also completely rewritten.
+
+We are however very keen to make adjustments to the paper in order to appease any legitimate concerns that the referees have highlighted. In particular, we have replaced the 2D problem at the end of the paper with a 4 dimensional example where the posterior exhibits nonlinear correlations between the parameters, again coming from an inverse problem arising from chemical kinetics. We have also completely rewritten the introduction for a second time, taking more care to reference more relevant literature from, among others, the adaptive importance sampling community. Hopefully the introduction now better reflects the content of the rest of the paper. Importantly, we have also added a short passage which directs interested/concerned readers to proofs of the consistency of ensemble adaptive importance sampling schemes.
+
+We are keen to resubmit the manuscript to SIAM/ASA JUQ for a second time. In order to address the issues that have arisen, we have provided three copies of the paper. The first is the original submission to SISC. The second is the version of the paper that was submitted to SIAM UQ, with the changes made highlighted. The third version is our new submission, with the newest changes highlighted. We also provide detailed descriptions of how are changes address the concerns of both sets of referees.
+
+However, if you still believe that this manuscript and its contents are not suitable for publication in your journal, we would very much appreciate a swift decision, in order that we are able to submit it elsewhere.
+
+We thank you very much for your time and patience in dealing with this manuscript, and would like to apologise in our oversight in failing to provide these details at the time of the first submission to SIAM/ASA JUQ. We look forward to hearing from you in due course.
+
+\closing{Yours sincerely,}
+\end{letter}
+
+\end{document}
