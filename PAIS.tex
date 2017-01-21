@@ -112,15 +112,15 @@
   complexity, the need for efficient methods which can exploit the
   parallel architectures which are prevalent in high performance
   computing increases. In this paper, we aim to develop a framework
-  for scalable parallel MCMC algorithms. At each iteration, an
+  for scalable parallel sampling algorithms. At each iteration, an
   importance sampling proposal distribution is formed using the
-  current states of all of the chains within an ensemble. Once
-  weighted samples have been produced from this, a state-of-the-art
+  an ensemble of particles. A stratified sample is taken from this
+  distribution and weighted under the posterior, a state-of-the-art
   resampling method is then used to create an evenly weighted sample
   ready for the next iteration. We demonstrate that this parallel
   adaptive importance sampling (PAIS) method outperforms naive
-  parallelisation of serial MCMC methods using the same number of
-  ensemble members, for low dimensional problems, and in fact shows
+  parallelisation of serial MCMC methods for low dimensional problems,
+  and in fact shows
   better than linear improvements in convergence rates with respect to
   the number of ensemble members. We also introduce a new resampling
   strategy, approximate multinomial resampling (AMR), which while not
@@ -176,12 +176,12 @@ parallelisation of MCMC methods was presented, which demonstrated
 speed ups of up to two orders of magnitude when compared with serial
 methods.
 
-Other methods are also designed for particular scenarios. For
-instance, the challenge of sampling from high/infinite-dimensional
-posterior distributions is a big one. The majority of
+A variety of other methods have been designed with particular scenarios in mind. For
+instance, sampling from high/infinite-dimensional
+posterior distributions is of interest in many applications. The majority of
 Metropolis-Hastings algorithms suffer from the curse of
 dimensionality, requiring more samples for a given degree of accuracy
-as the dimension of problem is increased. However some
+as the parameter dimension is increased. However some
 dimension-independent methods have been developed, based on
 Crank-Nicolson discretisations of certain stochastic differential
 equations\cite{cotter2013mcmc}. Other ideas such as chain
@@ -209,21 +209,21 @@ mixture models. Given a dataset, where we know that the data is from
 two or more different distributions, we wish to be able to identify
 the parameters, e.g. the mean and variance and relative weight, of
 each part of the mixture\cite{marin2005bayesian}. The resulting posterior
-distribution is invariably a multimodal distribution, since it is
-usually invariant to permutations. Metropolis-Hastings algorithms, for
+distribution is invariably a multimodal distribution, since the likelihood is
+invariant to permutations. Metropolis-Hastings algorithms, for
 example, will often fail to converge in a reasonable time frame for
 problems such as this. Since the posterior may be multimodal,
-independent of this label switching, it is still important to be able
+independent of this label switching, it is important to be able
 to efficiently sample from the whole posterior.
 
-Importance sampling methods are another class of methods which allow
-us to sample from complex probability distribution. A related class of algorithms, adaptive importance sampling (AIS)
+Importance samplers are another class of methods which allow
+us to sample from complex probability distributions. A related class of algorithms, adaptive importance sampling (AIS)
 \cite{liu2008monte} reviewed in\cite{bugallo2015adaptive}, had
 received less attention until their practical applicability was
 demonstrated in the
 mid-2000s\cite{celeux2006iterated,cappepopulation,isard1998condensation,bink2008bayesian}.
 AIS methods produce a sequence of approximating distributions,
-constructed from standard distributions, from which samples can be
+constructed from mixtures of standard distributions, from which samples can be
 easily drawn. At each iteration the samples are weighted, often using
 standard importance sampling methods. The weighted samples are used to
 train the adapting sequence of distributions so that samples are drawn
@@ -231,21 +231,20 @@ more efficiently as the iterations progress. The weighted samples form
 a sample from the posterior distribution under some mild
 conditions~\cite{robert2013monte,martino2015adaptive}.
 
-Ensemble importance sampling schemes also exist, such as population Monte Carlo (PMC)~\cite{cappe2012population}. This algorithm uses a population of
-samples to build a mixture or kernel density estimate (KDE) of the
+Ensemble importance sampling schemes also exist, e.g. population Monte Carlo (PMC)~\cite{cappe2012population}. PMC uses an ensemble to build a mixture or kernel density estimate (KDE) of the
 posterior distribution. The efficiency of
 this optimisation is restricted by the component kernel(s) chosen, and
 the quality of the current sample from the posterior. Extensions, such
 as adaptive multiple importance sampling algorithm
 (AMIS)~\cite{cornuet2012adaptive}, and adaptive population importance sampling
-(APIS)~\cite{martino2015adaptive} have allowed these methods to
+(APIS)~\cite{martino2015adaptive} have enabled these methods to be
 applied to various applications, including population
 genetics~\cite{siren2011reconstructing}.
 
 In this paper, we present a framework for parallelisation of
 importance sampling, which can be built around many of the current
 Metropolis-based methodologies in order to create an efficient target
-proposal from the current state of all of the chains in the
+distribution from the current
 ensemble. The method makes use of a resampler based on optimal
 transport which has been used in the context of particle
 filters\cite{reich2013nonparametric}. In particular we demonstrate the
@@ -266,38 +265,42 @@ consistency of the PAIS algorithm. In Section \ref{Sec:Num} we present
 some numerical examples, before a brief conclusion and discussion in
 Section \ref{Sec:Conc}.
 
+%%%%%%
+
 \section{Preliminaries}\label{Sec:Prelim}
+
 In this Section we will introduce preliminary topics and algorithms
 that will be referred to throughout the paper.
+
+%%%%%%
+
 \subsection{Bayesian inverse problems}
+
 In this paper, we focus on the use of MCMC methods for characterising
 posterior probability distributions arising from Bayesian inverse problems. We
-wish to learn about a particular unknown quantity $u$, of which we are
+wish to learn about a particular unknown quantity $x$, of which we are
 able to make direct or indirect noisy observations. For now
 we say that $x$ is a member of a Hilbert
 space $X$. 
 
-The parameter $x$ is observed
-through the observation operator $\mathcal{G}:X \to\mathbb{R}^d$. 
-Since observations are never perfect, we
-assume that these measurements $\data$ are subject to Gaussian noise,
-so that
+The quantity $x$ is mapped on to observable space by the observation
+operator $\mathcal{G}:X \to\mathbb{R}^d$. We assume that the
+observations, $\data$, are subject to Gaussian noise,
 \begin{equation}\label{eqn:obs}
 	\data = \mathcal{G}(x) + \varepsilon, \qquad \varepsilon \sim \mu_{\varepsilon} = \mathcal{N}(0,\Sigma).
 \end{equation}
-For example, if $x$ are the rates of reactions in a chemical system, $\G$ might
-return the quantities of each chemical species at a particular time, or some
-summary of this information.
+For example, if $x$ is an initial condition for the wave equation,
+$\mathcal{G}$ might calculate the height of a wave at a particular point and time.
 
 These modelling assumptions allow us to construct the 
-likelihood of observing the data $\data$ given the parameter $x =
+likelihood of observing the data $\data$ given the quantity $x =
 x^*$. Rearranging \eqref{eqn:obs} and using the distribution of
 $\varepsilon$, we get:
 \begin{equation}\label{eqn:like}
 	\mathbb{P}(\data|x=x^*) \propto \exp \left ( -\frac{1}{2} \|\mathcal{G}(x^*)
 	  - \data\|_\Sigma^2 \right ) = \exp\left(-\Phi(x^*)\right),
 \end{equation}
-where $\| y_1 - y_2 \|_\Sigma$ is the Mahalanobis distance between $y_1$ and $y_2 \in \mathbb{R}^d$.
+where $\| y_1 - y_2 \|_\Sigma = (y_1-y_2)^\top\Sigma^{-1}(y_1-y_2)$ for $y_1,y_2 \in \mathbb{R}^d$.
 
 As discussed in \cite{stuart2010inverse,cotter2009bayesian},
 in order for this inverse problem to be well-posed in the Bayesian
@@ -312,96 +315,55 @@ likelihood:
 	\frac{d\mu_Y}{d\mu_0} \propto \exp \left ( -\Phi(x^*) \right ).
 \end{equation}
 
-% \subsection{The preconditioned Crank-Nicolson Langevin (pCNL) algorithm}\label{Sec:pCNL}
-% In recent years, work has been carried out to frame MCMC proposal
-% distributions on function space\cite{cotter2013mcmc}. These new
-% discretisations perform comparably with the original versions in low
-% dimensions. If gradient information regarding the observation operator is
-% available, then a range of MCMC methods are available which exploit this information to improve mixing rates. One
-% example of such an algorithm is MALA. In \cite{cotter2013mcmc}, a function space version of this
-% method was presented, the pCNL algorithm, and is described in full in Table
-% \ref{tab:pCNL}. The proposal used in this method comes about through
-% a Crank-Nicolson approximation of the Langevin SDE, whose invariant
-% measure is the posterior measure $\mu_Y$.
-
-% \begin{table}
-% \begin{mdframed}
-% \begin{algorithmic}
-% \STATE $X = x_0$
-% \FOR{$i=1,2,3,\ldots$}
-% \STATE $Y = (2+\delta)^{-1}\left[(2 - \delta)X_{i-1}-
-% 2\delta\mathcal{C}\nabla \Phi(u)+
-% \sqrt{8\delta} W\right] $, $W \sim \mu_0$
-% \STATE $a(X_{i-1},Y) = \min \left \{ 1,  \exp(\Phi(X_{i-1}) - \Phi(Y) ) \right \}$.
-% \STATE $u \sim U([0,1])$
-% \IF{$u<a(X_{i-1},Y)$}
-% \STATE $X_i = Y$
-% \ELSE 
-% \STATE $X_i = X_{i-1}$
-% \ENDIF
-% \ENDFOR
-% \end{algorithmic}
-% \end{mdframed}\caption{A pseudo-code representation of the preconditioned Crank-Nicolson Langevin
-%    (pCNL) algorithm. $\delta \in (0,2]$ is a step size parameter.}
-% \label{tab:pCNL}
-% \end{table}
-
-
+%%%%%%
 
 \subsection{Particle filters and resamplers}\label{sec:filters}
-In several applications, data must be assimilated in an ``online''
-fashion, with up to date observations of the studied system being made
-available on a regular basis. In these contexts, such as in weather forecasting or
-oceanography, data is incorporated using a filtering
-methodology. One popular filtering method is the particle filter, the
-first of which was dubbed the Bootstrap
-filter\cite{gordon1993novel}. In this method, a set of weighted particles is
-used to represent the posterior distribution. The positions of the
-particles are updated using the model dynamics. Then, when more
-observations are made available, the relative weights of the particles
-are updated to take account of this data, using Bayes' formula. Other filtering methods, such
-as the Kalman filter\cite{kalman1960new} and ensemble Kalman filter\cite{evensen1994sequential}, have also been developed which are often used within the data
-assimilation community.
 
-One advantage of the particle filter is that there are convergence
-results for this method as the number of particles is increased.  One downside is that the required ensemble
-size increases quickly with dimension, making it difficult to use in
-high-dimensional problems. Another
-downside is that the effective sample size decreases at each
-iteration, resulting in degeneration of the approximation of the
-posterior. One way to tackle
-this is to employ a resampling scheme. The aim of a successful
-resample is to take the unevenly weighted ensemble and return a new
-ensemble of particles with even weights which is highly correlated to
-the original samples.
+Particle filters are a class of Monte Carlo algorithms designed to
+solve the filtering problem. That is, to find the best estimate of the
+true state of a system when given only noisy observations of the
+system. The solution of this problem has been of importance since the
+middle of the 20th century in fields such as molecular biology,
+computational physics and signal processing. In recent years the data
+assimilation community has contributed several efficient particle
+filters, including the ensemble Kalman filter
+(EnKF)~\cite{evensen1994sequential} and the ensemble transform
+particle filter (ETPF)~\cite{reich2013nonparametric}.
 
-The ensemble transform particle filter (ETPF) proposed by Reich
-\cite{reich2013nonparametric} makes use of optimal transportation as
-described in \cite{villani2003topics,villani2008optimal}. The transform
-takes a sample of weighted particles $\{y_i\}_{i=1}^M$ from $\mu_Y$
-and converts it into a sample of evenly weighted particles $\{x_i\}_{i=1}^M$
-from $\mu_X$, by means of defining a coupling $T^*$ between $Y$ and
-$X$. Given that a trivial coupling $T^t$ always exists in the space of
-transference plans, $\Pi(\mu_{X}, \mu_{Y})$, we can find a coupling
-$T^*$ which maximises the correlation between $X$ and $Y$
-\cite{cotter2012ensemble}. This coupling is the solution to a linear
-programming problem in $M^2$ variables with $2M-1$ constraints.
-Maximising the correlation ensures that the new sample is as much like
-the original sample as possible with the additional property that the sample
-is evenly weighted.
+The ETPF defines a coupling $T$ between two random variables $Y$ and
+$X$, allowing us to use the induced map as a resampler. An \emph{optimal
+coupling} $T^*$ is one which maximises the correlation between $X$ and
+$Y$ \cite{cotter2012ensemble}. This coupling is the solution to a
+linear programming problem in $M^2$ variables with $2M-1$ constraints,
+where $M$ is the size of the sample. Maximising the correlation
+preserves the statistics of $X$ in the new sample.
 
-A Monte Carlo algorithm can be implemented to resample from a weighted
-ensemble. We create a weighted sample, then solve the optimal
-transport problem which produces the coupling described above, we can
-draw a new sample from the evenly weighted distribution. Reich
-suggests using the mean of the evenly weighted distribution to produce
-a consistent estimator. Analysis of this method shows that as the
-ensemble size increases, the statistics of the evenly weighted sample
-approach those of the posterior distribution.
+In this work we use these particle filters as resampling methods. We
+approximate the posterior distribution, $\mu_Y$, with a small sample
+of weighted particles, $\{(w_i,y_i)\}_{i=1}^M$. In filtering problems
+the weights would be found by incorporating new observed data whereas
+here we simply use importance weights. This distribution, $\hat{\mu}_Y
+\approx \mu_Y$, can then be resampled, using the ETPF or otherwise,
+into a new distribution, $\hat{\eta} \approx \mu_Y$,
+\begin{equation}\label{eqn:resampler}
+	\hat{\mu}_Y = \sum\limits_{i=1}^M \! w_i\delta_{y_i}(\cdot)
+	 \quad \xrightarrow{\text{ETPF}} \quad \sum\limits_{i=1}^M \!
+	 n_i\delta_{x_i}(\cdot) = \hat{\eta}.
+\end{equation}
+where $n_i \in \{0, 1, \dots,M\}$ and $\sum_{i=1}^M \! n_i = M$. This
+new sample $\{x_i\}_{i=1}^M$ is equally weighted.
+
+Particle filters such as the ETPF are well suited to this problem
+since it is easy to introduce conditions in the resampling to ensure
+you obtain the behaviour you require. One downside is that the
+required ensemble size increases quickly with dimension, making it
+difficult to use in high-dimensional problems.
+
+%%%%%%
 
 \subsection{Deficiencies of Metropolis-type MCMC schemes}
 All MCMC methods are naively parallelisable. One can take a method
-and simply implement it simultaneously over a set of processors in an ensemble. All
+and simply implement it simultaneously over an ensemble of processors. All
 of the states of all of the ensemble member can be recorded, and in the time
 that it takes one MCMC chain to draw $N$ samples, $M$ ensemble members
 can draw $NM$ samples. 
@@ -439,31 +401,9 @@ motivated the development of the Parallel Adaptive Importance Sampler
 (PAIS). In the next section we will introduce the method in its most
 general form.
 
+%%%%%%
 
 \section{The Parallel Adaptive Importance Sampler \allowbreak (PAIS)}\label{Sec:PAIS}
-
-% In a trivially parallelised MCMC scheme, if we have enough processes
-% all sampling from the target density at the same time, then we can
-% make a very rough approximation of that density by taking the current
-% states of all of the processes as a representative sample. In the
-% PAIS, the proposal density for the importance sampler stage is a
-% mixture of all of the proposal densities for a chosen MCMC scheme,
-% using the current states. If the proposal in the MCMC scheme is
-% appropriate and our number of samples is big enough, we might hope
-% that this mixture of densities is a good enough approximation of the
-% target density, and that new samples drawn from
-% the mixture proposal are approximately draws from the target
-% measure. If this is the case, then the variance of importance weights
-% for these samples will be small, leading to a highly efficient
-% sampler.
-
-% The problem at this stage, is that our current states all have varying
-% importance, but in order for us to iterate this whole process again,
-% we require them to be the same. Therefore, we employ a resampler to
-% take our new set of samples with differing weights, and return a set
-% of states with equal weights, which are chosen so that the correlation
-% between the two sets is maximised. At this stage we can start the whole
-% process again. 
 
 Importance sampling can be a very efficient method for sampling from a
 probability distribution. A proposal density is chosen, from which we
@@ -471,58 +411,39 @@ can draw samples. Each sample is assigned a weight given by the
 ratio of the target density and the proposal density at that
 point. They are efficient when the proposal density is concentrated in
 similar areas to the target density, and incredibly inefficient when
-this is not the case. The aim of the PAIS is to use an ensemble of states,
-each coming from a MCMC chain, to construct a proposal
+this is not the case. The aim of the PAIS is to use an ensemble of states to construct a proposal
 distribution which will be as close as possible to the target density. If this
 ensemble is large enough, the distribution of states will be representative
 of the target density.
 
 The proposal distribution could be constructed in many different ways,
 but we choose to use a mixture distribution, made up of a sum of MCMC
-proposal distributions for each of the members of the ensemble. Once the proposal is
-constructed, we can sample a new set of states from the proposal
-distribution, and each is assigned a weight given by the ratio of the target
-density and the proposal mixture distribution density. Assuming that
-our proposal distribution is a good one, then the variance of the
-weights will be small, and we will have many useful samples. Finally, we
-need to create a set of evenly weighted samples which best represent
-this set of weighted samples. This is achieved by implementing a
-resampling algorithm. Initially we will use the ETPF
-algorithm\cite{reich2013nonparametric}, although we will suggest an
-alternative strategy in Section \ref{sec:AMR}. The resampling
-algorithm gives us a set of evenly weighted samples which represents
-the target distribution well, which we can use to iterate the process
-again. The algorithm is summarised in Algorithm \ref{alg:PAIS}. 
+proposal kernels. This corresponds to replacing the Dirac distribution
+in the right-hand side of Equation~\ref{eqn:resampler} with a chosen
+distribution e.g. Gaussian. Once the proposal is constructed, we can
+sample a new ensemble from the proposal distribution, and each is
+assigned a weight given by the ratio of the target density and the
+proposal mixture density. Assuming that our proposal distribution is a
+good one, then the variance of the weights will be small, and we will
+have many useful samples. Finally, we need to create a set of evenly
+weighted samples which best represent this set of weighted samples.
+This is achieved by implementing a resampling algorithm. Initially we
+will use the ETPF algorithm\cite{reich2013nonparametric}, although we
+will suggest an alternative strategy in Section \ref{sec:AMR}. The
+resampling algorithm gives us a set of evenly weighted samples which
+represents the target distribution well, which we can use to iterate
+the process again. The algorithm is summarised in Algorithm
+\ref{alg:PAIS}.
 
 We wish to sample states $x \in X$ from a posterior
 probability distribution $\mu_D$, where $D$ represents our data which
 we wish to use to infer $x$. Since we have $M$ ensemble members, we
 represent the current state of all of the Markov chains as a vector
-$\X = [x_1,x_2,\ldots,x_M]^T$. We are also given a transition kernel
+$\X = [x_1,x_2,\ldots,x_M]^\top$. We are also given a transition kernel
 $\nu(\cdot,\cdot)$, which might come from an MCMC method, for example
 the random walk Metropolis-Hastings proposal density $\nu(\cdot,x) \sim
 \mathcal{N}(x,\beta^2)$, where $\beta^2\in \mathbb{R}$ defines the
 variance of the proposal.
-
-%\begin{table}
-%\begin{mdframed}
-%\begin{algorithmic}
-%\STATE $\X^{(0)} = \X_0 = [x_1^{(0)},x_2^{(0)},\ldots,x_M^{(0)}]^T$
-%\FOR{$i=0,1,2, ..., N-1$}
-%\STATE $\Y^{(i)} = [y_1^{(i)},y_2^{(i)},\ldots,y_M^{(i)}]^T, \quad y_j^{(i)} \sim
-%\nu(\cdot;x_j^{(i)})$
-%\STATE $\chi(y;\X^{(i)}) = \frac{1}{M}
-%\sum_{j=1}^M \nu(y;x_j^{(i)})$.
-%\STATE $\W^{(i)} = [w_1^{(i)},w_2^{(i)},\ldots,w_M^{(i)}]^T,$ \quad $w^{(i)}_j =
-%\frac{\pi(y_j^{(i)})}{\chi(y_j^{(i)};\X^{(i)})}$.
-%\STATE Resample: $(\W^{(i)},\Y^{(i)}) \rightarrow (\frac{1}{M}\mathbf{1}, \X^{(i+1)})$
-%\ENDFOR 
-%\end{algorithmic}
-%\end{mdframed}
-%\caption{A pseudo-code representation of the Parallel Adaptive
-%  Importance Sampler (PAIS).}
-%\label{tab:PAIS}
-%\end{table}
 
 \begin{table}[!h]
 \centering
@@ -533,14 +454,14 @@ variance of the proposal.
 	\For {$i = 1, \dots, N$}
 	{
 		Sample $\Y^{(i)} = [y_1^{(i)},y_2^{(i)},\ldots,y_M^{(i)}]^\top, \quad y_j^{(i)} \sim
-\nu(\cdot;x_j^{(i-1)})$.\;
+\nu(\cdot;x_j^{(i-1)})$.\label{algline:PAIS_propose}\;
 		Calculate $\W^{(i)} = [w_1^{(i)},w_2^{(i)},\ldots,w_M^{(i)}]^\top,$ \quad $w^{(i)}_j =
 \frac{\pi(y_j^{(i)})}{\chi(y_j^{(i)};\X^{(i-1)})}$, where
 		\[
-			\chi(y;\X^{(i-1)}) = \frac{1}{M}\sum_{j=1}^M \nu(y;x_j^{(i-1)}).
+			\chi(\cdot;\X^{(i-1)}) = \frac{1}{M}\sum_{j=1}^M \nu(\cdot;x_j^{(i-1)}).
 		\]
 
-		Resample: $(\W^{(i)},\Y^{(i)}) \rightarrow (\frac{1}{M}\mathbf{1}, \X^{(i)})$.
+		Resample: $(\W^{(i)},\Y^{(i)}) \rightarrow (\frac{1}{M}\mathbf{1}, \X^{(i)})$.\label{algline:PAIS_resample}\;
 	}
 	Output $(\W, \Y)$.\;
 \caption{The parallel adaptive importance sampler (PAIS).\label{alg:PAIS}}
@@ -558,29 +479,28 @@ The key is to choose a suitable transition kernel $\nu$ such that
 if $X^{(i)}$ is a representative sample of the posterior,
 then the mixture density $\chi(\cdot;\X^{(i)})$ is a good
 approximation of the posterior distribution. If this is the case,
-the newly proposed states $\Y^{(i)}$ will also be a good sample of the posterior with low variance in the
-weights $\W^{(i)}$.
+the newly proposed states $\Y^{(i)}$ will also be a good sample of the
+posterior with low variance in the weights $\W^{(i)}$.
 
 In Section \ref{Sec:Num}, we will demonstrate how the algorithm
-performs, primarily using RWMH proposals. We do not claim that this choice is optimal, but
+performs, primarily using random walk (RW) proposals. We do not claim that this choice is optimal, but
 is simply chosen as an example to show that sharing information across
-ensemble members can improve on the original MCMC algorithm and lead to
-convergence in fewer evaluations of $\G$. This is important since if
+ensemble members can improve on the original MH algorithm and lead to
+tolerances being achieved in fewer evaluations of $\G$. This is important since if
 the inverse problem being tackled involves computing
 the likelihood from a very large data set this could lead to a
 large saving of computational cost. We have observed that
 using more complex (and hence more expensive) kernels $\nu$, does not
 significantly improve the speed of convergence of the algorithm for
-simple examples\cite{Paul}.
+posteriors which are easy to approximate\cite{Paul}.
 
 Care needs to be taken when choosing the proposal distribution to
 ensure that the proposals are absolutely continuous with respect to
-the posterior distribution. In Section \ref{sec:chem} we will consider
-an inverse problem with Gamma priors. Since the posterior distribution
-in this context is heavy-tailed, if we use a lighter tailed
-distribution for $\nu$, such as a Gaussian kernel, then importance
-weights in the tails will be unbounded, which will hamper convergence
-of the algorithm.
+the posterior distribution. If this is not the case, importance
+weights grow exponentially for samples in the tails. This will
+drastically decrease the efficiency of sampling.
+
+%%%%%%
 
 \section{Automated tuning of Algorithm Parameters}\label{Sec:adapt}
 
@@ -593,22 +513,9 @@ with the PAIS, is finding an appropriate proposal kernel $\nu$ such
 that the mixture distribution $\chi$ is a close approximation to the
 posterior density $\pi$.
 
-%If the
-%proposal distribution is too over-dispersed, then the algorithm will often
-%propose states in the tails of the distribution, resulting in larger
-%variance of the weights, and therefore slower convergence to the
-%posterior distribution. Similarly, if the proposal distribution is
-%under-dispersed, the proposals will be highly correlated with the
-%previous states, and the algorithm will take a long time to fully explore
-%the parameter space, and worse, will lead regularly to states proposed
-%in the tails of the proposal distribution with very large weights. It is therefore necessary to find a proposal
-%distribution which is slightly over-dispersed to ensure the entire
-%posterior is explored\cite{gelman1992inference}, but is as close to the
-%posterior as possible.
-
-Most commonly used MCMC proposals have parametric dependence which
-allows the user to control their variance. For example, in the RWMH
-proposal $y = x + \beta \eta$, the parameter $\beta$ is the variance
+Most MCMC proposals have parametric dependence which
+allows the user to control their variance. For example, in the RW
+proposal $y = x + \beta \eta$, the parameter $\beta$ is the standard deviation
 of the proposal distribution. Therefore the proposal distributions can
 be tuned such that they are are slightly over-dispersed. This tuning
 can take place during the burn-in phase of the algorithm. Algorithms
@@ -630,13 +537,6 @@ explore each region efficiently. Using an ensemble of chains allows
 quick and effective assessment of the value of the optimal scaling
 parameter.
 
-%The alternative to using adaptive procedures to tune the scaling
-%parameters is to perform exploratory simulations to find the optimal
-%regimes by trial and error. This can be very costly and the optimal
-%parameters cannot realistically be found to more than a couple of
-%significant figures. It is therefore important that MCMC algorithms
-%provide a feasible adaptive strategy.
-
 In many MCMC algorithms such as the Random Walk Metropolis-Hastings
 (RWMH) algorithm, the optimal scaling parameter can be found by
 searching for the parameter value which gives an optimal acceptance
@@ -646,13 +546,11 @@ is not applicable to PAIS so we must use other statistics to optimise
 the scaling parameter. Section~\ref{sec:statistics} gives some
 possible methods for tuning $\beta$.
 
+%%%%%%
+
 \subsection{Statistics for Determining the Optimal Scaling Parameter}\label{sec:statistics}
 
 \subsubsection{Determining optimal scaling parameter using error analysis}
-
-%Sampling algorithms can be assessed by comparing their approximation of
-%the posterior to the analytic distribution, in cases where the
-%posterior distribution can be computed using alternative methods. 
 
 When available, an analytic form for the target distribution allows us
 to assess the convergence of sampling algorithms to the target
@@ -664,10 +562,10 @@ $\hat{m}_n$, is given by:
 \begin{equation}\label{eq:34567}
 	e = \left|\frac{\hat{m}_n - \mathbb{E}[X^n]}{\mathbb{E}[X^n]}\right|, \quad \text{where} \quad \hat{m}_n = \frac{1}{N}\sum_{i=1}^N \! x_i^n,
 \end{equation}
-where $\{x_i\}_{i=1}^N$ is a sample of size $N$.
+and $\{x_i\}_{i=1}^N$ is a sample of size $N$.
 
-The relative $L^2$ error, $E$, between a continuous function to a
-piecewise constant function, can be given by considering the
+The relative $L^2$ error, $E$, between a continuous density function to a
+piecewise constant approximation of that density, can be defined by considering the
 difference in mass between the self-normalised histogram of the
 samples and the posterior distribution over a set of disjoint sets or
 ``bins'':
@@ -682,25 +580,12 @@ metric converges to the standard definition of the relative $L^2$
 error as $v\rightarrow 0$.
 
 These statistics cannot be used in general to find optimal values of
-$\beta$ since they require knowledge of the analytic solution, and
-the algorithm must be run for a long time to build up a
-sufficiently large sample. However they can be used to assess the
-ability of other indicators to find the optimal scaling parameters in
-a controlled setting.
+$\beta$ since they require the analytic solution, and are expensive to
+approximate. However they can be used to assess the ability of other
+indicators to find the optimal scaling parameters in a controlled
+setting.
 
-%\subsubsection{The variance of the weights}
-
-%Importance samplers assign a weight to each sample they produce based
-%on a ratio of the posterior to the proposal at that point. Importance
-%samplers are most efficient when the target is proportional to the
-%proposal distribution. In this case the weights are all equal, and so the variance of the weights, $var(w(y))$, is zero. Hence, we would like to %choose the value of $\beta$ which minimises the variance of the weights,
-%\[
-%	\beta^*_{\text{var}} = \argmin_{\beta} \text{var}(w(y)).
-%\]
-%In our experience, the mean of the estimator
-%$\text{var}(w(y))$ is a smooth enough function of $\beta$ that it can
-%be used to tune the proposal variance during the burn-in phase of MCMC
-%algorithms. However the variance of the estimator of the variance can be large, especially far away from the optimal value, so it can take a %large number of iterations to calculate descent directions.
+%%%%%%
 
 \subsubsection{The effective sample size}\label{sec:ess}
 
@@ -725,20 +610,6 @@ weights, as it takes values on $[1, M]$ while the variance of the
 weights takes values on $\mathbb{R}_\geq$. Since the variance can vary
 over many orders of magnitude bringing numerical issues, the effective
 sample size is more desirable.
-
-%In the numerics which follow, we use the effective sample size
-%calculated at each iteration and averaged across the entire run to
-%tune the scaling parameters. We do this because when we tune this
-%parameter on the fly, we use the single-iteration average to estimate
-%optimality. The optimal scaling parameter found using the global
-%optimum of the variance of the weights is also included for
-%comparison. Note that for the majority of iterations the value of
-%$\neff$ is an overestimate of this statistic over a larger number of
-%samples. Rare events which result in a large importance weight bring
-%this statistic down, and care must be made not to overfit the proposal
-%variance to $\neff$ on an iteration by iteration basis. This can be
-%accounted for by increasing the variance slightly once the adaptive
-%algorithm has arrived on a value using single iteration values of $\neff$.
 
 In this paper we tune our simulations using the effective sample size
 statistic. We calculate this statistic using a sample size of $Mn_k$,
@@ -765,7 +636,7 @@ efficiently.
 \includegraphics[width=0.65\textwidth]{"figures/C1_burnin"}
 \caption{The effective sample size ratio and relative $L^2$ difference
 $E$ during the first 30 iterations. These numerics are taken from the
-example in Section~\ref{sec:chem} using the PAIS-Gamma algorithm.}
+example in Section~\ref{sec:mixture_conv} using the PAIS-RW algorithm.}
 \label{fig:neff-burnin}
 \end{figure}
 
@@ -792,62 +663,12 @@ scaling parameter as the ensemble size increases. Subfigure (b) shows
 that as the ensemble size increases, the algorithm becomes more
 efficient.
 
-%If we are to use the effective sample size ratio as an indicator of
-%how to tune the proposal variance, we need to look at how it behaves
-%in different situations. Here we look at how the statistic behaves as
-%we vary the ensemble size, $M$. Figure~\ref{fig:neff-M} shows results
-%for the Gaussian posterior discussed in Section~\ref{sec:problem 1}
-%when using the PAIS algorithm with RW proposals, each with variance
-%$\beta^2 \in \mathbb{R}_{>0}$. Figure~\ref{fig:neff-M} (a) shows that
-%as the ensemble size increases, the scaling parameter which gives the
-%optimal effective sample size ratio decreases. This is to be expected
-%since if we are trying to approximate the posterior with a mixture
-%distribution of a small number of Gaussians, the optimal variance will
-%naturally be larger so that the whole of the significant regions are
-%covered by the proposal distribution. As the number increases, the
-%optimal variances decrease so that finer details in the posterior can
-%be better represented in the proposal. Figure~\ref{fig:neff-M} (b) shows that as the ensemble size increases, the efficiency of the sampler also increases.
-
-\subsection{Adaptive PAIS}\label{sec:adapt}
-
-%A popular approach for adaptive MCMC algorithms is to view the scaling
-%parameter as a random variable which we can sample during the course
-%of the MCMC iterations. However, it can be slow to converge to the
-%optimal value, and we may need an
-%uninformative prior for the scaling parameter. Alternatively, the
-%parameter may be randomly sampled at various points during the
-%evolution of the chain. This results in some iterations which make
-%larger global moves in the state space between modes in the target
-%distribution, and some which make local moves. Algorithms of this type
-%do not converge to an optimal value of the scaling parameter.
+\subsection{Adaptively Tuned PAIS}\label{sec:adapt}
 
 To adapt the scaling parameter $\beta$, we use a version of the
 gradient ascent method modified for a stochastic function. Some more
 sophisticated examples are described in
 \cite{roberts2009examples,Ji2013adaptive,andrieu2006ergodicity}.
-%Algorithm~\ref{tab:adapt} in Appendix~\ref{Sec:App}, is not
-%presented as an optimal strategy but as a demonstration that the PAIS
-%algorithm can be adaptively tuned effectively.
-
-%From here on in, we use the random walk proposal unless otherwise stated,
-%\begin{equation}y = x_{i-1}+\beta \omega_{i-1}, \qquad \omega_{i-1}
-%  \sim \mathcal{N}(0,\Sigma) \qquad {\rm i.i.d.}
-%\end{equation}
-%where $x_{i-1}$ is our current state, $y$ is our proposed state and
-%$\Sigma$ is a covariance operator which might come from the prior
-%distribution. In the numerics section we will refer to $\beta$ as the
-%scaling parameter.
-
-%Using an adaptive strategy, we calculate a sequence
-%$\{\beta^{(k)}\}_{k=1}$ which converges roughly to the optimal
-%scaling parameter $\beta^*$, resulting in the optimal transition
-%density $\chi$ for our MCMC algorithm. This optimal value will differ
-%depending on the criterion we are optimising. We must choose some sequence
-%of iterations, $\{n_k\}_{k=1}$, at which to update $\beta$, and due
-%to the constraints on adaptive MCMC
-%algorithms\cite{roberts2007coupling,roberts2009examples}, these $n_k$
-%must grow exponentially further apart. This same adaptive approach
-%can also be applied to the trivially parallelised MCMC algorithms to adaptively calculate their optimal scaling parameter $\beta^*$.
 
 \begin{table}[!h]
 \centering
@@ -856,7 +677,7 @@ sophisticated examples are described in
 \BlankLine
 	Define update times $\{n_k\}_k$.\;
 	\For{$n=1,\dots,N$}{
-		Compute normal PAIS steps.\;
+		Complete steps \ref{algline:PAIS_propose}-\ref{algline:PAIS_resample} of Algorithm~\ref{alg:PAIS}.\;
 		\If {$n \in \{n_k\}$}
 		{
 			Divide ensemble into two halves. Use these halves to estimate the gradient in $\neff$ at $\delta_k$.\;
@@ -867,27 +688,15 @@ sophisticated examples are described in
 			\label{algline:gradient_ascent}
 		}
 	}
-\caption{The Adaptive PAIS Algorithm.\label{alg:adaptPAIS}}
+\caption{Adaptively tuned PAIS algorithm.\label{alg:adaptPAIS}}
 \end{algorithm}
 \end{table}
 Our adaptive algorithm is given in Algorithm~\ref{alg:adaptPAIS}. We choose update times which, as suggested in Section~\ref{sec:ess} allow for a reasonable estimate of the effective sample size, but do not waste too many iterations. In Step~\ref{algline:gradient_ascent}, the gradient ascent parameter $\gamma$ may decrease over time, e.g. as a function of $n_k$.
 
-% When implemented, there are a number of parameters which must be
-% chosen to ensure efficient tuning of $\beta$. Firstly, the initial
-% value of $\beta$ should be chosen so that the chains quickly explore the parameter space. However, if $\beta$ is chosen to be too
-% large, then the method may become unstable. We also choose two
-% iteration numbers at which we change our adaptive strategy. At
-% iteration $N_\text{join}$ we resample using the full ensemble instead
-% of using two subsets of the full ensemble. When using two subsets we
-% are training the scaling parameter using the wrong ensemble size, this
-% allows faster convergence but leads to a sub-optimal scaling
-% parameter. Resampling with the full ensemble towards the end of the
-% tuning allows fast convergence to the right order of magnitude,
-% followed by fine tuning to the optimal scaling parameter. Finally we
-% choose a time, $N_\text{stop}$, at which we stop updating our
-% parameter.
+%%%%%%
 
 \section{Approximate Multinomial Resampling}\label{sec:AMR}
+
 Although the ETPF is optimal in terms of preserving statistics of the
 sample, it can also become quite costly as the number of ensemble members
 is increased. It is arguable that in the context of PAIS, we do not
@@ -1017,6 +826,8 @@ that the AMR is the optimal choice within PAIS, but it does have
 favourable features, and demonstrates how different choices of
 resampler can affect the speed and accuracy of the PAIS algorithm.
 
+%%%%%%
+
 \section{Consistency of PAIS}\label{sec:consistency}
 
 As outlined in~\cite{martino2015adaptive} consistency of population AIS algorithms can be considered in two different cases. In the first case we fix the number of iterations $N < \infty$, but allow the population size to grow to inifinity $M\rightarrow\infty$. In the second case we hold the population size fixed $M<\infty$, and allow infinitely many iterations $N\rightarrow\infty$.
@@ -1028,6 +839,8 @@ In case one, from standard importance sampling results we know that for an itera
 where the normalisation constant, $\hat{Z} = \frac{1}{M}\sum_{i=1}^M \! w_i$, also converges to the true normalisation constant $Z$~\cite{robert2013monte}.
 
 Case two is slightly more involved. Estimation of the normalisation constant $Z$ is biased, and so estimates of statistics are sums of independent but biased estimators. Since the estimators are independent, the proof of consistency of PAIS in this second limit can be approached in the same way as the PMC algorithm, where it has been shown that $\hat{Z}\rightarrow Z$~\cite{robert2013monte}. Since the normalisation constant is consistent, sums of the independent estimators are also consistent.
+
+%%%%%%
 
 \section{Numerical Examples}\label{Sec:Num}
 
@@ -1679,15 +1492,6 @@ algorithms (HMC, Riemann manifold MCMC etc) which could be
 incorporated into this framework, leading to even more efficient
 algorithms, and this is another opportunity for future work. 
 
-% One disadvantage of parallelised algorithms is that often different
-% processors will complete their tasks in different amount of times, for
-% a number of reasons, often due to communication between the
-% processors. One approach which could be applied to the PAIS to avoid
-% this is for each processor to immediately start a new iteration, only
-% using the last values of the other processors that were communicated
-% to it. This incomplete approach would still be valid, and could lead
-% to more efficient use of the computer architecture.
-
 One limitation of the PAIS approach as described above is that a
 direct solver of the ETPF problem (such as FastEMD \cite{FastEMD}) has computational cost
 $\mathcal{O}(M^3\log M)$, where $M$ is the number of particles in the
@@ -1698,68 +1502,7 @@ with much larger ensemble sizes. The PAIS framework is very flexible
 in terms of being able to use any combination of proposal
 distributions and resampling algorithms that one wishes.
 
-%  A second limitation is associated
-% with the problem of accurately approximating measures with empirical
-% measures in high dimensional phase space. This is a well-known issue
-% in filtering, where one possible solution is to ``localise'' the
-% impact of observations, as rigorously analysed in
-% \cite{rebeschini2013can}. An established technique in Ensemble Kalman
-% filters, localisation has also been incorporated into the Ensemble
-% Transform Particle Filter \cite{ChRe2015}. This issue could be
-% addressed in the PAIS by using localisation when computing the
-% transform, but keeping the unlocalised weights in the importance
-% sampling for consistency.
-
 \bibliographystyle{siam}
 \bibliography{refs}
-
-% \begin{appendix}
-% \section{The adaptive PAIS algorithm}\label{Sec:App}
-% \begin{table}[!h]
-% \begin{mdframed}
-% \begin{algorithmic}
-% \STATE $x_j^{(0)} \sim \mu_0$, for $j \in L\cup U$, where $L = \{j\}_{j=1}^{M/2},\ U = \{j\}_{j=M/2+1}^M$.
-% \STATE Choose $\beta^{(1)} \in (0, 2]$. Set $\beta_{L,U}^{(1)} = (1\pm 0.01)\beta^{(1)}\wedge 2$.
-% \FOR{$i=1,2, \ldots, N$}
-% \STATE $y_j^{(i)}~\sim~Q(x_j^{(i-1)},\beta_L^{(i)})$ for $j \in L$, and $y_j^{(i)}~\sim~Q(x_j^{(i-1)},\beta_U^{(i)})$ for $j \in U$.
-% \STATE Calculate 
-% \[
-% 	w^{(i)}_j = \frac{\pi(y_j^{(i)})}{\nu(y_j^{(i)};X^{(i-1)})},
-% \]
-% where
-% \[
-% 	\nu(y;X) = \frac{1}{M}\sum_{j\in L} q(y;x_j,\beta_L)+\frac{1}{M}\sum_{j\in U} q(y;x_j,\beta_U).
-% \]
-
-% \IF{$i$ is in $\{n_k\}_{k=1}$}
-% 	\STATE For $w_{kj} = w_j^{(k)}$, $S = n_k - n_{k-1}$,
-% 	\STATE $T_L = SM(\sum_{k=i-S}^S\sum_{j\in L} w_{kj})^2/(\sum_{k=i-S}^S\sum_{j\in L} w_{kj}^2)$.
-% 	\STATE $T_U = SM(\sum_{k=i-S}^S\sum_{j\in U} w_{kj})^2/(\sum_{k=i-S}^S\sum_{j\in U} w_{kj}^2)$.
-% 	\STATE $\beta^{(i+1)} = \beta^{(i)} - \Delta t \displaystyle\frac{T_U - T_L}{\beta_U^{(i)}-\beta_L^{(i)}}$.
-% \ELSE
-% 	\STATE $\beta^{(i+1)} = \beta^{(i)}$.
-% \ENDIF
-
-% \IF{$i < N_\text{stop}$}
-% 	\IF{$i < N_\text{join}$}
-% 		\STATE Resample 
-% 	\[
-% 		(w_j^{(i)},y_j^{(i)})_{j\in L} \rightarrow (\frac{1}{M}, x_j^{(i)})_{j\in L}, \quad (w_j^{(i)},y_j^{(i)})_{j\in U} \rightarrow (\frac{1}{M}, x_j^{(i)})_{j\in U}.
-% \]
-% 	\ELSE
-% 		\STATE Resample $(w^{(i)},Y^{(i)}) \rightarrow (\frac{1}{M}\mathbf{1}, X^{(i)})$.
-% 	\ENDIF
-% 	\STATE $\beta_{L,U}^{(i)} = \beta^{(i)} \pm 2\sqrt{2}\beta^{(i)}/\sqrt{NM} \wedge 2$.
-% \ELSE
-% 		\STATE Resample $(w^{(i)},Y^{(i)}) \rightarrow (\frac{1}{M}\mathbf{1}, X^{(i)})$.
-% 		\STATE $\beta_L^{(i+1)} = \beta_U^{(i+1)} = \beta^{(i+1)}$.
-% \ENDIF
-% \ENDFOR
-% \end{algorithmic}
-% \end{mdframed}\caption{A pseudo-code representation of the adaptive
-%   PAIS algorithm.}
-% \label{tab:adapt}
-% \end{table}
-% \end{appendix}
 
 \end{document}
