@@ -153,11 +153,11 @@ computing likelihoods can be extremely large, this means that many
 problems of interest are simply computationally intractable.
 
 This problem has been tackled in a variety of different ways. One
-approach is to constuct increasingly complex MCMC methods which are
+approach is to construct increasingly complex MCMC methods which are
 able to use the structure of the posterior to make more intelligent
 proposals, leading to more thorough exploration of the posterior with
 fewer iterations. For example, the Hamiltonian or Hybrid Monte Carlo
-(HMC) algorithm uses gradient information and simplectic integrators
+(HMC) algorithm uses gradient information and symplectic integrators
 in order to make very large moves in state with relatively high
 acceptance probability\cite{sexton1992hamiltonian}. Non-reversible
 methods are also becoming quite popular as they can improve
@@ -180,7 +180,7 @@ MCMC\cite{liu2000multiple} and ensemble MCMC\cite{neal2011mcmc}. In
 \cite{calderhead2014general}, a general construction for the
 parallelisation of MCMC methods was presented, which demonstrated
 speed ups of up to two orders of magnitude when compared with serial
-methods.
+methods on a single core.
 
 A variety of other methods have been designed with particular scenarios in mind. For
 instance, sampling from high/infinite-dimensional
@@ -324,6 +324,9 @@ likelihood:
 %%%%%%
 
 \subsection{Particle filters and resamplers}\label{sec:filters}
+In this subsection we briefly review particle filters, since the
+development of the resampler that we incorporate into the PAIS is
+motivated by this area.
 
 Particle filters are a class of Monte Carlo algorithms designed to
 solve the filtering problem. That is, to find the best estimate of the
@@ -419,7 +422,8 @@ point. They are efficient when the proposal density is concentrated in
 similar areas to the target density, and incredibly inefficient when
 this is not the case. The aim of the PAIS is to use an ensemble of states to construct a proposal
 distribution which will be as close as possible to the target density. If this
-ensemble is large enough, the distribution of states will be representative
+ensemble is large enough, the distribution of states will be
+approximately representative
 of the target density.
 
 The proposal distribution could be constructed in many different ways,
@@ -433,7 +437,13 @@ proposal mixture density. Assuming that our proposal distribution is a
 good one, then the variance of the weights will be small, and we will
 have many useful samples. Finally, we need to create a set of evenly
 weighted samples which best represent this set of weighted samples.
-This is achieved by implementing a resampling algorithm. Initially we
+This is achieved by implementing a resampling algorithm. These samples
+are not stored in order to characterise the posterior density, since
+the resampling process inevitably adds some error/bias. They are
+simply needed in order to inform the mixture distribution for the next
+iteration of the algorithm. 
+
+Initially we
 will use the ETPF algorithm\cite{reich2013nonparametric}, although we
 will suggest an alternative strategy in Section \ref{sec:AMR}. The
 resampling algorithm gives us a set of evenly weighted samples which
@@ -498,7 +508,7 @@ the likelihood from a very large data set this could lead to a
 large saving of computational cost. We have observed that
 using more complex (and hence more expensive) kernels $\nu$, does not
 significantly improve the speed of convergence of the algorithm for
-posteriors which are easy to approximate\cite{Paul}.
+posteriors that we have considered\cite{Paul}.
 
 Care needs to be taken when choosing the proposal distribution to
 ensure that the proposals are absolutely continuous with respect to
@@ -608,14 +618,16 @@ following way:
 \]
 The second two expressions are true when $M\rightarrow\infty$. From
 the last expression, if the variance of the weights is zero then
-$\neff = M$; this is our ideal scenario. Maximising the effective
+$\neff = M$; this is our ideal scenario. In the limit
+$M\rightarrow\infty$, maximising the effective
 sample size is equivalent to minimising the variance of the weights.
 
 The statistic $\neff$ is easier to deal with than the variance of the
 weights, as it takes values on $[1, M]$ while the variance of the
-weights takes values on $\mathbb{R}_\geq$. Since the variance can vary
-over many orders of magnitude bringing numerical issues, the effective
-sample size is more desirable.
+weights takes values on $\mathbb{R}_\geq$. Moreover the variance of
+the weights can vary
+over many orders of magnitude causing numerical issues, so that the effective
+sample size is more desirable as an indicator of optimality.
 
 In this paper we tune our simulations using the effective sample size
 statistic. We calculate this statistic using a sample size of $Mn_k$,
@@ -655,15 +667,17 @@ to its minimum.
 \centering
 \subfigure[Contours showing optimal ranges of the scaling parameter.]{\includegraphics[width=0.47\textwidth]{"figures/ESSvM_contour"}}
 \subfigure[The highest effective sample size achieved for each ensemble size.]{\includegraphics[width=0.47\textwidth]{"figures/ESSvM"}}
-\caption{The behaviour of the effective sample size as the ensemble size increases. This analysis is of the example in Section~\ref{sec:problem 1} using the PAIS-RW algorithm.}
+\caption{The behaviour of the effective sample size as the ensemble
+  size increases, considering the example in Section~\ref{sec:problem 1} using the PAIS-RW algorithm.}
 \label{fig:neff-M}
 \end{figure}
 
 Figure~\ref{fig:neff-M} shows how the effective sample size used in
 PAIS is affected by the ensemble size. We see from subfigure (a) that
 as the ensemble size increases, the optimal scaling parameter
-decreases. This is expected since the scaling parameter must be
-reduced if we are to fit more kernels into the same target. We also
+decreases. This is expected since the larger ensemble allows for
+finer resolution in the proposal distribution approximation of the
+posterior distribution. We also
 see that the algorithm becomes less sensitive to changes in the
 scaling parameter as the ensemble size increases. Subfigure (b) shows
 that as the ensemble size increases, the algorithm becomes more
@@ -836,7 +850,7 @@ resampler can affect the speed and accuracy of the PAIS algorithm.
 
 \section{Consistency of PAIS}\label{sec:consistency}
 
-As outlined in~\cite{martino2015adaptive} consistency of population AIS algorithms can be considered in two different cases. In the first case we fix the number of iterations $N < \infty$, but allow the population size to grow to inifinity $M\rightarrow\infty$. In the second case we hold the population size fixed $M<\infty$, and allow infinitely many iterations $N\rightarrow\infty$.
+As outlined in~\cite{martino2015adaptive} consistency of population AIS algorithms can be considered in two different cases. In the first case we fix the number of iterations $N < \infty$, but allow the population size to grow to infinity $M\rightarrow\infty$. In the second case we hold the population size fixed $M<\infty$, and allow infinitely many iterations $N\rightarrow\infty$.
 
 In case one, from standard importance sampling results we know that for an iteration $n$, as $M\rightarrow\infty$, we obtain a consistent estimator for any statistic of interest,
 \[
@@ -894,7 +908,7 @@ discussed in Section~\ref{sec:ess}.
 \subsubsection{Target distribution}
 
 Consider the case of a linear observation operator which maps a one
-dimensional parameter onto the observale space, $\G\colon x \mapsto
+dimensional parameter onto the observable space, $\G\colon x \mapsto
 x$. We assign centred priors to the parameter $x$, as well as to the
 observational noise. We choose the true value of the parameter to be
 $x_\text{ref} = 4$, then following Equations~\eqref{eqn:obs} and
@@ -995,7 +1009,8 @@ Figure~\ref{fig:MH1 L2} shows that after an initial burn-in
 period the APAIS-RW algorithm catches up to the PAIS-RW algorithm, and
 by the end of the simulation window is matching its performance. The
 ARWMH algorithm does not perform quite as well, this is possibly because
-it is optimising a cost functional which is not smooth.
+it is optimising a cost functional which is not smooth due to an
+increased sensitivity to Monte Carlo error.
 
 %%%%%%
 
@@ -1063,7 +1078,7 @@ Section~\ref{sec:tar}.}
 In this example we look at a bimodal posterior distribution which has
 a high energy barrier between the two modes. In the MH algorithm, the
 expected number of iterations for a switch between modes is a large
-proportion of the total number of iterations. This posterior is in
+proportion of the total number of iterations. This posterior is presented in
 Figure~\ref{fig:BM2_posterior}.
 
 We consider a non-linear observation operator $\G\colon x \mapsto
@@ -1296,15 +1311,15 @@ number of modes which are separated by a large distance.
 In particular we look at a data set where we assume that there are two
 subpopulations within the overall population. Since both
 subpopulations will be approximated by Gaussian distributions we have
-five parameters which we need to be estimated, two means $\mu_{1,2}$,
-two variances $\sigma^2_{1,2}$, and the probability, $p$, that an
+five parameters which we need to be estimated, two means $\{\mu_{1}, \mu_{2}\}$,
+two variances $\{\sigma^2_{1}, \sigma^2_{2}\}$, and the probability, $p$, that an
 individual observation belongs to the first subpopulation. We have 100
 data points, $D_i$, which we assume to be distributed according to
 \[
 	D_i \sim p\mathcal{N}(\mu_1, \sigma^2_1) + (1-p)\mathcal{N}
 	(\mu_2, \sigma^2_2), \quad i = 1,\dots,100,
 \]
-where $p \in [0, 1]$, $\mu_{1,2} \in \mathbb{R}$ and $\sigma^2_{1,2}
+where $p \in [0, 1]$, $\mu_{1},\mu_2 \in \mathbb{R}$ and $\sigma^2_{1},\sigma^2_2
 \in \mathbb{R}^+$. Due to the domains of these parameters and also
 some prior knowledge, we assign the priors
 \[
@@ -1356,7 +1371,7 @@ of the parameters. Now that we can assign a sample to a particular
 mode, we can calculate the density in each mode by summing the weights
 associated to all samples in that mode,
 \[
-	\bar{w}_k = \sum\limits_{i=1}^N w_i\text{I}(X_i \in \text{Mode $k$}), \quad k = 1, 2,
+	\bar{w}_k = \sum\limits_{i=1}^N w_iI_{X_i \in \text{Mode $k$}}, \quad k = 1, 2,
 \]
 and the relative error in the amount of density in each mode is then
 \begin{equation}\label{eqn:mode_prop}
@@ -1438,7 +1453,7 @@ method to be used to sample from complex multimodal distribution.
 
 Another strength of the PAIS is that it can also be used with any MCMC
 proposal. There are a growing number of increasing sophisticated MCMC
-algorithms (HMC, Riemann manifold MCMC etc) which could be
+algorithms (non-reversible Langevin/HMC proposals, Riemann manifold MCMC etc) which could be
 incorporated into this framework, leading to even more efficient
 algorithms, and this is another opportunity for future work. 
 
