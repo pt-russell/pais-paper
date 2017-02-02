@@ -911,8 +911,8 @@ Consider the case of a linear observation operator which maps a one
 dimensional parameter onto the observable space, $\G\colon x \mapsto
 x$. We assign centred priors to the parameter $x$, as well as to the
 observational noise. We choose the true value of the parameter to be
-$x_\text{ref} = 4$, then following Equations~\eqref{eqn:obs} and
-\eqref{eqn:like},
+$x_\text{ref} = 4$, and choose $\sigma^2=\tau^2=0.1$. Then
+following Equations~\eqref{eqn:obs} and \eqref{eqn:like},
 \begin{equation}\label{eqn:Gaussian posterior}
 	\text{law}(\mu_D) = \pi(x|D) \propto \exp\left(-\frac{1}{2}\big\|x
 	 - D\big\|^2_{\sigma^2} - \frac{1}{2}\big\|x\big\|^2_{\tau^2}\right).
@@ -993,24 +993,22 @@ the optimal scaling parameter.
 
 \begin{figure}[htb]
 \centering
-\subfigure[Relative $L^2$ error.]{\includegraphics[width=0.45\textwidth]{"figures/G2_l2"}}
-\subfigure[Relative error in first moment.]{\includegraphics[width=0.45\textwidth]{"figures/G2_moments"}}
-\caption{Error analysis for the (A)RWMH and (A)PAIS-RW algorithms. The setup is as in Section~\ref{sec:Implementation P1} (2, 3). Resampling is performed using the ETPF.}
+\includegraphics[width=0.8\textwidth]{"figures/new_G2_l2"}
+\caption{Convergence of the (A)RWMH and (A)PAIS-RW algorithms. The
+setup is as in Section~\ref{sec:Implementation P1} (2, 3). Resampling
+is performed using the ETPF.}
 \label{fig:MH1 L2}
 \end{figure}
 
-Figure~\ref{fig:MH1 L2} shows that the PAIS-RW algorithm converges to
-the posterior distribution significantly faster than the RWMH
+Figure~\ref{fig:MH1 L2} shows that the PAIS-RW algorithm converges
+tothe posterior distribution significantly faster than the RWMH
 algorithm, in both $L^2$ error and relative error in the moments. A
 description of the speed up attained by this algorithm is given in
-Section~\ref{sec:calc_saving}.
-
-Figure~\ref{fig:MH1 L2} shows that after an initial burn-in
-period the APAIS-RW algorithm catches up to the PAIS-RW algorithm, and
-by the end of the simulation window is matching its performance. The
-ARWMH algorithm does not perform quite as well, this is possibly because
-it is optimising a cost functional which is not smooth due to an
-increased sensitivity to Monte Carlo error.
+Section~\ref{sec:calc_saving}. The adaptive algorithms are also shown
+in Figure~\ref{fig:MH1 L2}. We see that both adaptive algorithms
+converge to the posterior at a similar speed to the respective
+optimised algorithm. This shows that, particularly for PAIS, we can
+optimise simulations efficiently on the fly.
 
 %%%%%%
 
