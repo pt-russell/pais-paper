@@ -240,8 +240,8 @@ conditions~\cite{robert2013monte,martino2015adaptive}.
 Ensemble importance sampling schemes also exist, e.g. population Monte Carlo (PMC)~\cite{cappe2012population}. PMC uses an ensemble to build a mixture or kernel density estimate (KDE) of the
 posterior distribution. The efficiency of
 this optimisation is restricted by the component kernel(s) chosen, and
-the quality of the current sample from the posterior. Extensions, such
-as adaptive multiple importance sampling algorithm
+the quality of the current sample from the posterior\cite{cappe2008adaptive,douc2007convergence,douc2007minimum}. Extensions, such
+as layered adaptive importance sampling\cite{martino2017layered}, adaptive multiple importance sampling algorithm
 (AMIS)~\cite{cornuet2012adaptive}, and adaptive population importance sampling
 (APIS)~\cite{martino2015adaptive} have enabled these methods to be
 applied to various applications, including population
@@ -266,6 +266,22 @@ likelihood evaluations. We will demonstrate that this methodology
 allows us to sample from such a posterior distribution with greater
 precision per likelihood evaluation than an uncorrelated ensemble of
 standard MCMC chains of the same type.
+
+The method considered is similar to population Monte Carlo methods
+which have been previously studied, for example in
+\cite{elvira2017improving}. However our approach exploits the current
+state-of-the-art resamplers. Higher accuracy resamplers, that provide
+a deterministic resample which optimally reflects the statistics of
+the original sample, lead to better mixture approximations of the
+posterior. These approximations can then be used to construct stable
+and efficient importance sampling proposals. The cost of the
+state-of-art resamplers can be prohibitive for large ensemble sizes,
+which are necessary for sampling in moderately higher dimensions, and
+as such we also present a greedy approximation of the optimal
+transport resampler, which provides us with good results for a
+fraction of the cost. We also detail how scaling parameters in the
+MCMC proposals can be quickly tuned, leading us to an efficient and
+fully-automated algorithm.
 
 In Section \ref{Sec:Prelim} we introduce some mathematical
 preliminaries upon which we will later rely. In Section \ref{Sec:PAIS}
@@ -315,22 +331,30 @@ $\varepsilon$, we get:
 	\mathbb{P}(\data|x=x^*) \propto \exp \left ( -\frac{1}{2} \|\mathcal{G}(x^*)
 	  - \data\|_\Sigma^2 \right ) = \exp\left(-\Phi(x^*)\right),
 \end{equation}
-where $\| y_1 - y_2 \|_\Sigma = (y_1-y_2)^\top\Sigma^{-1}(y_1-y_2)$ for $y_1,y_2 \in \mathbb{R}^d$.
+where $\| y_1 - y_2 \|_\Sigma = (y_1-y_2)^\top\Sigma^{-1}(y_1-y_2)$
+for $y_1,y_2 \in \mathbb{R}^d$.
 
-As discussed in \cite{stuart2010inverse,cotter2009bayesian},
-in order for this inverse problem to be well-posed in the Bayesian
-sense, we require the posterior distribution, $\mu_Y$, to be absolutely
-continuous with respect to the prior, $\mu_0$. A
-minimal regularity prior can be chosen informed by regularity results
-of the observational operator $\mathcal{G}$. Given such a prior, then
-the Radon-Nikodym derivative of the posterior measure, $\mu_Y$, with
-respect to the prior measure, $\mu_0$, is proportional to the
-likelihood:
-\begin{equation}\label{eqn:RND}
-	\frac{d\mu_Y}{d\mu_0} \propto \exp \left ( -\Phi(x^*) \right ).
-\end{equation}
+Then, according to Bayes' theorem, the posterior distribution that we
+are interested in characterising is given, up to a constant of proportionality, by
+\begin{equation*}
+	\pi_Y \propto \exp \left ( -\Phi(x^*) \right )\pi_0(x^*),
+\end{equation*}
+where $\pi_0$ is the prior density on the quantity of interest $x^*$.
 
-%%%%%%
+% As discussed in \cite{stuart2010inverse,cotter2009bayesian},
+% in order for this inverse problem to be well-posed in the Bayesian
+% sense, we require the posterior distribution, $\mu_Y$, to be absolutely
+% continuous with respect to the prior, $\mu_0$. A
+% minimal regularity prior can be chosen informed by regularity results
+% of the observational operator $\mathcal{G}$. Given such a prior, then
+% the Radon-Nikodym derivative of the posterior measure, $\mu_Y$, with
+% respect to the prior measure, $\mu_0$, is proportional to the
+% likelihood:
+% \begin{equation}\label{eqn:RND}
+% 	\frac{d\mu_Y}{d\mu_0} \propto \exp \left ( -\Phi(x^*) \right ).
+% \end{equation}
+
+% %%%%%%
 
 \subsection{Particle filters and resamplers}\label{sec:filters}
 In this subsection we briefly review particle filters, since the
@@ -366,9 +390,9 @@ into a new distribution, $\hat{\eta} \approx \mu_Y$,
 \begin{equation}\label{eqn:resampler}
 	\hat{\mu}_Y = \sum\limits_{i=1}^M \! w_i\delta_{y_i}(\cdot)
 	 \quad \xrightarrow{\text{ETPF}} \quad \sum\limits_{i=1}^M \!
-	 n_i\delta_{x_i}(\cdot) = \hat{\eta}.
+	 \frac{1}{M} \delta_{x_i}(\cdot) = \hat{\eta}.
 \end{equation}
-where $n_i \in \{0, 1, \dots,M\}$ and $\sum_{i=1}^M \! n_i = M$. This
+where $n_i \in \{0, 1, \dots,M\}$. This
 new sample $\{x_i\}_{i=1}^M$ is equally weighted.
 
 Particle filters such as the ETPF are well suited to this problem
@@ -511,7 +535,9 @@ relative cost of communication across the cores, to the cost of the
 likelihood evaluation. Evaluation of the denominator in the weights
 also contributes to the overhead costs of this approach over and above
 a standard MCMC method, but this too can be parallelised efficiently,
-depending on communication costs of the architecture of the machine.
+depending on communication costs of the architecture of the machine,
+reducing the $\mathcal{O}(M^2)$ cost to $\mathcal{O}(M)$ over $M$
+cores, for example.
 
 The key is to choose a suitable transition kernel $\nu$ such that
 if $X^{(i)}$ is a representative sample of the posterior,
@@ -537,6 +563,19 @@ ensure that the proposals are absolutely continuous with respect to
 the posterior distribution. If this is not the case, importance
 weights grow exponentially for samples in the tails. This will
 drastically decrease the efficiency of sampling.
+
+It is also possible, especially during the early stages of the
+algorithm, where the mixture proposal is a poor approximation of the
+target distribution, for a sample to be produced with a weight which
+is orders of magnitude bigger than the rest. This is a problem, since
+the resampling step will then lead to a vector of particles all
+centred at the outlier sample. Fortunately these spikes in weights can
+easily be detected, and in such a case, the sample for this iteration
+can be removed. The ETPF can then be used to formulate a new mixture
+sample with one particle placed at the outlier point, and the others
+distributed according to the particle positions before the problematic
+iteration. This ensures that the region where the problem occurred is
+better represented by the mixture, and prevents further spikes in this region.
 
 %%%%%%
 
@@ -1547,8 +1586,39 @@ reduce the number of likelihood evaluations required to characterise
 complex posterior distributions in low dimensions to a given
 degree. We have also introduced a greedy approximation to this
 resampler, which drastically reduces the cost, at the loss of some
-accuracy, which can be mitigated with the use of larger ensembles.
+accuracy, which can be mitigated with the use of larger
+ensembles. Lastly, we have detailed how scaling parameters in the MCMC
+proposals that are used within the mixture distribution can be quickly
+and efficiently
+tuned in an automated way. However, tuning the variances and
+covariances of the mixture proposal components
+globally is likely to be of limited use for multimodal problems where
+the modes have very different covariances, or where there is curved
+ridges in the density. There are a variety of possible solutions to
+this problem that would be worthy of future consideration, not least
+the potential to use transport maps\cite{el2012bayesian,parno2014transport} to map Gaussian mixtures to
+highly complex non-Gaussian approximations of the posterior. Such a
+map could encode local covariance information, and lead to accelerated
+and stable PAIS sampling. This is an interesting area for future study.
 
+\begin{appendix}
+
+\section{Glossary of acronyms}
+
+MCMC
+RWMH
+MALA
+AIS
+PMC
+PAIS
+ETPF
+AMR
+PAIS-RW
+PAIS-MALA
+APAIS-RW
+APAIS-MALA
+
+\end{appendix}
 
 \bibliographystyle{siam}
 \bibliography{refs}
