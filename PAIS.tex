@@ -253,10 +253,19 @@ Metropolis-based methodologies in order to create an efficient target
 distribution from the current
 ensemble. The method makes use of a resampler based on optimal
 transport which has been used in the context of particle
-filters\cite{reich2013nonparametric}. In particular we demonstrate the
+filters\cite{reich2013nonparametric}. We also detail how algorithmic
+parameters can be quickly tuned into optimal regimes, with respect to
+the effective sample size statistic. In particular we demonstrate the
 advantages of this method when attempting to sample from multimodal
 posterior distributions, such as those arising from inference for
-mixture models.
+mixture models. The method that we present is specifically designed to
+tackle the challenges of certain types of low-dimensional inverse
+problem which have complex posterior structure, for example
+multimodality or strong correlations, and expensive
+likelihood evaluations. We will demonstrate that this methodology
+allows us to sample from such a posterior distribution with greater
+precision per likelihood evaluation than an uncorrelated ensemble of
+standard MCMC chains of the same type.
 
 In Section \ref{Sec:Prelim} we introduce some mathematical
 preliminaries upon which we will later rely. In Section \ref{Sec:PAIS}
@@ -491,6 +500,19 @@ importance samplers, the weighted samples
 $(\W^{(i)},\Y^{(i)})_{i=1}^N$ are the samples from the posterior that
 we will analyse.
 
+In each iteration of the algorithm, we are required to compute the
+likelihood for each member of the ensemble. In the case where the
+likelihood is expensive to compute, for example because it requires
+the numerical approximation of an ODE or PDE, and/or there is a very
+large amount of observations in the data, it will be expedient to
+split this computational effort across multiple cores. Whether this is
+efficient will depend on the architecture of the machine, and the
+relative cost of communication across the cores, to the cost of the
+likelihood evaluation. Evaluation of the denominator in the weights
+also contributes to the overhead costs of this approach over and above
+a standard MCMC method, but this too can be parallelised efficiently,
+depending on communication costs of the architecture of the machine.
+
 The key is to choose a suitable transition kernel $\nu$ such that
 if $X^{(i)}$ is a representative sample of the posterior,
 then the mixture density $\chi(\cdot;\X^{(i)})$ is a good
@@ -561,6 +583,9 @@ RWMH and 57.4\% for MALA\cite{roberts2001optimal}. This method
 is not applicable to PAIS so we must use other statistics to optimise
 the scaling parameter. Section~\ref{sec:statistics} gives some
 possible methods for tuning $\beta$.
+
+
+
 
 %%%%%%
 
@@ -713,6 +738,26 @@ sophisticated examples are described in
 \end{table}
 Our adaptive algorithm is given in Algorithm~\ref{alg:adaptPAIS}. We choose update times which, as suggested in Section~\ref{sec:ess} allow for a reasonable estimate of the effective sample size, but do not waste too many iterations. In Step~\ref{algline:gradient_ascent}, the gradient ascent parameter $\gamma$ may decrease over time, e.g. as a function of $n_k$.
 
+
+
+\begin{figure}[!htb]
+\centering
+\subfigure[APAIS-RW algorithm adapting variance.]{\includegraphics[width=0.495\textwidth]{"figures/G1_PAISRW_adapt_var"}}
+\subfigure[APAIS-RW algorithm maximising ESS.]{\includegraphics[width=0.495\textwidth]{"figures/G1_PAISRW_adapt_ess"}}
+\subfigure[APAIS-MALA algorithm adapting variance.]{\includegraphics[width=0.495\textwidth]{"figures/G1_PAISMALA_adapt_var"}}
+\subfigure[APAIS-MALA algorithm maximising ESS.]{\includegraphics[width=0.495\textwidth]{"figures/G1_PAISMALA_adapt_ess"}}
+\caption{Demonstration of the convergence of the adaptive scaling parameter in the adaptively tuned PAIS algorithms.}
+\label{fig:G1_adapt_trace_PAIS}
+\end{figure}
+
+In the context of an expensive likelihood evaluation, slow convergence
+of the algorithmic parameters in this adaptive regime would be a
+concern. However, this is rarely an issue, due in part to the speed at
+which the PAIS algorithm completes the burn-in phase. Figure
+\ref{fig:G1_adapt_trace_PAIS} demonstrates this for two different
+versions of the PAIS methodology with a RW proposal and a MALA\cite{roberts1998optimal}
+proposal. This picture is typical in our experience, with the scaling
+parameters converging in $\mathcal{O}(10^2)$ iterations to an optimal regime.
 %%%%%%
 
 \section{Approximate Multinomial Resampling}\label{sec:AMR}
@@ -836,7 +881,8 @@ resampling. Note that only the error for the bootstrap multinomial
 sampler is presented for the first moment since both the ETPF and the
 AMR preserve the mean of the original weighted samples up to machine precision. Figure \ref{fig:AMR} (d) shows how the computational cost,
 measured in seconds, scales with the ensemble size for the three
-different methods. These results demonstrate that the AMR behaves how we wish, and
+different methods, where timings have been taken from simulations on a Dell
+server with four 8-core 3.3GHz CPUs and 64Gb memory. These results demonstrate that the AMR behaves how we wish, and
 importantly ensures that exactly one sample of the output will lie in
 each region with weights up to $\frac{1}{M}$ of the total.
 
@@ -863,6 +909,18 @@ Case two is slightly more involved. Estimation of the normalisation constant $Z$
 %%%%%%
 
 \section{Numerical Examples}\label{Sec:Num}
+The numerical examples in this section were all computed on a single
+core of Dell
+server with four 8-core 3.3GHz CPUs and 64Gb memory. Throughout we
+measure the efficiency of the algorithms in terms of the number of
+iterations (i.e. likelihood evaluations) which are required in order
+to reach a given order of accuracy. The reason for this is that this
+method is designed with a particular type of challenging inverse
+problem in mind, namely one which is low dimensional, has an expensive
+likelihood (such as a PDE solve, and/or very large data) which dwarfs
+the overhead cost of PAIS, and which could have complex posterior
+structure, such as correlations, multimodality or other highly
+non-Gaussian features. 
 
 In this section we demonstrate convergence of the PAIS algorithm. We
 also investigate the convergence properties of PAIS compared with
@@ -1425,7 +1483,25 @@ The optimal scaling parameters for the MH and PAIS algorithms with the proposal 
 \label{fig:mixture_modes}
 \end{figure}
 
-Convergence of the relative error for the two algorithms is displayed in Figure~\ref{fig:mixture_modes}. PAIS converges at the expected $\mathcal{O}(1/\sqrt{N})$ rate, whereas the MH algorithm converges to locally smooth histograms but with the wrong proportion of samples in each mode. The relatively low value of the error for the MH example is due to the priors covering the sample space evenly, however since transitions are near impossible with a small value of the scaling parameter, this error will take a very long time to reduce. This problem was discussed in Section~\ref{sec:bimodal}.
+Convergence of the relative error for the two algorithms is displayed
+in Figure~\ref{fig:mixture_modes}. PAIS converges at the expected
+$\mathcal{O}(1/\sqrt{N})$ rate, whereas the MH algorithm converges to
+locally smooth histograms but with the wrong proportion of samples in
+each mode. The relatively low value of the error for the MH example is
+due to the priors covering the sample space evenly, however since
+transitions are near impossible with a small value of the scaling
+parameter, this error will take a very long time to reduce. This
+problem was discussed in Section~\ref{sec:bimodal}.
+
+In this example, we have only considered a relatively low dimensional
+mixture model problem, with only two distributions in the
+mixture. With more elements in the mixture, and/or an undefined number
+in the mixture, the dimension of this problem will quickly
+increase. Importance sampling schemes such as this suffer from the
+curse of dimensionality, limiting the size of the dimension of target
+density that it can efficiently sample from. However, this example
+does demonstrate the remarkable convergence of the PAIS for multimodal
+target distributions.
 
 \section{Discussion and Conclusions}\label{Sec:Conc} 
 
@@ -1447,7 +1523,7 @@ members used.
 The PAIS has a number of favourable features, for example the
 algorithm's ability to redistribute, through the resampling regime,
 the ensemble members to regions which require more exploration. This allows the
-method to be used to sample from complex multimodal distribution.
+method to be used to sample from complex multimodal distributions.
 
 Another strength of the PAIS is that it can also be used with any MCMC
 proposal. There are a growing number of increasing sophisticated MCMC
@@ -1464,6 +1540,15 @@ approach to the limit
 with much larger ensemble sizes. The PAIS framework is very flexible
 in terms of being able to use any combination of proposal
 distributions and resampling algorithms that one wishes.
+
+We have demonstrated that the framework that we have considered, with
+the use of state-of-the-art optimal transport-based resampling, can
+reduce the number of likelihood evaluations required to characterise
+complex posterior distributions in low dimensions to a given
+degree. We have also introduced a greedy approximation to this
+resampler, which drastically reduces the cost, at the loss of some
+accuracy, which can be mitigated with the use of larger ensembles.
+
 
 \bibliographystyle{siam}
 \bibliography{refs}
