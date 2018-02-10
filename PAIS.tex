@@ -1542,6 +1542,87 @@ density that it can efficiently sample from. However, this example
 does demonstrate the remarkable convergence of the PAIS for multimodal
 target distributions.
 
+\subsection{Data assimilation with Lorenz `63 trajectories}\label{sec:lorenz}
+
+The sampling algorithm we have introduced in this paper is designed for problems where the likelihood density function is expensive to calculate, and the computational overhead involved in the calculation of the importance weights is dwarfed. This situation commonly occurs in inverse problems where the model being investigated involves the solution of a differential equation. In this example we attempt to recover the initial position of a particle with motion governed by Lorenz's 1963 atmospheric convection equations~\cite{lorenz1963deterministic}:
+\begin{align*}
+	\frac{\text{d}x}{\text{d}t} &= \sigma(y-x), \\
+	\frac{\text{d}y}{\text{d}t} &= x(\rho-z)-y, \\
+	\frac{\text{d}z}{\text{d}t} &= xy - \beta z.
+\end{align*}
+When the parameters are chosen to be $\rho = 28$, $\sigma=10$ and $\beta=8/3$ this system has chaotic solutions. If we are interesting in calculating the initial position by observing the location of the particle at certain points in time, it can quickly become intractable when there is any noise in the observations.
+
+\begin{figure}[htb]
+\centering
+\includegraphics[width=0.8\textwidth]{"figures/Lorenz_xtraj"}
+\caption{Trajectory of the $x$ component of a particles position varying in time when motion is governed by the Lorenz `63 equations. The two trajectories are calculated using an initial position of $[-0.587,-0.563,16.870]$ and $[-0.590,-0.563,16.870]$.}
+\label{fig:Lorenz_xtraj}
+\end{figure}
+
+To demonstrate how small errors in the initial condition of a Lorenz solution can affect the trajectory of a particle, Figure~\ref{fig:Lorenz_xtraj} shows the path taken by two particles with very similar initial conditions,
+\[
+	\mathbf{x}_0^1 = \begin{pmatrix} -0.587\\-0.563\\16.870 \end{pmatrix} \quad \text{and} \quad \mathbf{x}_0^2 = \begin{pmatrix} -0.590\\-0.563\\16.870 \end{pmatrix}.
+\]
+This small difference in the $x$-dimension of the initial condition leads to the trajectories of the two particles diverging near $t=5$. This chaotic behaviour means that if we take only a few observations over a long time period we will find that many trajectories which may be vastly different achieve similar values of the likelihood function and so the posterior distribution for the initial condition can become very complex.%
+
+\subsubsection{Target Distribution}\label{sec:lorenz_target}
+
+For this example, we observe noisily the position of a particle at ten equally spaced points in the time interval $t \in (0, 1]$. The Lorenz equations are solved with the chaotic parameters given above and the initial condition $\mathbf{x}_0^1$. A time step of $h=1\times 10^{-3}$ was used to evolve the equations numerically with the Euler method. The noise added to each observation was taken from the distribution $\mathcal{N}(0, 0.1^2)$. An informative prior distribution was chosen to limit the complications arising from multiple initial conditions resulting in point-wise matching trajectories,
+\[
+	x_0 \sim \mathcal{N}(-0.5, 0.03^2), \quad y_0 \sim\mathcal{N}(-0.5, 0.03^2) \quad \text{and} \quad z_0 \sim \mathcal{N}(15, 0.03^2).
+\]
+The posterior density function takes the form
+\[
+	\pi(\mathbf{x}_0|D) \propto \exp\left\{-\frac{1}{2}\|\mathcal{G}(\mathbf{x}_0) - D\|^2_\Sigma\right\}\mathcal{N}(\mathbf{x}_0; m, 0.03^2\text{I}),
+\]
+where $\mathcal{G}$ calculates the solution to the Lorenz equations, using the Euler method with a time step of $h=1\times 10^{-3}$ starting at the initial condition $\mathbf{x}_0$, and returns the position at $t = 0.1, ..., 1$. The mean of the prior distribution $m = [-0.5, -0.5, 15]$.
+
+\begin{figure}[htb]
+\centering
+\includegraphics[width=0.8\textwidth]{"figures/Lorenz_posterior"}
+\caption{Posterior distribution for the initial condition of the particle with motion governed by the Lorenz equations as described in Section~\ref{sec:lorenz_target}.}
+\label{fig:Lorenz_posterior}
+\end{figure}
+
+Figure~\ref{fig:Lorenz_posterior} shows the marginal distributions of the posterior distribution for the initial condition $\mathbf{x}_0$ as found using the MH algorithm. While the $z$-dimension is largely uncorrelated with the other two dimensions, the correlation between $x$ and $y$ is -0.98, which makes it a challenging posterior distribution to explore without a transformation of the parameter space.
+
+%%%%%%
+\subsubsection{Implementation}\label{sec:lorenz_implementation}
+
+As in the previous example, we have no analytic form for the normalisation constant of the posterior and so we will measure convergence of the algorithms by calculating convergence to the posterior mean, where the truth is calculated using a very long chain produced by the MH algorithm.
+
+Both the MH and PAIS algorithms use an ensemble size of $M=500$. The PAIS algorithm uses the AMR resampling algorithm. The optimal scaling parameters are calculated for both algorithms using test runs which are not included in the convergence cost calculations. Convergence graphs are produced using 32 repeats of each algorithm with each simulation producing one million samples.
+
+% numerics.
+\subsubsection{Convergence of MH vs PAIS}\label{sec:lorenz_conv}
+
+The optimal scaling parameters for the MH and PAIS algorithms are given in Table~\ref{table:Lorenz_opt_parameters}.
+
+\begin{table}[!htb]
+      \centering
+        \begin{tabular}{|l|r|r|}
+	\hline
+	Algorithm	& MH & PAIS \\ \hline
+	$\delta^*$	& 1.0e-1     & 1.3e-2 \\
+	\hline
+	\end{tabular}
+	\vspace{1mm}
+	\caption{Optimal values of the scaling parameter. The MH algorithm is optimised using the acceptance rate, and the PAIS algorithm is optimised using the effective sample size.}
+	\label{table:Lorenz_opt_parameters}
+\end{table}
+
+\begin{figure}[htb]
+\centering
+\includegraphics[width=0.8\textwidth]{"figures/Lorenz_convergence"}
+\caption{Convergence of the sample mean to the posterior mean for the MH and PAIS algorithms. Posterior distribution as described in Section~\ref{sec:lorenz_target}.}
+\label{fig:Lorenz_convergence}
+\end{figure}
+
+As is clear from Figure~\ref{fig:Lorenz_convergence} the PAIS-RW has a vastly superior burn-in time and achieves improved accuracy on the RWMH algorithm of three orders of magnitude after one million samples.
+
+To produce one sample from the posterior distribution for this example using the PAIS algorithm takes on average $5.5\times 10^{-4}$ seconds, while a sample can be produced in $1.7\times 10^{-5}$ seconds using the MH algorithm. However; the quality of the sample produced by PAIS is much higher. To reach a tolerance of $5\times 10^{-5}$, it takes the PAIS algorithm roughly 16.5 seconds and the MH algorithm roughly 1020 seconds.
+
+
 \section{Discussion and Conclusions}\label{Sec:Conc} 
 
 We have explored the application of parallelised MCMC algorithms in
