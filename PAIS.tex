@@ -134,7 +134,8 @@
   ensemble sizes, which can then be used in conjunction with PAIS for
   complex problems. In particular, we demonstrate this methodology's
   superior sampling for multimodal problems, such as those arising
-  from inference for mixture models.
+  from inference for mixture models, and for problems with expensive
+  likelihoods requiring the solution of a differential equation.
 \end{abstract}
 \begin{keywords}MCMC, parallel, importance sampling, Bayesian, inverse problems.
 \end{keywords}
@@ -1620,7 +1621,15 @@ The optimal scaling parameters for the MH and PAIS algorithms are given in Table
 
 As is clear from Figure~\ref{fig:Lorenz_convergence} the PAIS-RW has a vastly superior burn-in time and achieves improved accuracy on the RWMH algorithm of three orders of magnitude after one million samples.
 
-To produce one sample from the posterior distribution for this example using the PAIS algorithm takes on average $5.5\times 10^{-4}$ seconds, while a sample can be produced in $1.7\times 10^{-5}$ seconds using the MH algorithm. However; the quality of the sample produced by PAIS is much higher. To reach a tolerance of $5\times 10^{-5}$, it takes the PAIS algorithm roughly 16.5 seconds and the MH algorithm roughly 1020 seconds.
+To produce one sample from the posterior distribution for this example
+using the PAIS algorithm takes on average $5.5\times 10^{-4}$ seconds,
+while a sample can be produced in $1.7\times 10^{-5}$ seconds using
+the MH algorithm. However; the quality of the sample produced by PAIS
+is much higher. To reach a tolerance of $5\times 10^{-5}$, it takes
+the PAIS algorithm roughly 16.5 seconds and the MH algorithm roughly
+1020 seconds. Although we do not claim that either codes are optimally
+efficient, this give an indication of the saving that can be achieved
+through this type of methodology.
 
 
 \section{Discussion and Conclusions}\label{Sec:Conc} 
@@ -1668,10 +1677,17 @@ complex posterior distributions in low dimensions to a given
 degree. We have also introduced a greedy approximation to this
 resampler, which drastically reduces the cost, at the loss of some
 accuracy, which can be mitigated with the use of larger
-ensembles. Lastly, we have detailed how scaling parameters in the MCMC
+ensembles. We have detailed how scaling parameters in the MCMC
 proposals that are used within the mixture distribution can be quickly
 and efficiently
-tuned in an automated way. However, tuning the variances and
+tuned in an automated way. Lastly we have demonstrated that when the
+likelihood is expensive, for instance because it involves the
+numerical approximation of the solution of a differential equation, the savings made in terms of the number
+iterations required in order reach a particular degree of accuracy
+outweight the additional overhead costs that are incurred
+over-and-above standard MCMC.
+
+However, tuning the variances and
 covariances of the mixture proposal components
 globally is likely to be of limited use for multimodal problems where
 the modes have very different covariances, or where there is curved
@@ -1686,18 +1702,23 @@ and stable PAIS sampling. This is an interesting area for future study.
 
 \section{Glossary of acronyms}
 
-MCMC
-RWMH
-MALA
-AIS
-PMC
-PAIS
-ETPF
-AMR
-PAIS-RW
-PAIS-MALA
-APAIS-RW
-APAIS-MALA
+\begin{table}[h!]
+\centering
+\begin{tabular}{|l|l|}
+\hline
+Acronym & Full name                              \\ \hline
+MCMC    & Markov chain Monte Carlo               \\
+RWMH    & Random walk Metropolis-Hastings        \\
+MALA    & Metropolis-adjusted Langevin algorithm \\
+AIS     & Adaptive importance sampling           \\
+PMC     & Population Monte Carlo                 \\
+PAIS    & Parallel adaptive importance sampling  \\
+ETPF    & Ensemble transport particle filter     \\
+AMR     & Approximate multinomial resampler      \\
+PAIS-X  & PAIS with X kernels                    \\
+APAIS-X & Adaptive PAIS with X kernels          \\ \hline
+\end{tabular}
+\end{table}
 
 \end{appendix}
 

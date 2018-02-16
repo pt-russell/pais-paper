@@ -24,7 +24,7 @@
 First of all, we would like to thank the referees and the associate editor for
 their time in reading and commenting on our manuscript. In this document
 we will address each of the points raised, and describe any relevant
-changes that have been made to the paper.
+changes that have been made to the paper. We have made some substantial changes, not least with the inclusion of a new ``large scale'' example where the likelihood requires a solve of a differential equation. We demonstrate in this example that PAIS is 2 orders of magnitude faster, in terms of CPU time, than the equivalent standard MCMC.
 
 \section*{Referee 1 comments}
 
@@ -49,9 +49,9 @@ concern when the number of chains is big.}{The tuning of the scaling parameters 
 \comment{An real data example for the PAIS algorithm is much needed. It will be 
 interesting to see how PAIS is compared not only against a naive 
 parallelization, but also compared against a state of the art MCMC algorithm 
-or/and a efficient ad hoc MCMC algorithm designed for such example.}{Unfortunately we do not have the resources to apply our method to a full-scale real data example. However, following additional comments from the editor, we have included a new example where the likelihood requires the solution of an ODE. In Section **** we include an example of data assimilation for the Lorenz*** equations, which is a set of equations which is commonly used to test methods for inference in the applied mathematics community. 
+or/and a efficient ad hoc MCMC algorithm designed for such example.}{Unfortunately we do not have the resources to apply our method to a full-scale real data example. However, following additional comments from the editor, we have included a new example where the likelihood requires the solution of an ODE. In Section 7.5 we include an example of data assimilation for the Lorenz '63 equations, which is a set of equations which is commonly used to test methods for inference in the applied mathematics community. 
 
-Expensive likelihoods actually make this method more applicable, since they make the extra overheads of the resampling step relatively less important. This is precisely what the method is designed for, and is the very reason for us to compare the algorithms by looking at error as a function of the number of samples/likelihood evaluations. We have also added further discussion regarding this to Section ****.}
+Expensive likelihoods actually make this method more applicable, since they make the extra overheads of the resampling step relatively less important. This is precisely what the method is designed for, and is the very reason for us to compare the algorithms by looking at error as a function of the number of samples/likelihood evaluations. This is seen even for a simple 3D ODE as we see in our example in Section 7.5, where PAIS reaches a relative error in the mean of $10^{-5}$ in a time which is 2 orders of magnitude quicker in CPU time than for trivially parallelised RWMH chains.}%done
 
 \comment{There aren't details about the architecture used to run the M chains in 
 parallel. This is relevant since there are several options such as: multi-core 
@@ -60,7 +60,7 @@ Comments about the advantages and disadvantages of the architecture
 are also welcome. The same goes for details regarding the programming language 
 used.}{We thank the referee for this comment, as we should have included these details in the manuscript. The method was implemented in C++, serially, and was run on a single core of a Dell server with four 8-core 3.3GHz CPUs, 64Gb memory, and these details have been added in Section 7. 
 
-We are not computer scientists, and as such, we are not in a position to comment on specific architectures, especially as the optimal architecture would be problem specific. The optimal architecture would likely depend on the relative costs of communication of the states across the processors, the cost of the likelihood evaluation, and the cost of the resampler for the chosen ensemble size. We have added a discussion to Section 3, following the presentation of the PAIS algorithm.}
+We are not computer scientists, and as such, we are not in a position to comment on specific architectures, especially as the optimal architecture would be problem specific. The optimal architecture would likely depend on the relative costs of communication of the states across the processors, the cost of the likelihood evaluation, and the cost of the resampler for the chosen ensemble size. We have added a discussion to Section 3, following the presentation of the PAIS algorithm.}%done
 
 \comment{CPU time must be reported to compare the gain of each algorithm in 
 order to have a fair comparison. Authors claim that there is a significant 
@@ -75,7 +75,9 @@ method. CPU time is of particular importance in example 7.4 since the number of
 parallel chains grows from 50 to 500.}{The referee may have missed Figure 5.1 in which we show the computational cost, in time, of the resamplers that we use in the paper, both the optimal transport resampler, and the AMR. As mentioned before in response to another of the referee's comments, we had neglected to share the specs of the machine that these times were recorded on, and this has now been added. % There is an additional cost in the algorithm over and above the resampler, which is the computation of the denominator in the weights, as pointed out by the second referee. If we have $M$ members of our ensemble, then the cost of this denominator across the whole ensemble is $M^2$, but it can be easily parallelised. We include some timings of the cost of this aspect of the algorithm in Section ****, and a discussion of the overall additional cost of the approach. 
 % Coupled with the timings presented for the resampler, we believe that this now gives the reader a clear idea of the additional overhead costs which are incurred when using our method as opposed to a standard MCMC method. We thank the referee for their comments on this.
 
-The reason for analysing the error as a function of the number of the likelihood evaluations, is that this method is intended for problems with expensive likelihoods, for which these overhead costs would be dwarfed. We have added a discussion on this to the beginning of Section 7.}%done
+The reason for analysing the error as a function of the number of the likelihood evaluations, is that this method is intended for problems with expensive likelihoods, for which these overhead costs would be dwarfed. We have added a discussion on this to the beginning of Section 7.
+
+Additionally to this, in Section 7.5, as detailed above, we have compared the CPU time that it takes the PAIS to reach a relative error in the mean of the posterior of $10^{-5}$ against that for trivially parallelised (non-communicative) RWMH. Even for a simple example such as this, PAIS outperforms standard parallelised MCMC by two orders of magnitude.}%done
 
 
 
@@ -112,7 +114,7 @@ You can also point out that you also propose some different resampling or adapta
 \comment{A very similar version of the authors’ PAIS algorithm has been studied before, as explained by the second referee. Moreover, I could argue that the PAIS algorithm is a particular case since weights are considered deter- ministic. This is a serious issue in the paper, let alone that the authors are unaware of the series of papers mentioned by referee 2, that are closely related to their work.
 This should be explained in detail and the paper original perspective and contributions be further highlighted.}{Following suggestions by the second referee and the associate editor, we have added a significant new section to the introduction to highlight the other ensemble importance schemes already in the literature. We have also highlighted further the contribution made by this manuscript in the introduction and discussion sections.}%done
 
-\comment{An other serious concern is why not use PMC-MCMC for the updating scheme in Algorithm 1. That would be as costly (since it also involves evaluating the posterior) but the yis will have the correct distribution.}{This comment is not clear to us - what is the ``updating scheme'' in Algorithm 1?? Also, the (weighted) $y_i$ are distributed according to the posterior, as discussed in Section 6. We'd be happy to address this point if the AE is able to clarify it for us.}%nothing to do
+\comment{An other serious concern is why not use PMC-MCMC for the updating scheme in Algorithm 1. That would be as costly (since it also involves evaluating the posterior) but the yis will have the correct distribution.}{This comment is not clear to us - what is the ``updating scheme'' in Algorithm 1? Also, the (weighted) $y_i$ are distributed according to the posterior, as discussed in Section 6. We'd be happy to address this point if the AE is able to clarify it for us.}%nothing to do
 
 \comment{The ”automatic” tuning will be as useful as the what traditional adaptive tuning is: in the limit, the proposal cov matrix converges to the cov matrix of the target. This is ok for Gaussian type targets but will fail for multimodal, multiscale distributions, mostly present in non-trivial forward maps, as those suggested in section 2. Something similar happens with gradient based proposals, since from the onset they are not conceived to scape local maxima.}{This is an interesting point, and the subject of our most recent paper in this area, in which transport maps are used to stabilise and accelerate the PAIS methodology, and also addressing exactly the point raised by the AE. We have added a discussion on this topic in the discussion section, proposing it as an area for future study (our new manuscript will be completed in the next few weeks).}%done
 
