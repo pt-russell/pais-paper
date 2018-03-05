@@ -2,6 +2,7 @@
 \usepackage{graphicx}
 \usepackage{amsfonts}
 \usepackage{url}
+\usepackage{pdfpages}
 \usepackage{amsmath,amssymb}
 \usepackage{enumerate}
 \usepackage{color}
@@ -24,7 +25,7 @@
 First of all, we would like to thank the referees and the associate editor for
 their time in reading and commenting on our manuscript. In this document
 we will address each of the points raised, and describe any relevant
-changes that have been made to the paper. We have made some substantial changes, not least with the inclusion of a new ``large scale'' example where the likelihood requires a solve of a differential equation. We demonstrate in this example that PAIS is 2 orders of magnitude faster, in terms of CPU time, than the equivalent standard MCMC.
+changes that have been made to the paper. We have made some substantial changes, not least with the inclusion of a new ``large scale'' example where the likelihood requires a solve of a differential equation. We demonstrate in this example that PAIS is 2 orders of magnitude faster, in terms of CPU time, than the equivalent standard MCMC. We include a copy of the manuscript with all of the changes marked.
 
 \section*{Referee 1 comments}
 
@@ -123,5 +124,8 @@ This should be explained in detail and the paper original perspective and contri
 \comment{The Radon-Nokodyn version of Bayes theorem in (2.3) is unnecessary in the actual finite dimensional context the authors work with. The authors should state that, although there is an infinite dimensional version for the posterior distribution, their discussion is restricted to the parametric, finite dimensional case.}{We thank the AE for this comment. There is no need for this version of Bayes' theorem here, and so we have switched to the finite dimensional version.}%done
 
 \comment{Note that in (2.4) the total measure of the space for ηˆ is M (!).}{Thanks to the AE for picking up on this typo, this has now been fixed.}%done
+
+
+\includepdf[pages=-]{diff.pdf}
 
 \end{document}
