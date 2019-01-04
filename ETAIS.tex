@@ -314,7 +314,6 @@ that will be referred to throughout the paper.
 %%%%%%
 
 \subsection{Bayesian inverse problems}
-
 In this paper, we focus on the use of MCMC methods for characterising
 posterior probability distributions arising from Bayesian inverse problems. We
 wish to learn about a particular unknown quantity $x$, of which we are
@@ -326,7 +325,7 @@ The quantity $x$ is mapped on to observable space by the observation
 operator $\mathcal{G}:X \to\mathbb{R}^d$. We assume that the
 observations, $\data$, are subject to Gaussian noise,
 \begin{equation}\label{eqn:obs}
-	\data = \mathcal{G}(x) + \varepsilon, \qquad \varepsilon \sim \mu_{\varepsilon} = \mathcal{N}(0,\Sigma).
+	\data = \mathcal{G}(x) + \varepsilon, \qquad \varepsilon \sim \mathcal{N}(0,\Sigma).
 \end{equation}
 
 These modelling assumptions allow us to construct the 
@@ -340,7 +339,7 @@ $\varepsilon$, we get:
 where $\| y_1 - y_2 \|^2_\Sigma = (y_1-y_2)^\top\Sigma^{-1}(y_1-y_2)$
 for $y_1,y_2 \in \mathbb{R}^d$.
 
-Then, according to Bayes' theorem, the posterior distribution that we
+Then, according to Bayes' theorem, the posterior density that we
 are interested in characterising is given, up to a constant of proportionality, by
 \begin{equation*}
 	\pi_Y \propto \exp \left ( -\Phi(x^*) \right )\pi_0(x^*),
@@ -387,18 +386,16 @@ where $M$ is the size of the sample. Maximising the correlation
 preserves the statistics of $X$ in the new sample.
 
 In this work we use the resampler used within these particle filters. We
-approximate the posterior distribution, $\mu_Y$, with a sample
+approximate the posterior {\red density $\pi$,} with a sample
 of weighted particles, $\{(w_i,y_i)\}_{i=1}^M$. In filtering problems
 the weights would be found by incorporating new observed data whereas
-here we simply use importance weights. This distribution, $\hat{\mu}_Y
-\approx \mu_Y$, can then be resampled, using the ETPF or otherwise,
-into a new distribution, $\hat{\eta} \approx \mu_Y$,
+here we simply use importance weights. These weighted states can then be resampled, using the ETPF or otherwise,
+into a {\red set of new equally-weighted states, such that
 \begin{equation}\label{eqn:resampler}
-	\hat{\mu}_Y = \sum\limits_{i=1}^M \! w_i\delta_{y_i}(\cdot)
+	\sum\limits_{i=1}^M \! w_i\delta_{y_i}(\cdot)
 	 \quad \xrightarrow{\text{ETPF}} \quad \sum\limits_{i=1}^M \!
-	 \frac{1}{M} \delta_{x_i}(\cdot) = \hat{\eta}.
-\end{equation}This
-new sample $\{x_i\}_{i=1}^M$ is equally weighted.
+	 \frac{1}{M} \delta_{x_i}(\cdot).
+\end{equation}}
 
 The resampler used within particle filters such as the ETPF are well suited to this problem
 since it is easy to introduce conditions in the resampling to ensure
@@ -484,8 +481,7 @@ the process again. The algorithm is summarised in Algorithm
 \ref{alg:ETAIS}.
 
 We wish to sample states $x \in X$ from a posterior
-probability distribution $\mu_D$, where $D$ represents our data which
-we wish to use to infer $x$. Since we have $M$ ensemble members, we
+probability distribution with density {\red $\pi$}. Since we have $M$ ensemble members, we
 represent the current state of all of the Markov chains as a vector
 $\X = [x_1,x_2,\ldots,x_M]^\top$. We are also given a transition kernel
 $\nu(\cdot,\cdot)$, which might come from an MCMC method, for example
@@ -561,10 +557,15 @@ used in MALA can be more stable for certain problems\cite{Paul}.
 
 Care needs to be taken when choosing kernel(s) for the proposal distribution to
 ensure that the overall mixture is absolutely continuous with respect to
-the posterior distribution. If this is not the case, importance
-weights can become high variance where samples are made away from
-modes in the distribution. This will
-drastically decrease the efficiency of sampling.
+the posterior distribution. {\red For example, in many inverse problems we
+may be looking to find the value of certain physical parameters which
+may be strictly positive, or even bounded on an interval. In
+this case, proposal kernels $\nu$ should be picked which have the same
+support as the target. We will see an example of an unknown parameter
+being bounded in Section \ref{sec:mixture}, where
+$\beta$-distributed proposals are made to ensure that the distribution
+is supported on $[0,1]$.}
+
 
 It is also possible, especially during the early stages of the
 algorithm, where the mixture proposal is a poor approximation of the
@@ -936,7 +937,12 @@ resampler can affect the speed and efficiency of the ETAIS algorithm.
 %%%%%%
 
 \section{Consistency of ETAIS}\label{sec:consistency}
-
+{\red As with all importance sampling schemes, we must have absolute
+  continuity of target distribution with respect to the proposal
+  distribution if we wish to achieve convergence. This can usually be
+  ensured by picking the proposal kernels $\nu$ to be from the same
+  distribution type as the prior distribution.}
+  
 As outlined in~\cite{martino2015adaptive} consistency of population AIS algorithms can be considered in two different cases. In the first case we fix the number of iterations $N < \infty$, but allow the population size to grow to infinity $M\rightarrow\infty$. In the second case we hold the population size fixed $M<\infty$, and allow infinitely many iterations $N\rightarrow\infty$.
 
 In case one, from standard importance sampling results we know that for an iteration $n$, as $M\rightarrow\infty$, we obtain a consistent estimator for any statistic of interest,
@@ -949,8 +955,9 @@ Case two is slightly more involved. Estimation of the normalisation constant $Z$
 
 %%%%%%
 
-
-\section{A useful property of the ETAIS algorithm for multimodal distributions}
+{\red
+\section{A useful property of the ETAIS algorithm for multimodal
+  distributions} }
 
 \begin{figure}[!ht]
 \begin{center}
@@ -1124,7 +1131,7 @@ communication between the ensemble members should give us added value over and a
 provided by naive parallelism. This decrease is due to the increasing
 effective sample size shown in Figure~\ref{fig:neff-M} (b).
 
-\subsection{Effect of resampler quality}
+\subsection{Multimodal targets and the effect of resampler quality}
 \label{sec:bimodal}
 {\red
 In this second example we investigate the behaviour of the ETAIS
@@ -1167,7 +1174,8 @@ good greedy approximation of the ETPF, and for a fraction of the cost
 when the number of ensemble members is larger, as shown in Section
 \ref{sec:AMR}. The RWMH algorithm fails to converge efficiently since chains only very rarely
 make switches between the two modes, leading to very slow mixing. This
-demonstrates a big advantage of ensemble-based methods when the target
+demonstrates the advantage that ensemble-based methods can have over
+other methods when the target
 is multimodal.
 
 }
@@ -1249,10 +1257,7 @@ samples produced by the ETAIS-RW algorithm.
 
 \subsubsection{Implementation}
 \label{sec:mixture_implementation}
-
-We have no analytic form for the posterior distribution for this
-model, and MH cannot reliably sample from this type of bimodal
-distribution. We do however know that the probability density should
+{\red In order to quantify error, we note that} the probability density should
 be evenly divided between the two modes. This is due to the symmetric
 prior for $p$, and and the same priors being assigned to $\mu_1$ and
 $\mu_2$, and also to $\sigma^2_1$ and $\sigma^2_2$. To decide which
@@ -1273,9 +1278,14 @@ and the relative error in the amount of density in each mode is then
 
 Since the probability $p$ is constrained to lie in the interval
 $[0,1]$, and the variances must be positive, it can be wasteful to use
-Gaussian proposal distributions. For this example we make proposals by
-matching the proposal distribution to the prior, scaling the variance
-and centring the proposal at the previous value. So
+Gaussian proposal distributions, {\red which will produce samples outside of
+the support of the posterior. Moreover, the value of the variances of
+the unknown distributions are strictly non-negative. The algorithm
+will be most efficient if the proposal and posterior distributions are
+mutually absolutely continuous. It is also useful to be able to pick
+proposal densities for which the variance is easily scaled so that we
+can tune them to optimise efficiency. Thus we pick the following
+proposal distributions for the $p$, $\mu$ and $\sigma^2$ parameters, respectively;}
 \[
 	q_p \sim \text{Beta}(\delta^{-2}p, \delta^{-2}(1-p)), \quad q_{\mu_{1,2}} \sim \mathcal{N}(\mu_{1,2}, 4\delta^2) \quad \text{and} \quad q_{\sigma^2_{1,2}} \sim \text{Gamma}(\alpha^*, \beta^*),
 \]
@@ -1371,10 +1381,10 @@ equations are solved with the chaotic parameters given above and the
 initial condition $\mathbf{x}_0^1$. A time step of $h=1\times 10^{-3}$
 was used to evolve the equations numerically with the explicit Euler
 method. The noise added to each observation was taken from the
-distribution $\mathcal{N}(0, 0.1^2I$. Priors for the initial condition
+distribution {\red $\mathcal{N}(0, 0.1^2I)$.} Priors for the initial condition
 coordinates were given by
 \[
-	x_0 \sim \mathcal{N}(-0.5, 0.03^2), \quad y_0 \sim\mathcal{N}(-0.5, 0.03^2) \quad \text{and} \quad z_0 \sim \mathcal{N}(15, 0.03^2).
+	x_0 \sim \mathcal{N}(-0.5, 0.03^2), \quad y_0 \sim\mathcal{N}(-0.5, 0.03^2) \quad \text{and} \quad z_0 \sim \mathcal{N}(15, 0.4^2).
 \]
 The posterior density function takes the form
 \[
@@ -1382,12 +1392,14 @@ The posterior density function takes the form
 \]
 where $\mathcal{G}$ calculates the solution to the Lorenz equations, using the Euler method with a time step of $h=1\times 10^{-3}$ starting at the initial condition $\mathbf{x}_0$, and returns the position at $t = 0.1, ..., 1$. The mean of the prior distribution $m = [-0.5, -0.5, 15]$.
 
+*********
 \begin{figure}[htb]
 \centering
 \includegraphics[width=0.8\textwidth]{"figures/Lorenz_posterior"}
 \caption{Posterior distribution for the initial condition of the particle with motion governed by the Lorenz equations as described in Section~\ref{sec:lorenz_target}.}
 \label{fig:Lorenz_posterior}
 \end{figure}
+********* NEW FIGURE HERE
 
 Figure~\ref{fig:Lorenz_posterior} shows the marginal distributions of the posterior distribution for the initial condition $\mathbf{x}_0$ as found using the MH algorithm. While the $z$-dimension is largely uncorrelated with the other two dimensions, the correlation between $x$ and $y$ is -0.98, which makes it a challenging posterior distribution to explore without a transformation of the parameter space.
 
@@ -1396,32 +1408,35 @@ Figure~\ref{fig:Lorenz_posterior} shows the marginal distributions of the poster
 
 As in the previous example, we have no analytic form for the normalisation constant of the posterior and so we will measure convergence of the algorithms by calculating convergence to the posterior mean, where the truth is calculated using a very long chain produced by the MH algorithm.
 
-Both the MH and ETAIS algorithms use an ensemble size of $M=500$. The ETAIS algorithm uses the AMR resampling algorithm. The optimal scaling parameters are calculated for both algorithms using test runs which are not included in the convergence cost calculations. Convergence graphs are produced using 32 repeats of each algorithm with each simulation producing one million samples.
+For this example, we use an ensemble size of $M=1500$, and the AMR resampling algorithm. The optimal scaling parameters are calculated for both algorithms using test runs which are not included in the convergence cost calculations. Convergence graphs are produced using 32 repeats of each algorithm with each simulation producing one million samples.
 
 % numerics.
 \subsubsection{Convergence of MH vs ETAIS}\label{sec:lorenz_conv}
 
-The optimal scaling parameters for the MH and ETAIS algorithms are given in Table~\ref{table:Lorenz_opt_parameters}.
+% The optimal scaling parameters for the MH and ETAIS algorithms are given in Table~\ref{table:Lorenz_opt_parameters}.
 
-\begin{table}[!htb]
-      \centering
-        \begin{tabular}{|l|r|r|}
-	\hline
-	Algorithm	& MH & ETAIS \\ \hline
-	$\delta^*$	& 1.0e-1     & 1.3e-2 \\
-	\hline
-	\end{tabular}
-	\vspace{1mm}
-	\caption{Optimal values of the scaling parameter. The MH algorithm is optimised using the acceptance rate, and the ETAIS algorithm is optimised using the effective sample size.}
-	\label{table:Lorenz_opt_parameters}
-\end{table}
+% \begin{table}[!htb]
+%       \centering
+%         \begin{tabular}{|l|r|r|}
+% 	\hline
+% 	Algorithm	& MH & ETAIS \\ \hline
+% 	$\delta^*$	& 1.0e-1     & 1.3e-2 \\
+% 	\hline
+% 	\end{tabular}
+% 	\vspace{1mm}
+% 	\caption{Optimal values of the scaling parameter. The MH algorithm is optimised using the acceptance rate, and the ETAIS algorithm is optimised using the effective sample size.}
+% 	\label{table:Lorenz_opt_parameters}
+% \end{table}
 
+**********
 \begin{figure}[htb]
 \centering
 \includegraphics[width=0.8\textwidth]{"figures/Lorenz_convergence"}
 \caption{Convergence of the sample mean to the posterior mean for the MH and ETAIS algorithms. Posterior distribution as described in Section~\ref{sec:lorenz_target}.}
 \label{fig:Lorenz_convergence}
 \end{figure}
+****************** NEW FIGURE HERE
+
 
 As is clear from Figure~\ref{fig:Lorenz_convergence} the ETAIS-RW has a vastly superior burn-in time and achieves improved accuracy on the RWMH algorithm of three orders of magnitude after one million samples.
 
@@ -1446,7 +1461,7 @@ Adjusted Langevin Algorithm (MALA), preconditioned Crank-Nicolson (pCN),
 preconditioned Crank-Nicolson Langevin (pCNL) and Hamiltonian
 Monte Carlo (HMC) proposals has yielded similar results\cite{Paul}.
 
-\red{The implementations of the ETAIS that have been presented in this
+{\red The implementations of the ETAIS that have been presented in this
   paper, have been run in serial, but we argue that, particularly for
   inverse problems with expensive likelihoods, for example in the case
   where this requires the approximation of the solution of a
