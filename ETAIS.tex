@@ -137,8 +137,9 @@ Markov chain Monte Carlo methods are a powerful and commonly used
   performance. In particular, we demonstrate this methodology's
   superior sampling for multimodal problems, such as those arising
   from inference for mixture models, and for problems with expensive
-  likelihoods requiring the solution of a differential equation, for
-  which significant speed-ups are demonstrated.
+  likelihoods requiring the solution of a differential equation, {\red
+    for
+  which speed-ups of orders of magnitude are demonstrated.}
 \end{abstract}
 \begin{keywords}MCMC, importance sampling, Bayesian, inverse problems,
   parallel.
@@ -300,7 +301,8 @@ distributions. In Section \ref{sec:AMR} we introduce the approximate
 multinomial resampling (AMR) algorithm which is a less accurate but
 faster alternative to resamplers which solve the optimal transport
 problem exactly. In Section~\ref{sec:consistency} we consider
-consistency of the ETAIS algorithm. In Section \ref{Sec:Num} we present
+consistency of the ETAIS algorithm. {\red In Section~\ref{sec:useful} we briefly look at one
+particular advantageous property of this approach.} In Section \ref{Sec:Num} we present
 some numerical examples, before a brief conclusion and discussion in
 Section \ref{Sec:Conc}.
 
@@ -467,7 +469,7 @@ have many useful samples. Finally, we need to create a set of evenly
 weighted samples which best represent this set of weighted samples.
 This is achieved by implementing a resampling algorithm. These samples
 are not stored in order to characterise the posterior density, since
-the resampling process inevitably adds some error. They are
+the resampling process {\red is not exact}. They are
 simply needed in order to inform the mixture proposal distribution for the next
 iteration of the algorithm. 
 
@@ -479,6 +481,13 @@ resampling algorithm gives us a set of evenly weighted samples which
 represents the target distribution well, which we can use to iterate
 the process again. The algorithm is summarised in Algorithm
 \ref{alg:ETAIS}.
+
+{\red The choice of resampling algorithm is important since its
+  output is used to formulate the proposal distribution for the next
+  iteration. A basic resampler may be cheap to implement, but the
+  resulting sample, and in turn the next iteration's proposal distribution, may not be as representative of the target
+  distribution. This leads to higher variances of the weights in the
+  importance sampler, and therefore to slower convergence.}
 
 We wish to sample states $x \in X$ from a posterior
 probability distribution with density {\red $\pi$}. Since we have $M$ ensemble members, we
@@ -957,13 +966,13 @@ Case two is slightly more involved. Estimation of the normalisation constant $Z$
 
 {\red
 \section{A useful property of the ETAIS algorithm for multimodal
-  distributions} }
+  distributions} } \label{sec:useful}
 
 \begin{figure}[!ht]
 \begin{center}
 \includegraphics[width=\textwidth]{"figures/BM2_suction"}
 \caption{This figure demonstrates the redistribution property of the
-ETAIS algorithm. Initially there is one chain in the positive mode, and
+ETAIS algorithm for a bimodal target with equally weighted modes. Initially there is one chain in the positive mode, and
 49 chains in the negative mode.}
 \label{fig:BM2_suction}
 \end{center}
@@ -1003,16 +1012,15 @@ problem in mind, namely one which is low dimensional, has an expensive
 likelihood (such as a PDE solve, and/or very large data) which dwarfs
 the overhead cost of ETAIS, and which could have complex posterior
 structure, such as correlations, multimodality or other highly
-non-Gaussian features. 
+non-Gaussian features.
 
-*******
-In this section we demonstrate convergence of the ETAIS algorithm. We
-also investigate the convergence properties of ETAIS compared with
-naively parallelised Metropolis-Hastings samplers. We assess the
-performance of the ETAIS algorithm using the relative $L^2$ error
-defined in Equation~\eqref{eqn:L2_error}, as well as the relative error in the
-first moment (Equation~\eqref{eq:34567}).
-********
+
+% In this section we demonstrate convergence of the ETAIS algorithm. We
+% also investigate the convergence properties of ETAIS compared with
+% naively parallelised Metropolis-Hastings samplers. We assess the
+% performance of the ETAIS algorithm using the relative $L^2$ error
+% defined in Equation~\eqref{eqn:L2_error}, as well as the relative error in the
+% first moment (Equation~\eqref{eq:34567}).
 %%%%%%
 
 % \subsection{Numerical implementation}
@@ -1392,23 +1400,26 @@ The posterior density function takes the form
 \]
 where $\mathcal{G}$ calculates the solution to the Lorenz equations, using the Euler method with a time step of $h=1\times 10^{-3}$ starting at the initial condition $\mathbf{x}_0$, and returns the position at $t = 0.1, ..., 1$. The mean of the prior distribution $m = [-0.5, -0.5, 15]$.
 
-*********
+
 \begin{figure}[htb]
 \centering
-\includegraphics[width=0.8\textwidth]{"figures/Lorenz_posterior"}
+\includegraphics[width=0.8\textwidth]{"figures/Lorenz_posterior_b"}
 \caption{Posterior distribution for the initial condition of the particle with motion governed by the Lorenz equations as described in Section~\ref{sec:lorenz_target}.}
 \label{fig:Lorenz_posterior}
 \end{figure}
-********* NEW FIGURE HERE
 
-Figure~\ref{fig:Lorenz_posterior} shows the marginal distributions of the posterior distribution for the initial condition $\mathbf{x}_0$ as found using the MH algorithm. While the $z$-dimension is largely uncorrelated with the other two dimensions, the correlation between $x$ and $y$ is -0.98, which makes it a challenging posterior distribution to explore without a transformation of the parameter space.
+Figure~\ref{fig:Lorenz_posterior} shows the marginal distributions of
+the posterior distribution for the initial condition $\mathbf{x}_0$ as
+found using the MH algorithm. While the $z$-dimension is largely
+uncorrelated with the other two dimensions, the correlation between
+$x$ and $y$ is {\red -0.97}, which makes it a challenging posterior distribution to explore without a transformation of the parameter space.
 
 %%%%%%
 \subsubsection{Implementation}\label{sec:lorenz_implementation}
 
 As in the previous example, we have no analytic form for the normalisation constant of the posterior and so we will measure convergence of the algorithms by calculating convergence to the posterior mean, where the truth is calculated using a very long chain produced by the MH algorithm.
 
-For this example, we use an ensemble size of $M=1500$, and the AMR resampling algorithm. The optimal scaling parameters are calculated for both algorithms using test runs which are not included in the convergence cost calculations. Convergence graphs are produced using 32 repeats of each algorithm with each simulation producing one million samples.
+For this example, we use an ensemble size of {\red $M=1500$}, and the AMR resampling algorithm. The optimal scaling parameters are calculated for both algorithms using test runs which are not included in the convergence cost calculations. Convergence graphs are produced using 32 repeats of each algorithm with each simulation producing one million samples.
 
 % numerics.
 \subsubsection{Convergence of MH vs ETAIS}\label{sec:lorenz_conv}
@@ -1428,27 +1439,33 @@ For this example, we use an ensemble size of $M=1500$, and the AMR resampling al
 % 	\label{table:Lorenz_opt_parameters}
 % \end{table}
 
-**********
+
 \begin{figure}[htb]
 \centering
-\includegraphics[width=0.8\textwidth]{"figures/Lorenz_convergence"}
+\includegraphics[width=0.7\textwidth]{"figures/Lorenz_convergence"}
 \caption{Convergence of the sample mean to the posterior mean for the MH and ETAIS algorithms. Posterior distribution as described in Section~\ref{sec:lorenz_target}.}
 \label{fig:Lorenz_convergence}
 \end{figure}
-****************** NEW FIGURE HERE
 
-
-As is clear from Figure~\ref{fig:Lorenz_convergence} the ETAIS-RW has a vastly superior burn-in time and achieves improved accuracy on the RWMH algorithm of three orders of magnitude after one million samples.
-
-To produce one sample from the posterior distribution for this example
-using the ETAIS algorithm takes on average $5.5\times 10^{-4}$ seconds,
-while a sample can be produced in $1.7\times 10^{-5}$ seconds using
-the MH algorithm. However; the quality of the sample produced by ETAIS
-is much higher. To reach a tolerance of $5\times 10^{-5}$, it takes
-the ETAIS algorithm roughly 16.5 seconds and the MH algorithm roughly
-1020 seconds. Although we do not claim that either codes are optimally
-efficient, this gives an indication of the saving that can be achieved
-through this type of methodology.
+{\red Figure \ref{fig:Lorenz_convergence} shows convergence plots for
+  this problem using RWMH and ETAIS. The burn-in of the ETAIS is
+  remarkably better than MH, as the ensemble quickly covers the
+  manifold on which the majority of the density lies close to. The
+  plot shows convergence with respect to number of samples, but the
+  two approaches have differing costs, due to the calculation of the
+  denominator in the weights in the ETAIS, and the resampling step
+  (AMR). Assuming that both error curves decay like $N^{-1/2}$ from
+  $N=10^6$, then for a given error tolerance, the number $N_{\rm MH}$
+  of MH samples required is given by
+\[N_{\rm MH} = N_{\rm ETAIS} \times 3.838 \times 10^4,\]
+where $N_{\rm ETAIS}$ is the number of ETAIS samples required for the
+same error tolerance. The cost per sample for the MH and ETAIS methods
+for this problem are $1.64 \times 10^{-5}$ and $1.46 \times 10^{-3}$
+respectively. Putting this together, we arrive at a speed-up factor of
+over 430. This demonstrates the benefits of this approach for
+problems with expensive likelihoods and challenging posteriors such as
+this one.
+}
 
 
 \section{Discussion and Conclusions}\label{Sec:Conc} 
@@ -1512,15 +1529,14 @@ proposals that are used within the mixture distribution can be quickly
 and efficiently
 tuned in an automated way. Lastly we have demonstrated that when the
 likelihood is expensive, for instance because it involves the
-numerical approximation of the solution of a differential equation, the savings made in terms of the number
-iterations required in order reach a particular degree of accuracy
-outweighs the additional overhead costs that are incurred
-over-and-above standard MCMC.
+numerical approximation of the solution of a differential equation, {\red
+that we can achieve orders of magnitude reductions in cost to reach a
+given error tolerance in comparison with standard Metropolis-Hastings approaches.}
 
 However, tuning the variances and
 covariances of the mixture proposal components
 globally is likely to be of limited use for multimodal problems where
-the modes have very different covariances, or where there is curved
+the modes have very different covariances, or where there are curved
 ridges in the density. There are a variety of possible solutions to
 this problem that would be worthy of future consideration, not least
 the potential to use transport maps\cite{el2012bayesian,parno2014transport} to map Gaussian mixtures to
