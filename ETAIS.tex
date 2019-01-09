@@ -1461,10 +1461,14 @@ For this example, we use an ensemble size of {\red $M=1500$}, and the AMR resamp
 where $N_{\rm ETAIS}$ is the number of ETAIS samples required for the
 same error tolerance. The cost per sample for the MH and ETAIS methods
 for this problem are $1.64 \times 10^{-5}$ and $1.46 \times 10^{-3}$
-respectively. Putting this together, we arrive at a speed-up factor of
-over 430. This demonstrates the benefits of this approach for
+respectively. Here the ETAIS results were produced with a serial
+implementation, so this cost may be slightly overoptimistic, since the
+runtimes do not include extra overheads of communicating the ensemble
+states between processors. However, putting this together, we arrive at a speed-up factor of
+over 430, which will undoubtedly overshadow any such underestimate of
+the cost-per-sample of the ETAIS approach. This demonstrates the benefits of this approach for
 problems with expensive likelihoods and challenging posteriors such as
-this one.
+this one. 
 }
 
 
@@ -1537,12 +1541,17 @@ However, tuning the variances and
 covariances of the mixture proposal components
 globally is likely to be of limited use for multimodal problems where
 the modes have very different covariances, or where there are curved
-ridges in the density. There are a variety of possible solutions to
+ridges in the density. {\red With increased dimensionality and/or
+  complexity of the target the distribution, we also require increases
+  in the size of the ensemble if we wish to have a stable ETAIS
+  implementation. After a certain point, the extra overheads
+  associated with a very large ensemble will outweigh the advantages
+  of this approach. However, there} are a variety of possible solutions to
 this problem that would be worthy of future consideration, not least
 the potential to use transport maps\cite{el2012bayesian,parno2014transport} to map Gaussian mixtures to
 highly complex non-Gaussian approximations of the posterior. Such a
 map could encode local covariance information, and lead to accelerated
-and stable ETAIS sampling. This is an interesting area for future study.
+and stable ETAIS sampling {\red with much smaller ensemble sizes}.
 
 \begin{appendix}
 
