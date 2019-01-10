@@ -74,5 +74,9 @@ The more dimensions and posterior complexity that exists in a problem, the bigge
 
   \comment{8) Do not use an explicit Euler solver, use any higher order, off the shelve solver.}{Many of the off-the-shelf higher order solvers are just as inappropriate to use for the approximation of the solution of the Lorenz '63 equations. We agree that the explicit Euler method with a small timestep is not an optimal choice, but it is a simple choice, which still leads to a chaotic nonlinear system. We argue that it is sufficient for the purpose of comparing the efficiency of two different Monte Carlo methods, both of which are using the same approximation of the likelihood.}
 
-  %{Many of the off-the-shelf higher order solvers are just as inappropriate to use for the approximation of the solution of the Lorenz '63 equations, since they are chaotic, and as such \emph{any} numerical error is quickly amplified through the dynamics. Moreover, the focus of this paper is not on these applications, but in the statistical algorithm. In this example, we are simply looking for a non-linear mapping such that we can demonstrate the speed-up that is gained from using ETAIS as opposed to standard M-H sampling, and we believe that a simple Euler approximation provides such a mapping.}
+  % {Many of the off-the-shelf higher order solvers are just as inappropriate to use for the approximation of the solution of the Lorenz '63 equations, since they are chaotic, and as such \emph{any} numerical error is quickly amplified through the dynamics. Moreover, the focus of this paper is not on these applications, but in the statistical algorithm. In this example, we are simply looking for a non-linear mapping such that we can demonstrate the speed-up that is gained from using ETAIS as opposed to standard M-H sampling, and we believe that a simple Euler approximation provides such a mapping.}
+
+  \section{Other changes}
+  We have also changed the name of the approximate multinomial resampler (AMR) to multinomial transformation (MT).
+  
 \end{document}

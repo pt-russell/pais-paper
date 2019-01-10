@@ -114,22 +114,20 @@
 \begin{abstract}
 Markov chain Monte Carlo methods are a powerful and commonly used
   family of numerical methods for sampling from complex probability
-  distributions. As applications of these methods increase in size and
-  complexity, the need for efficient methods which can exploit the
-  parallel architectures which are prevalent in high performance
-  computing increases. In this paper, we aim to develop a framework
-  for scalable parallel sampling algorithms. At each iteration, an
+  distributions. {\red As applications of these methods increase in size and
+  complexity, the need for efficient methods increases. In this
+paper, we present a particle ensemble algorithm.} At each iteration, an
   importance sampling proposal distribution is formed using an
   ensemble of particles. A stratified sample is taken from this
   distribution and weighted under the posterior, a state-of-the-art
   ensemble transport resampling method is then used to create an evenly weighted sample
   ready for the next iteration. We demonstrate that this ensemble transport
-  adaptive importance sampling (ETAIS) method outperforms naive
-  parallelisation of serial MCMC methods for low dimensional problems,
+  adaptive importance sampling (ETAIS) method outperforms MCMC methods
+  {\red with equivalent proposal distributions} for low dimensional problems,
   and in fact shows
   better than linear improvements in convergence rates with respect to
   the number of ensemble members. We also introduce a new resampling
-  strategy, approximate multinomial resampling (AMR), which while not
+  strategy, {\red multinomial transformation (MT),} which while not
   as accurate as the ensemble transport resampler, is substantially less costly for large
   ensemble sizes, and can then be used in conjunction with ETAIS for
   complex problems. We also focus on how algorithmic parameters
@@ -139,10 +137,13 @@ Markov chain Monte Carlo methods are a powerful and commonly used
   from inference for mixture models, and for problems with expensive
   likelihoods requiring the solution of a differential equation, {\red
     for
-  which speed-ups of orders of magnitude are demonstrated.}
+  which speed-ups of orders of magnitude are demonstrated. Likelihood
+  evaluations of the ensemble could be computed in a distributed
+  manner, suggesting that this methodology could be a good candidate
+  for parallel Bayesian computations.}
 \end{abstract}
 \begin{keywords}MCMC, importance sampling, Bayesian, inverse problems,
-  parallel.
+  {\red ensemble, resampling}.
 \end{keywords}
 \section{Introduction}
 Having first been developed in the early 1970s\cite{hastings1970monte}, Markov chain Monte Carlo (MCMC) methods have been of increasing
@@ -253,11 +254,11 @@ as layered adaptive importance sampling\cite{martino2017layered}, adaptive multi
 applied to various applications, including population
 genetics~\cite{siren2011reconstructing}.
 
-In this paper, we present a framework for parallelisation of
+{\red In this paper, we present a framework for ensemble
 importance sampling, which can be built around many of the current
 Metropolis-based methodologies in order to create an efficient target
 distribution from the current
-ensemble. The method makes use of a resampler based on optimal
+ensemble.} The method makes use of a resampler based on optimal
 transport which has been used in the context of particle
 filters\cite{reich2013nonparametric}. We also detail how algorithmic
 parameters can be quickly tuned into optimal regimes, with respect to
@@ -270,7 +271,7 @@ problem which have complex posterior structure, for example
 multimodality or strong correlations, and expensive
 likelihood evaluations. We will demonstrate that this methodology
 allows us to sample from such a posterior distribution with greater
-precision per likelihood evaluation than an uncorrelated ensemble of
+precision per likelihood evaluation than 
 standard MCMC chains of the same type.
 
 The method considered is similar to population Monte Carlo methods
@@ -297,8 +298,7 @@ preliminaries upon which we will later rely. In Section \ref{Sec:ETAIS}
 we present the general framework of the ETAIS algorithm. In Section
 \ref{Sec:adapt} we consider adaptive versions of ETAIS which
 automatically tune algorithmic parameters concerned with the proposal
-distributions. In Section \ref{sec:AMR} we introduce the approximate
-multinomial resampling (AMR) algorithm which is a less accurate but
+distributions. In Section \ref{sec:MT} we introduce the {\red multinomial transformation (MT)} algorithm which is a less accurate but
 faster alternative to resamplers which solve the optimal transport
 problem exactly. In Section~\ref{sec:consistency} we consider
 consistency of the ETAIS algorithm. {\red In Section~\ref{sec:useful} we briefly look at one
@@ -437,9 +437,10 @@ that proposal in the Metropolis step. An advantage of importance
 samplers is that no evaluations of $\mathcal{G}$ are ever wasted
 since all samples are saved along with their relative weighting.
 
-These deficiencies of the naive method of parallelising MCMC methods
-motivated the development of the Parallel Adaptive Importance Sampler
-(ETAIS). In the next section we will introduce the method in its most
+{\red These deficiencies of MCMC methods
+motivated the development of the Ensemble Transport Adaptive Importance Sampler
+(ETAIS).}
+In the next section we will introduce the method in its most
 general form.
 
 %%%%%%
@@ -475,7 +476,7 @@ iteration of the algorithm.
 
 Initially we
 will use the ETPF resampler algorithm\cite{reich2013nonparametric}, although we
-will suggest an alternative strategy in Section \ref{sec:AMR} where a
+will suggest an alternative strategy in Section \ref{sec:MT} where a
 large ensemble is required, and for which the ETPF may become more expensive. The
 resampling algorithm gives us a set of evenly weighted samples which
 represents the target distribution well, which we can use to iterate
@@ -811,7 +812,7 @@ proposal. This picture is typical in our experience, with the scaling
 parameters converging in $\mathcal{O}(10^2)$ iterations to an optimal regime.
 %%%%%%
 
-\section{Approximate Multinomial Resampling}\label{sec:AMR}
+\section{Approximate Multinomial Resampling}\label{sec:MT}
 
 Although the ETPF produces the optimal linear coupling, it can also become quite costly as the number of ensemble members
 is increased. It is arguable that in the context of ETAIS, we do not
@@ -833,7 +834,7 @@ prohibitively costly for moderately or large sized ensembles,
 which preserves the mean of the samples, and which makes it much
 harder for the new samples to forget a significant region in the
 density. This motivates the following algorithm, which we refer to as the
-approximate multinomial resampler (AMR), which is a greedy
+multinomial transformation (MT), which is a greedy
 approximation of the ETPF resampler.
 
 Instead of sampling $M$ times from an $M$-dimensional multinomial
@@ -847,7 +848,7 @@ bootstrap filter has a vector of probabilities given by:
 with associated states $y_n$.
 We wish to find $M$ vectors $\{{\bf p}_1,{\bf p}_2,\ldots,{\bf p}_M\}
 \subset \mathbb{R}^M_{\ge 0}$
-such that  $\frac{1}{M} \sum {\bf p}_i = \bar{\bf w}$. The AMR is then
+such that  $\frac{1}{M} \sum {\bf p}_i = \bar{\bf w}$. The MT is then
 given by a sample from each of the multinomials defined by the vectors
 ${\bf p}_i = [p_{i,1},p_{i,2},\ldots,p_{i,M}]$ with associated states ${\bf y}_i$. Alternatively, as with the ETPF, a deterministic sample
 can be chosen by picking each sample to be equal to the mean value of
@@ -898,11 +899,11 @@ may be spread across the parameter space.
 		}
 		$x_i = \sum_k p_{i,k}y_k$.\;
 	}
-\caption{The approximate multinomial resampler (AMR).\label{alg:AMR}}
+\caption{The approximate multinomial resampler (MT).\label{alg:MT}}
 \end{algorithm}
 \end{table}
 
-Algorithm~\ref{alg:AMR} describes the basis of the algorithm with
+Algorithm~\ref{alg:MT} describes the basis of the algorithm with
 deterministic resampling, using the means of each of the
 sub-multinomials as the new samples. This resampler was designed with the aims of being
 numerically cheaper than the ETPF, and more accurate than straight multinomial
@@ -917,29 +918,29 @@ $\mathbb{E}(X^2)$]{\includegraphics[width=0.45\textwidth]{"figures/Resampler_EX2
 \subfigure[Relative error in $\mathbb{E}(X^3)$]{\includegraphics[width=0.45\textwidth]{"figures/Resampler_EX3"}}
 \subfigure[Cost of resamplers per iteration]{\includegraphics[width=0.45\textwidth]{"figures/Resampler_speed"}}\\
 \caption{Comparison of the performance between different resampling schemes. The example in Section~\ref{sec:problem 1} is implemented for this demonstration.}
-\label{fig:AMR}
+\label{fig:MT}
 \end{figure}
 
 To test the accuracy and speed of the three resamplers (ETPF,
-bootstrap and AMR), we drew a sample of size $M$ from the proposal distribution
+bootstrap and MT), we drew a sample of size $M$ from the proposal distribution
 $\mathcal{N}(1,2)$. Importance weights were assigned, based on a
 target distribution of $\mathcal{N}(2,3)$. The statistics of the
-resampled outputs were compared with the original weighted samples. Figure \ref{fig:AMR} (a)-(c) show how the relative errors in the first
+resampled outputs were compared with the original weighted samples. Figure \ref{fig:MT} (a)-(c) show how the relative errors in the first
 three moments of the samples changes with ensemble size $M$ for the three different
-resamplers. As expected, the AMR lies somewhere between the high
+resamplers. As expected, the MT lies somewhere between the high
 accuracy of the ETPF and the less accurate bootstrap
 resampling. Note that only the error for the bootstrap multinomial
 sampler is presented for the first moment since both the ETPF and the
-AMR preserve the mean of the original weighted samples up to machine precision. Figure \ref{fig:AMR} (d) shows how the computational cost,
+MT preserve the mean of the original weighted samples up to machine precision. Figure \ref{fig:MT} (d) shows how the computational cost,
 measured in seconds, scales with the ensemble size for the three
 different methods, where timings have been taken from simulations on a Dell
-server with four 8-core 3.3GHz CPUs and 64Gb memory. These results demonstrate that the AMR behaves how we wish, and
+server with four 8-core 3.3GHz CPUs and 64Gb memory. These results demonstrate that the MT behaves how we wish, and
 importantly ensures that exactly one sample of the output will lie in
 each region with weights up to $\frac{1}{M}$ of the total.
 
-We will use the AMR in the numerics in Section \ref{sec:mixture}
+We will use the MT in the numerics in Section \ref{sec:mixture}
 where we have chosen to use a larger ensemble size. We do not claim
-that the AMR is the optimal choice within ETAIS, but it does have
+that the MT is the optimal choice within ETAIS, but it does have
 favourable features, and demonstrates how different choices of
 resampler can affect the speed and efficiency of the ETAIS algorithm.
 
@@ -1013,6 +1014,17 @@ likelihood (such as a PDE solve, and/or very large data) which dwarfs
 the overhead cost of ETAIS, and which could have complex posterior
 structure, such as correlations, multimodality or other highly
 non-Gaussian features.
+
+{\red The numerics contained herein compare the ETAIS approach that we
+  have presented against Metropolis-Hastings methods with
+  the same type of proposal as is used by the kernels within
+  ETAIS. Since we propose that ETAIS is a potential framework for
+  parallelised Bayesian computations, we compare ETAIS with $N$
+  ensemble members against an independent ensemble of $N$
+  Metropolis-Hastings chains. All implementations were
+  computed in serial, but the results demonstrate a clear speed-up
+  which could be further exploited through parallelisation in the future.
+  }
 
 
 % In this section we demonstrate convergence of the ETAIS algorithm. We
@@ -1161,7 +1173,7 @@ redistributes particles to new modes as they are found. This means
 that we expect the number of particles in a mode to be approximately
 proportional to the probability density in that mode, resulting in
 faster global convergence. {\red In particular, we will look at the effect
-of using either the ETPF, AMR or a standard bootstrap resampler.
+of using either the ETPF, MT or a standard bootstrap resampler.
 
 \begin{figure}[htb]
 \centering 
@@ -1169,18 +1181,18 @@ of using either the ETPF, AMR or a standard bootstrap resampler.
 \subfigure[Comparison of resamplers]{\includegraphics[width=0.45\textwidth]{"figures/Bivariate_L2"}}
 
 \caption{Left: Bimodal target density. Right: Convergence of RWMH and
-  ETAIS-RW with ETPF, AMR and bootstrap resamplers. }
+  ETAIS-RW with ETPF, MT and bootstrap resamplers. }
 \label{kshdbf}
 \end{figure}
 
 Figure \ref{kshdbf} shows the bimodal target density, and convergence
-plots for the RWMH and ETAIS-RW with ETPF, AMR and bootstrap
+plots for the RWMH and ETAIS-RW with ETPF, MT and bootstrap
 resamplers. As expected, a higher quality resampler leads to better
 proposal distributions, which in turn leads to greater stability and
-more reliable convergence. However, this also shows that the AMR is a
+more reliable convergence. However, this also shows that the MT is a
 good greedy approximation of the ETPF, and for a fraction of the cost
 when the number of ensemble members is larger, as shown in Section
-\ref{sec:AMR}. The RWMH algorithm fails to converge efficiently since chains only very rarely
+\ref{sec:MT}. The RWMH algorithm fails to converge efficiently since chains only very rarely
 make switches between the two modes, leading to very slow mixing. This
 demonstrates the advantage that ensemble-based methods can have over
 other methods when the target
@@ -1305,7 +1317,7 @@ univariate Beta, Gamma and Gaussian distributions.
 
 In the numerics which follow we have increased the ensemble size from
 $M=50$ to $M=500$ to compensate for the increase in dimension. We also
-use the AMR algorithm for the resampling step because of the reduced
+use the MT algorithm for the resampling step because of the reduced
 computational cost. The method otherwise remains the same as in
 previous examples. We perform test runs to find the optimal scaling
 parameters considering convergence to modes with equal density. We
@@ -1334,7 +1346,7 @@ The optimal scaling parameters for the MH and ETAIS algorithms with the proposal
 \begin{figure}[htb]
 \centering
 \includegraphics[width=0.8\textwidth]{"figures/Mode_proportions"}
-\caption{Convergence of the ETAIS algorithm for the mixture model described in Section~\ref{sec:mixture}, convergence judged using the criterion in Equation~\eqref{eqn:mode_prop}. Implementation described in Sections~\ref{sec:mixture_implementation} and \ref{sec:mixture_conv}. Resampling is performed using the AMR scheme.}
+\caption{Convergence of the ETAIS algorithm for the mixture model described in Section~\ref{sec:mixture}, convergence judged using the criterion in Equation~\eqref{eqn:mode_prop}. Implementation described in Sections~\ref{sec:mixture_implementation} and \ref{sec:mixture_conv}. Resampling is performed using the MT scheme.}
 \label{fig:mixture_modes}
 \end{figure}
 
@@ -1419,7 +1431,7 @@ $x$ and $y$ is {\red -0.97}, which makes it a challenging posterior distribution
 
 As in the previous example, we have no analytic form for the normalisation constant of the posterior and so we will measure convergence of the algorithms by calculating convergence to the posterior mean, where the truth is calculated using a very long chain produced by the MH algorithm.
 
-For this example, we use an ensemble size of {\red $M=1500$}, and the AMR resampling algorithm. The optimal scaling parameters are calculated for both algorithms using test runs which are not included in the convergence cost calculations. Convergence graphs are produced using 32 repeats of each algorithm with each simulation producing one million samples.
+For this example, we use an ensemble size of {\red $M=1500$}, and the MT resampling algorithm. The optimal scaling parameters are calculated for both algorithms using test runs which are not included in the convergence cost calculations. Convergence graphs are produced using 32 repeats of each algorithm with each simulation producing one million samples.
 
 % numerics.
 \subsubsection{Convergence of MH vs ETAIS}\label{sec:lorenz_conv}
@@ -1454,7 +1466,7 @@ For this example, we use an ensemble size of {\red $M=1500$}, and the AMR resamp
   plot shows convergence with respect to number of samples, but the
   two approaches have differing costs, due to the calculation of the
   denominator in the weights in the ETAIS, and the resampling step
-  (AMR). Assuming that both error curves decay like $N^{-1/2}$ from
+  (MT). Assuming that both error curves decay like $N^{-1/2}$ from
   $N=10^6$, then for a given error tolerance, the number $N_{\rm MH}$
   of MH samples required is given by
 \[N_{\rm MH} = N_{\rm ETAIS} \times 3.838 \times 10^4,\]
@@ -1474,10 +1486,10 @@ this one.
 
 \section{Discussion and Conclusions}\label{Sec:Conc} 
 
-We have explored the application of parallelised MCMC algorithms in
-low dimensional inverse problems. We have demonstrated numerically
-that these algorithms converge faster than the analogous naively parallelised
-Metropolis-Hastings algorithms. Further experimentation with the Metropolis
+{\red We have explored the application of 
+low dimensional Bayesian inverse problems. We have demonstrated numerically
+that this method converges faster than the analogous naively parallelised
+Metropolis-Hastings algorithms.} Further experimentation with the Metropolis
 Adjusted Langevin Algorithm (MALA), preconditioned Crank-Nicolson (pCN),
 preconditioned Crank-Nicolson Langevin (pCNL) and Hamiltonian
 Monte Carlo (HMC) proposals has yielded similar results\cite{Paul}.
@@ -1569,7 +1581,7 @@ AIS     & Adaptive importance sampling           \\
 PMC     & Population Monte Carlo                 \\
 ETAIS    & Ensemble transport adaptive importance sampling  \\
 ETPF    & Ensemble transport particle filter     \\
-AMR     & Approximate multinomial resampler      \\
+MT     & Multinomial transformation      \\
 ETAIS-X  & ETAIS with X kernels                    \\
 AETAIS-X & Adaptive ETAIS with X kernels          \\ \hline
 \end{tabular}
