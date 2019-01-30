@@ -109,12 +109,14 @@
     grant award EP/L023393/1} \and Paul Russell\thanks{School of
     Mathematics, University of Manchester, Manchester, UK}}
 \title{Ensemble Transport Adaptive Importance Sampling}
+%\newcommand{\revised}{\red}
+\newcommand{\revised}{}
 \begin{document}
 \maketitle
 \begin{abstract}
 Markov chain Monte Carlo methods are a powerful and commonly used
   family of numerical methods for sampling from complex probability
-  distributions. {\red As applications of these methods increase in size and
+  distributions. {\revised As applications of these methods increase in size and
   complexity, the need for efficient methods increases. In this
 paper, we present a particle ensemble algorithm.} At each iteration, an
   importance sampling proposal distribution is formed using an
@@ -123,11 +125,11 @@ paper, we present a particle ensemble algorithm.} At each iteration, an
   ensemble transport resampling method is then used to create an evenly weighted sample
   ready for the next iteration. We demonstrate that this ensemble transport
   adaptive importance sampling (ETAIS) method outperforms MCMC methods
-  {\red with equivalent proposal distributions} for low dimensional problems,
+  {\revised with equivalent proposal distributions} for low dimensional problems,
   and in fact shows
   better than linear improvements in convergence rates with respect to
   the number of ensemble members. We also introduce a new resampling
-  strategy, {\red multinomial transformation (MT),} which while not
+  strategy, {\revised multinomial transformation (MT),} which while not
   as accurate as the ensemble transport resampler, is substantially less costly for large
   ensemble sizes, and can then be used in conjunction with ETAIS for
   complex problems. We also focus on how algorithmic parameters
@@ -135,7 +137,7 @@ paper, we present a particle ensemble algorithm.} At each iteration, an
   performance. In particular, we demonstrate this methodology's
   superior sampling for multimodal problems, such as those arising
   from inference for mixture models, and for problems with expensive
-  likelihoods requiring the solution of a differential equation, {\red
+  likelihoods requiring the solution of a differential equation, {\revised
     for
   which speed-ups of orders of magnitude are demonstrated. Likelihood
   evaluations of the ensemble could be computed in a distributed
@@ -143,7 +145,7 @@ paper, we present a particle ensemble algorithm.} At each iteration, an
   for parallel Bayesian computations.}
 \end{abstract}
 \begin{keywords}MCMC, importance sampling, Bayesian, inverse problems,
-  {\red ensemble, resampling}.
+  {\revised ensemble, resampling}.
 \end{keywords}
 \section{Introduction}
 Having first been developed in the early 1970s\cite{hastings1970monte}, Markov chain Monte Carlo (MCMC) methods have been of increasing
@@ -254,7 +256,7 @@ as layered adaptive importance sampling\cite{martino2017layered}, adaptive multi
 applied to various applications, including population
 genetics~\cite{siren2011reconstructing}.
 
-{\red In this paper, we present a framework for ensemble
+{\revised In this paper, we present a framework for ensemble
 importance sampling, which can be built around many of the current
 Metropolis-based methodologies in order to create an efficient target
 distribution from the current
@@ -298,10 +300,10 @@ preliminaries upon which we will later rely. In Section \ref{Sec:ETAIS}
 we present the general framework of the ETAIS algorithm. In Section
 \ref{Sec:adapt} we consider adaptive versions of ETAIS which
 automatically tune algorithmic parameters concerned with the proposal
-distributions. In Section \ref{sec:MT} we introduce the {\red multinomial transformation (MT)} algorithm which is a less accurate but
+distributions. In Section \ref{sec:MT} we introduce the {\revised multinomial transformation (MT)} algorithm which is a less accurate but
 faster alternative to resamplers which solve the optimal transport
 problem exactly. In Section~\ref{sec:consistency} we consider
-consistency of the ETAIS algorithm. {\red In Section~\ref{sec:useful} we briefly look at one
+consistency of the ETAIS algorithm. {\revised In Section~\ref{sec:useful} we briefly look at one
 particular advantageous property of this approach.} In Section \ref{Sec:Num} we present
 some numerical examples, before a brief conclusion and discussion in
 Section \ref{Sec:Conc}.
@@ -386,17 +388,17 @@ where $M$ is the size of the sample. Maximising the correlation
 preserves the statistics of $X$ in the new sample.
 
 In this work we use the resampler used within these particle filters. We
-approximate the posterior {\red density $\pi$, with an ensemble
+approximate the posterior {\revised density $\pi$, with an ensemble
 of weighted samples,} $\{(w_i,y_i)\}_{i=1}^M$. In filtering problems
 the weights would be found by incorporating new observed data whereas
 here we simply use importance weights. These weighted samples can then be resampled, using the ETPF or otherwise,
-into a {\red set of new equally-weighted samples $\{x_i\}_{i=1}^M$, such that
+into a {\revised set of new equally-weighted samples $\{x_i\}_{i=1}^M$, such that
 \begin{equation}\label{eqn:resampler}
 	\sum\limits_{i=1}^M \! w_i\delta_{y_i}(\cdot)
 	 \quad \xrightarrow{\text{ETPF}} \quad \sum\limits_{i=1}^M \!
 	 \frac{1}{M} \delta_{x_i}(\cdot),
 \end{equation}}
-{\red where $\delta_{x}(\cdot)$ is the Dirac delta measure.}
+{\revised where $\delta_{x}(\cdot)$ is the Dirac delta measure.}
 
 The resamplers used within particle filters such as the ETPF are well suited to this problem
 since it is easy to introduce conditions in the resampling to ensure
@@ -436,7 +438,7 @@ that proposal in the Metropolis step. An advantage of importance
 samplers is that no evaluations of $\mathcal{G}$ are ever wasted
 since all samples are saved along with their relative weighting.
 
-{\red These deficiencies of MCMC methods
+{\revised These deficiencies of MCMC methods
 motivated the development of the Ensemble Transport Adaptive Importance Sampler
 (ETAIS).}
 In the next section we will introduce the method in its most
@@ -469,7 +471,7 @@ have many useful samples. Finally, we need to create a set of evenly
 weighted samples which best represent this set of weighted samples.
 This is achieved by implementing a resampling algorithm. These samples
 are not stored in order to characterise the posterior density, since
-the resampling process {\red is not exact}. They are
+the resampling process {\revised is not exact}. They are
 simply needed in order to inform the mixture proposal distribution for the next
 iteration of the algorithm. 
 
@@ -483,7 +485,7 @@ represents the target distribution well, which we can use to iterate
 the process again. The algorithm is summarised in Algorithm
 \ref{alg:ETAIS}.
 
-{\red The choice of resampling algorithm is important since its
+{\revised The choice of resampling algorithm is important since its
   output is used to formulate the proposal distribution for the next
   iteration. A basic resampler may be cheap to implement, but the
   resulting sample, and in turn the next iteration's proposal distribution, may not be as representative of the target
@@ -492,7 +494,7 @@ the process again. The algorithm is summarised in Algorithm
   target density.}
 
 We wish to sample states $x \in X$ from a posterior
-probability distribution with density {\red $\pi$}. Since we have $M$ ensemble members, we
+probability distribution with density {\revised $\pi$}. Since we have $M$ ensemble members, we
 represent the current state of all of the Markov chains as a vector
 $\X = [x_1,x_2,\ldots,x_M]^\top$. We are also given a transition kernel
 $\nu(\cdot,\cdot)$, which might come from an MCMC method, for example
@@ -568,7 +570,7 @@ used in MALA can be more stable for certain problems\cite{Paul}.
 
 Care needs to be taken when choosing kernel(s) for the proposal distribution to
 ensure that the overall mixture is absolutely continuous with respect to
-the posterior distribution. {\red For example, in many inverse problems we
+the posterior distribution. {\revised For example, in many inverse problems we
 may be looking to find the value of certain physical parameters which
 may be strictly positive, or even bounded on an interval. In
 this case, proposal kernels $\nu$ should be picked which have the same
@@ -948,7 +950,7 @@ resampler can affect the speed and efficiency of the ETAIS algorithm.
 %%%%%%
 
 \section{Consistency of ETAIS}\label{sec:consistency}
-{\red As with all importance sampling schemes, we must have absolute
+{\revised As with all importance sampling schemes, we must have absolute
   continuity of target distribution with respect to the proposal
   distribution if we wish to achieve convergence. This can usually be
   ensured by picking the proposal kernels $\nu$ to be from the same
@@ -966,7 +968,7 @@ Case two is slightly more involved. Estimation of the normalisation constant $Z$
 
 %%%%%%
 
-\section{{\red A useful property of the ETAIS algorithm for multimodal
+\section{{\revised A useful property of the ETAIS algorithm for multimodal
   distributions } }\label{sec:useful}
 
 \begin{figure}[!ht]
@@ -1015,7 +1017,7 @@ the overhead cost of ETAIS, and which could have complex posterior
 structure, such as correlations, multimodality or other highly
 non-Gaussian features.
 
-{\red The numerics contained herein compare the ETAIS approach that we
+{\revised The numerics contained herein compare the ETAIS approach that we
   have presented against Metropolis-Hastings methods with
   the same type of proposal as is used by the kernels within
   ETAIS. Since we propose that ETAIS is a potential framework for
@@ -1053,7 +1055,7 @@ non-Gaussian features.
 
 \subsection{Automated variance tuning}
 \label{sec:problem 1}
-{\red In this first example, we target a simple 1D Gaussian distribution, in
+{\revised In this first example, we target a simple 1D Gaussian distribution, in
 order to show the approximate equivalence of optimising the variance
 of the proposal kernels using the effective sample size, and the $L^2$
 error, which of course is not available to us in practical
@@ -1153,7 +1155,7 @@ effective sample size shown in Figure~\ref{fig:neff-M} (b).
 
 \subsection{Multimodal targets and the effect of resampler quality}
 \label{sec:bimodal}
-{\red
+{\revised
 In this second example we investigate the behaviour of the ETAIS
 algorithm when applied to a bimodal problem, given by a mixture of two
 Gaussians,
@@ -1172,7 +1174,7 @@ histograms. This example demonstrates that the ETAIS algorithm
 redistributes samples to new modes as they are found. This means
 that we expect the number of samples in a mode to be approximately
 proportional to the probability density in that mode, resulting in
-faster global convergence. {\red In particular, we will look at the effect
+faster global convergence. {\revised In particular, we will look at the effect
 of using either the ETPF, MT or a standard bootstrap resampler.
 
 \begin{figure}[htb]
@@ -1277,7 +1279,7 @@ samples produced by the ETAIS-RW algorithm.
 
 \subsubsection{Implementation}
 \label{sec:mixture_implementation}
-{\red In order to quantify error, we note that} the probability density should
+{\revised In order to quantify error, we note that} the probability density should
 be evenly divided between the two modes. This is due to the symmetric
 prior for $p$, and and the same priors being assigned to $\mu_1$ and
 $\mu_2$, and also to $\sigma^2_1$ and $\sigma^2_2$. To decide which
@@ -1298,7 +1300,7 @@ and the relative error in the amount of density in each mode is then
 
 Since the probability $p$ is constrained to lie in the interval
 $[0,1]$, and the variances must be positive, it can be wasteful to use
-Gaussian proposal distributions, {\red which will produce samples outside of
+Gaussian proposal distributions, {\revised which will produce samples outside of
 the support of the posterior. Moreover, the value of the variances of
 the unknown distributions are strictly non-negative. The algorithm
 will be most efficient if the proposal and posterior distributions are
@@ -1401,7 +1403,7 @@ equations are solved with the chaotic parameters given above and the
 initial condition $\mathbf{x}_0^1$. A time step of $h=1\times 10^{-3}$
 was used to evolve the equations numerically with the explicit Euler
 method. The noise added to each observation was taken from the
-distribution {\red $\mathcal{N}(0, 0.1^2I)$.} Priors for the initial condition
+distribution {\revised $\mathcal{N}(0, 0.1^2I)$.} Priors for the initial condition
 coordinates were given by
 \[
 	x_0 \sim \mathcal{N}(-0.5, 0.4^2), \quad y_0 \sim\mathcal{N}(-0.5, 0.4^2) \quad \text{and} \quad z_0 \sim \mathcal{N}(15, 0.4^2).
@@ -1424,14 +1426,14 @@ Figure~\ref{fig:Lorenz_posterior} shows the marginal distributions of
 the posterior distribution for the initial condition $\mathbf{x}_0$ as
 found using the MH algorithm. While the $z$-dimension is largely
 uncorrelated with the other two dimensions, the correlation between
-$x$ and $y$ is {\red -0.97}, which makes it a challenging posterior distribution to explore without a transformation of the parameter space.
+$x$ and $y$ is {\revised -0.97}, which makes it a challenging posterior distribution to explore without a transformation of the parameter space.
 
 %%%%%%
 \subsubsection{Implementation}\label{sec:lorenz_implementation}
 
 As in the previous example, we have no analytic form for the normalisation constant of the posterior and so we will measure convergence of the algorithms by calculating convergence to the posterior mean, where the truth is calculated using a very long chain produced by the MH algorithm.
 
-For this example, we use an ensemble size of {\red $M=1500$}, and the MT resampling algorithm. The optimal scaling parameters are calculated for both algorithms using test runs which are not included in the convergence cost calculations. Convergence graphs are produced using 32 repeats of each algorithm with each simulation producing one million samples.
+For this example, we use an ensemble size of {\revised $M=1500$}, and the MT resampling algorithm. The optimal scaling parameters are calculated for both algorithms using test runs which are not included in the convergence cost calculations. Convergence graphs are produced using 32 repeats of each algorithm with each simulation producing one million samples.
 
 % numerics.
 \subsubsection{Convergence of MH vs ETAIS}\label{sec:lorenz_conv}
@@ -1459,7 +1461,7 @@ For this example, we use an ensemble size of {\red $M=1500$}, and the MT resampl
 \label{fig:Lorenz_convergence}
 \end{figure}
 
-{\red Figure \ref{fig:Lorenz_convergence} shows convergence plots for
+{\revised Figure \ref{fig:Lorenz_convergence} shows convergence plots for
   this problem using RWMH and ETAIS. The burn-in of the ETAIS is
   remarkably better than MH, as the ensemble quickly covers the
   manifold on which the majority of the density lies close to. The
@@ -1486,7 +1488,7 @@ this one.
 
 \section{Discussion and Conclusions}\label{Sec:Conc} 
 
-{\red We have explored the application of 
+{\revised We have explored the application of 
 low dimensional Bayesian inverse problems. We have demonstrated numerically
 that this method converges faster than the analogous naively parallelised
 Metropolis-Hastings algorithms.} Further experimentation with the Metropolis
@@ -1494,7 +1496,7 @@ Adjusted Langevin Algorithm (MALA), preconditioned Crank-Nicolson (pCN),
 preconditioned Crank-Nicolson Langevin (pCNL) and Hamiltonian
 Monte Carlo (HMC) proposals has yielded similar results\cite{Paul}.
 
-{\red The implementations of the ETAIS that have been presented in this
+{\revised The implementations of the ETAIS that have been presented in this
   paper, have been run in serial, but we argue that, particularly for
   inverse problems with expensive likelihoods, for example in the case
   where this requires the approximation of the solution of a
@@ -1544,7 +1546,7 @@ proposals that are used within the mixture distribution can be quickly
 and efficiently
 tuned in an automated way. Lastly we have demonstrated that when the
 likelihood is expensive, for instance because it involves the
-numerical approximation of the solution of a differential equation, {\red
+numerical approximation of the solution of a differential equation, {\revised
 that we can achieve orders of magnitude reductions in cost to reach a
 given error tolerance in comparison with standard Metropolis-Hastings approaches.}
 
@@ -1552,7 +1554,7 @@ However, tuning the variances and
 covariances of the mixture proposal components
 globally is likely to be of limited use for multimodal problems where
 the modes have very different covariances, or where there are curved
-ridges in the density. {\red With increased dimensionality and/or
+ridges in the density. {\revised With increased dimensionality and/or
   complexity of the target the distribution, we also require increases
   in the size of the ensemble if we wish to have a stable ETAIS
   implementation. After a certain point, the extra overheads
@@ -1562,7 +1564,7 @@ this problem that would be worthy of future consideration, not least
 the potential to use transport maps\cite{el2012bayesian,parno2014transport} to map Gaussian mixtures to
 highly complex non-Gaussian approximations of the posterior. Such a
 map could encode local covariance information, and lead to accelerated
-and stable ETAIS sampling {\red with much smaller ensemble sizes}.
+and stable ETAIS sampling {\revised with much smaller ensemble sizes}.
 
 \begin{appendix}
 
